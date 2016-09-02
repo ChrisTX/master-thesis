@@ -16,7 +16,12 @@ namespace BasisFunctions {
 			phi_4
 		};
 
-		constexpr inline auto operator()(index_t i, T x, T y, T z) const
+		constexpr auto size() cosnt
+		{
+			return 4;
+		}
+
+		constexpr auto operator()(index_t i, T x, T y, T z) const
 		{
 			switch(i) {
 				case index_t::phi_1:
@@ -30,7 +35,7 @@ namespace BasisFunctions {
 			}
 		}
 
-		constexpr inline auto EvaluateDerivative(index_t i, T, T, T) const
+		constexpr auto EvaluateDerivative(index_t i, T, T, T) const
 		{
 			switch(i) {
 				case index_t::phi_1:
@@ -63,7 +68,12 @@ namespace BasisFunctions {
 			phi_10
 		};
 
-		constexpr inline auto operator()(index_t i, T x, T y, T z) const
+		constexpr auto size() cosnt
+		{
+			return 10;
+		}
+
+		constexpr auto operator()(index_t i, T x, T y, T z) const
 		{
 			switch(i) {
 				case index_t::phi_1:
@@ -89,7 +99,7 @@ namespace BasisFunctions {
 			}
 		}
 
-		constexpr inline auto EvaluateDerivative(index_t i, T x, T y, T z) const
+		constexpr auto EvaluateDerivative(index_t i, T x, T y, T z) const
 		{
 			switch(i) {
 				case index_t::phi_1:

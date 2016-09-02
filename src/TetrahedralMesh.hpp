@@ -9,7 +9,7 @@
 template<typename T>
 class TetrahedralMesh {
 public:
-	using Point_t = SpacePoint<T>;
+	using Point_t = std::array<T, 3>;
 	using NodeId_t = typename std::vector<Point_t>::size_type;
 
 	using ElementDescriptor_t = std::array<NodeId_t, 4>;
@@ -21,6 +21,7 @@ public:
 		ElementId_t replacement_first_child;
 		bool is_border_layer = false;
 		ElementId_t associated_element;
+		T h;
 	};
 
 	using ElementId_t = typename std::vector<Element_t>::size_type;
@@ -35,26 +36,14 @@ public:
 	};
 
 	struct SurfaceData_t {
-		SurfaceId_t corners;
 		SurfaceType_t type = SurfaceType_t::Undefined;
 		std::array<ElementId_t, 2> adjacent_elements;
+		bool is_time_orthogonal;
+		std::size_t top_element;
 		Point_t normal_vector;
-
-		void UpdateNormal() {
-			const auto& a = m_NodeList[corners[0]];
-			const auto& b = m_NodeList[corners[1]];
-			const auto& c = m_NodeList[corners[2]];
-
-			const auto ac = a - c;
-			const auto bc = b - c;
-			normal_vector.a = ac.b * bc.c - ac.c * bc.b;
-			normal_vector.b = ac.c * bc.a - ac.a * bc.c;
-			normal_vector.c = ac.a * bc.b - ac.b * bc.a;
-			normal_vector.normalize();
-		}
+		T h;
 	};
 
-protected:
 	std::vector<Point_t> m_NodeList;
 	std::vector<Element_t> m_ElementList;
 	std::vector<ElementId_t> m_ElementBottomLayer;
@@ -64,6 +53,31 @@ protected:
 
 	T m_StartTime;
 	T m_EndTime;
+
+	auto ElementToTetrahedron(const Element_t& elem) const {
+		auto retval = std::array<Point_t, 4>;
+		for(auto i = 0; i < 4; ++i)
+			retval[i] = m_NodeList[elem.corners[i]];
+		return std::move(retval);
+	}
+
+	auto ElementIdToTetrahedron(const ElementId_t elemid) const {
+		return std::move(ElementToTetrahedron(m_ElementList[elemid]));
+	}
+
+	auto SurfaceIdToTriangle(const SurfaceId_t& surf) const {
+		auto retval = std::array<Point_t, 3>;
+		for(auto i = 0; i < 3; ++i)
+			retval[i] = m_NodeList[surf[i]];
+		return std::move(retval);
+	}
+
+	auto& SurfaceDataById(const SurfaceId_t& surfid) const {
+		const auto& cur_surface_it = m_Mesh.m_SurfaceList.find( surfid );
+		assert( cur_surface_it != m_Mesh.m_SurfaceList.end() );
+
+		return *cur_surface_it;
+	}
 
 	auto InsertNode(Point_t point_to_insert) {
 		m_NodeList.push_back(std::move(point_to_insert));
@@ -110,13 +124,28 @@ protected:
 		ReplaceElement(elemid_to_refine, first_child_elem);
 	}
 
+	void UpdateNormal(const SurfaceId_t& surfid) {
+		const auto& a = m_NodeList[surfid[0]];
+		const auto& b = m_NodeList[surfid[1]];
+		const auto& c = m_NodeList[surfid[2]];
+
+		const auto ac = a - c;
+		const auto bc = b - c;
+		auto normal_vector = Point_t{};
+		normal_vector[0] = ac.b * bc.c - ac.c * bc.b;
+		normal_vector[1] = ac.c * bc.a - ac.a * bc.c;
+		normal_vector[2] = ac.a * bc.b - ac.b * bc.a;
+		normal_vector.normalize();
+		m_SurfaceList[surfid].normal_vector = std::move( normal_vector );
+	}
+
 	void UpdateAssociation(Element_t old_elem) {
 		const auto& old_elem_data = m_ElementList[old_elem].element_data;
 		assert(old_elem_data.is_border_layer);
 
 		// We do not remove elements from the vector, so we might have an element that was already processed
-		if(!old_elem_data.is_in_mesh)
-			return;
+		assert(!old_elem_data.is_in_mesh);
+
 		const auto first_child_id = old_elem_data.replacement_first_child;
 		const auto other_old_elem = old_elem_data.associated_element;
 		assert(other_old_elem < m_ElementList.size());
@@ -148,9 +177,21 @@ protected:
 	}
 
 	void UpdateAllAssociations() {
-		for(const auto i : m_ElementBottomLayer) {
+		const auto oldbottomlayer = m_ElementBottomLayer;
+		m_ElementBottomLayer.clear();
+
+		for(const auto i : oldbottomlayer)
 			UpdateAssociation(i);
-		}
+	}
+
+	void CompactElementList() {
+		auto vec_copy = decltype(m_ElementList){};
+		vec_copy.reserve( m_ElementList.size() );
+
+		for(const auto i : m_ElementList)
+			vec_copy.push_back(i);
+		
+		vec_copy.shrink_to_fit();
 	}
 
 	bool IsInTimeBorder( const SurfaceId_t& surfid, const T time_border ) {
@@ -162,24 +203,61 @@ protected:
 		return true;
 	}
 
-	void ConsiderElementForSurfaceList(const ElementId_t curelemid, const SurfaceId_t& surfid) {
-		auto& surf = m_SurfaceList[surfid];
-		switch(surf) {
-			case SurfaceType_t::Undefined:
-				// Untouched so far.
-				if( IsInTimeBorder(surfid, m_EndTime) )
-					surf.type = SurfaceType_t::EndTime;
-				else if ( IsInTimeBorder(surfid, m_StartTime) )
-					surf.type = SurfaceType_t::StartTime;
-				else
-					surf.type = SurfaceType_t::MidTime;
+	void CalculateElementH(const ElementId_t curelemid) {
+		const auto& curelem = m_ElementList[i];
+		const auto a = curelem.corners[0];
+		const auto b = curelem.corners[1];
+		const auto c = curelem.corners[2];
+		const auto d = curelem.corners[3];
 
-				surf.adjacent_elements[0] = curelemid;
+		curelem.h = std::abs(a - b);
+		curelem.h = std::max( curelem.h, std::abs(a - c) );
+		curelem.h = std::max( curelem.h, std::abs(a - d) );
+		curelem.h = std::max( curelem.h, std::abs(b - c) );
+		curelem.h = std::max( curelem.h, std::abs(b - d) );
+		curelem.h = std::max( curelem.h, std::abs(c - d) );
+	}
+
+	void ConsiderElementForSurfaceList(const ElementId_t curelemid, const SurfaceId_t& surfid, const NodeId_t other_node_id) {
+		// Note that because this is an unordered map, this operation might insert the surface
+		auto& surf = m_SurfaceList[surfid];
+		UpdateNormal(surfid);
+		const auto surfnm = surf.normal_vector;
+		const auto& curelem = m_ElementList[curelemid]; 
+		switch(surf.type) {
+			case SurfaceType_t::Undefined:
+				{
+					// Untouched so far.
+					if( IsInTimeBorder(surfid, m_EndTime) )
+						surf.type = SurfaceType_t::EndTime;
+					else if ( IsInTimeBorder(surfid, m_StartTime) )
+						surf.type = SurfaceType_t::StartTime;
+					else
+						surf.type = SurfaceType_t::MidTime;
+
+					surf.adjacent_elements[0] = curelemid;
+					surf.h = curelem.h;
+
+					const auto surf_node = m_NodeList[surfid[0]];
+					const auto other_node = m_NodeList[other_node_id];
+					auto scalval = T{0};
+					for(auto i = 0; i < 3; ++i)
+						scalval += ( other_node[i] - surf_node[i] ) * surfnm[i];
+					if( scalval == T{0} ) {
+						surf.is_time_orthogonal = true;
+					}
+					else {
+						surf.top_element = ( scalval > 0 ) ? 0 : 1;
+						surf.is_time_orthogonal = false;
+					}
+				}
 				break;
 			case SurfaceType_t::MidTime:
 				// Seen once, make inner.
 				surf.type = SurfaceType_t::Inner;
 				surf.adjacent_elements[1] = curelemid;
+				surf.h += curelem.h;
+				surf.h /= T{2};
 				break;
 			default:
 				// Start, End time elements or inner. Error.
@@ -200,10 +278,10 @@ protected:
 			const auto b = curelem.corners[1];
 			const auto c = curelem.corners[2];
 			const auto d = curelem.corners[3];
-			ConsiderElementForSurfaceList(i, {a, b, c});
-			ConsiderElementForSurfaceList(i, {a, b, d});
-			ConsiderElementForSurfaceList(i, {b, c, d});
-			ConsiderElementForSurfaceList(i, {a, c, d});
+			ConsiderElementForSurfaceList(i, {a, b, c}, d);
+			ConsiderElementForSurfaceList(i, {a, b, d}, c);
+			ConsiderElementForSurfaceList(i, {b, c, d}, a);
+			ConsiderElementForSurfaceList(i, {a, c, d}, b);
 		}
 	}
 
@@ -213,5 +291,6 @@ public:
 			RedRefine(i);
 		}
 		UpdateAllAssociations();
+		CompactElementList();
 	}
 };
