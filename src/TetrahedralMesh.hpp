@@ -2,8 +2,11 @@
 #define TETRAHEDRAL_MESH_HPP
 
 #include <array>
+#include <cmath>
+#include <limits>
 #include <memory>
 #include <tuple>
+#include <map>
 #include <unordered_map>
 #include <vector>
 
@@ -22,7 +25,7 @@ public:
 	using NodeId_t = typename std::vector<Point_t>::size_type;
 
 	using ElementDescriptor_t = std::array<NodeId_t, 4>;
-
+	using ElementId_t = std::size_t;
 	struct Element_t {
 		ElementDescriptor_t corners;
 
@@ -33,7 +36,6 @@ public:
 		T h;
 	};
 
-	using ElementId_t = typename std::vector<Element_t>::size_type;
 	using SurfaceId_t = std::array<NodeId_t, 3>;
 
 	enum class SurfaceType_t {
@@ -58,10 +60,10 @@ public:
 	std::vector<ElementId_t> m_ElementBottomLayer;
 	/* The surface list can be built on demand from the current element list
 	   It takes 4N time to construct, where N is the number of elements */
-	std::unordered_map<SurfaceId_t, SurfaceData_t> m_SurfaceList;
+	std::map<SurfaceId_t, SurfaceData_t> m_SurfaceList;
 
 	auto ElementToTetrahedron(const Element_t& elem) const {
-		auto retval = std::array<Point_t, 4>;
+		auto retval = std::array<Point_t, 4>{};
 		for(auto i = 0; i < 4; ++i)
 			retval[i] = m_NodeList[elem.corners[i]];
 		return std::move(retval);
@@ -72,15 +74,15 @@ public:
 	}
 
 	auto SurfaceIdToTriangle(const SurfaceId_t& surf) const {
-		auto retval = std::array<Point_t, 3>;
+		auto retval = std::array<Point_t, 3>{};
 		for(auto i = 0; i < 3; ++i)
 			retval[i] = m_NodeList[surf[i]];
 		return std::move(retval);
 	}
 
 	auto& SurfaceDataById(const SurfaceId_t& surfid) const {
-		const auto& cur_surface_it = m_Mesh.m_SurfaceList.find( surfid );
-		assert( cur_surface_it != m_Mesh.m_SurfaceList.end() );
+		const auto& cur_surface_it = m_SurfaceList.find( surfid );
+		assert( cur_surface_it != m_SurfaceList.end() );
 
 		return *cur_surface_it;
 	}
@@ -100,23 +102,40 @@ public:
 	void ReplaceElement(ElementId_t elem_to_replace, ElementId_t first_child_elem) {
 		auto& elem_data = m_ElementList[elem_to_replace];
 		elem_data.is_in_mesh = false;
-		elem_data.first_child_elem = first_child_elem;
+		elem_data.replacement_first_child = first_child_elem;
+	}
+
+	auto FindOrInsertNode(Point_t NodeTarget) {
+		for(auto i = std::size_t{0}; i < m_NodeList.size(); ++i)
+			if( m_NodeList[i] == NodeTarget )
+				return i;
+		
+		m_NodeList.push_back( std::move( NodeTarget ) );
+		return m_NodeList.size() - 1;	
 	}
 
 	void RedRefine(ElementId_t elemid_to_refine) {
 		auto& elem_to_refine = m_ElementList[elemid_to_refine];
 
 		// Use the point naming scheme as in [Bey95]
-		const auto x0 = elem_to_refine.corners[0];
-		const auto x1 = elem_to_refine.corners[1];
-		const auto x2 = elem_to_refine.corners[2];
-		const auto x3 = elem_to_refine.corners[3];
-		const auto x01 = (x0 + x1)/T{2};
-		const auto x02 = (x0 + x2)/T{2};
-		const auto x03 = (x0 + x3)/T{2};
-		const auto x12 = (x1 + x2)/T{2};
-		const auto x13 = (x1 + x3)/T{2};
-		const auto x23 = (x2 + x3)/T{2};
+		const auto x0_l = m_NodeList[ elem_to_refine.corners[0] ];
+		const auto x1_l = m_NodeList[ elem_to_refine.corners[1] ];
+		const auto x2_l = m_NodeList[ elem_to_refine.corners[2] ];
+		const auto x3_l = m_NodeList[ elem_to_refine.corners[3] ];
+
+		const auto FIMidNode = [this]( auto x, auto y ) -> auto {
+			auto z = Point_t{};
+			for(auto i = 0; i < 3; ++i)
+				z[i] = ( x[i] + y[i] ) / T{2};
+			return FindOrInsertNode(z);
+		};
+
+		const auto x01 = FIMidNode(x0, x1);
+		const auto x02 = FIMidNode(x0, x2);
+		const auto x03 = FIMidNode(x0, x3);
+		const auto x12 = FIMidNode(x1, x2);
+		const auto x13 = FIMidNode(x1, x3);
+		const auto x23 = FIMidNode(x2, x3);
 
 		const auto first_new_element_id = m_ElementList.size();
 
@@ -129,7 +148,7 @@ public:
 		InsertElement({x02, x03, x13, x23});
 		InsertElement({x02, x12, x13, x23});
 
-		ReplaceElement(elemid_to_refine, first_child_elem);
+		ReplaceElement(elemid_to_refine, first_new_element_id);
 	}
 
 	void UpdateNormal(const SurfaceId_t& surfid) {
@@ -147,14 +166,14 @@ public:
 		m_SurfaceList[surfid].normal_vector = std::move( normal_vector );
 	}
 
-	void UpdateAssociation(Element_t old_elem) {
+	void UpdateAssociation(ElementId_t old_elem) {
 		const auto& old_elem_data = m_ElementList[old_elem].element_data;
 		assert(old_elem_data.is_border_layer);
 
 		// We do not remove elements from the vector, so we might have an element that was already processed
 		assert(!old_elem_data.is_in_mesh);
 
-		const auto first_child_id = old_elem_data.replacement_first_child;
+		const auto first_old_child_id = old_elem_data.replacement_first_child;
 		const auto other_old_elem = old_elem_data.associated_element;
 		assert(other_old_elem < m_ElementList.size());
 		const auto& other_old_elem_data = m_ElementList[other_old_elem].element_data;
@@ -204,7 +223,7 @@ public:
 
 	bool IsInTimeBorder( const SurfaceId_t& surfid, const T time_border ) {
 		for(auto i = 0; i < 3; ++i) {
-			if( std::abs(m_NodeList[surfid[i]].z - time_border) > 5 * std::numeric_limits<T>::epsilon() ) {
+			if( std::abs(m_NodeList[surfid[i]][2] - time_border) > 5 * std::numeric_limits<T>::epsilon() ) {
 				return false;
 			}
 		}
@@ -212,18 +231,25 @@ public:
 	}
 
 	void CalculateElementH(const ElementId_t curelemid) {
-		const auto& curelem = m_ElementList[i];
-		const auto a = curelem.corners[0];
-		const auto b = curelem.corners[1];
-		const auto c = curelem.corners[2];
-		const auto d = curelem.corners[3];
+		auto& curelem = m_ElementList[curelemid];
+		const auto a = m_NodeList[ curelem.corners[0] ];
+		const auto b = m_NodeList[ curelem.corners[1] ];
+		const auto c = m_NodeList[ curelem.corners[2] ];
+		const auto d = m_NodeList[ curelem.corners[3] ];
 
-		curelem.h = std::abs(a - b);
-		curelem.h = std::max( curelem.h, std::abs(a - c) );
-		curelem.h = std::max( curelem.h, std::abs(a - d) );
-		curelem.h = std::max( curelem.h, std::abs(b - c) );
-		curelem.h = std::max( curelem.h, std::abs(b - d) );
-		curelem.h = std::max( curelem.h, std::abs(c - d) );
+		const auto eval_dist = []( auto p1, auto p2 ) -> auto {
+			auto edist = T{0};
+			for(auto i = 0; i < 3; ++i)
+				edist += std::pow( p1[i] - p2[i], T{2} );
+			return std::sqrt(edist);
+		};
+
+		curelem.h = eval_dist(a, b);
+		curelem.h = std::max( curelem.h, eval_dist(a, c) );
+		curelem.h = std::max( curelem.h, eval_dist(a, d) );
+		curelem.h = std::max( curelem.h, eval_dist(b, c) );
+		curelem.h = std::max( curelem.h, eval_dist(b, d) );
+		curelem.h = std::max( curelem.h, eval_dist(c, d) );
 	}
 
 	void CalculateAllElementH() {
@@ -307,7 +333,6 @@ public:
 
 	void InsertFullTimePrism(const NodeId_t al, const NodeId_t bl, const NodeId_t cl)
 	{
-		assert( IsInTimeBorder(al, m_StartTime) && IsInTimeBorder(bl, m_StartTime) && IsInTimeBorder(cl, m_StartTime) );
 		const auto& al_node = m_NodeList[al];
 		const auto& bl_node = m_NodeList[bl];
 		const auto& cl_node = m_NodeList[cl];

@@ -1,6 +1,7 @@
 #include "TetrahedralMesh.hpp"
 
 #include <array>
+#include <iostream>
 
 int main() {
 	auto mesh = TetrahedralMesh<double>{ 0., 1. };
@@ -12,4 +13,8 @@ int main() {
 
 	mesh.InsertFullTimePrism(al, bl, cl);
 	mesh.InsertFullTimePrism(bl, cl, dl);
+
+	mesh.UniformRefine();
+
+	std::cout << "DONE" << std::endl;
 }
