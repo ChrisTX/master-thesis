@@ -1,5 +1,7 @@
 #include <cassert>
 #include "TetrahedralMesh.hpp"
+#include "CSRMatrix.hpp"
+#include "IterativeSolvers.hpp"
 
 template<class T, class TriangQuadFm, class TetraQuadFm>
 class STMFormEvaluator {
@@ -10,9 +12,6 @@ protected:
 	const T beta;
 	const T lambda;
 
-	using ElementId_t = typename TetrahedralMesh<T>::ElementId_t;
-	using SurfaceId_t = typename TetrahedralMesh<T>::SurfaceId_t;
-
 	const auto x_scal_eval = [](const auto& u, const auto& v) -> auto {
 		return u[0] * v[0] + u[1] * v[1];
 	};
@@ -21,6 +20,9 @@ protected:
 	const TetraQuadFm tetra_quadfm{};
 
 public:
+	using ElementId_t = typename TetrahedralMesh<T>::ElementId_t;
+	using SurfaceId_t = typename TetrahedralMesh<T>::SurfaceId_t;
+	using Point_t = typename TetrahedralMesh<T>::Point_t;
 
 	STMFormEvaluator(const TetrahedralMesh<T>& mesh, const T par_sigma, const T par_alpha, const T par_beta, const T par_lambda) :
 		m_Mesh{ mesh }, sigma{ par_sigma }, alpha{ par_alpha }, beta{ par_beta }, lambda{ par_lambda }
@@ -325,8 +327,8 @@ public:
 
 		const auto integrand_fn = [&](const auto& sp) -> auto {
 			const auto p_2d = ref_triang_plain_tran(sp);
-			const auto p_end = point_t{ p_2d[0], p_2d[1], endtime_a[2] };
-			const auto p_start = point_t{ p_2d[0], p_2d[1], starttime_a[2] };
+			const auto p_end = Point_t{ p_2d[0], p_2d[1], endtime_a[2] };
+			const auto p_start = Point_t{ p_2d[0], p_2d[1], starttime_a[2] };
 			const auto p1 = ref_tran1.InverseMap(p_end);
 			const auto p2 = ref_tran2.InverseMap(p_start);
 
@@ -372,7 +374,7 @@ public:
 
 		const auto integrand_fn = [&](const auto& sp) -> auto {
 			const auto p_2d = ref_triang_plain_tran(sp);
-			const auto p_space = point_t{ p_2d[0], p_2d[1], a[2] };
+			const auto p_space = Point_t{ p_2d[0], p_2d[1], a[2] };
 			const auto p = ref_tran.InverseMap(p_space);
 			const auto uh = bf(biu, p[0], p[1], p[2]);
 			const auto fx = rhs_func(p_space[0], p_space[1], p_space[2]);
@@ -474,6 +476,45 @@ class STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					assert(false);
 			}
 		}
-		return std::move(matassembler);
+		return matassembler.AssembleMatrix();
+	}
+}
+
+template<class T, class BasisFuncs>
+class STMSolver {
+protected:
+	const Utility::CSRMatrix<T>& m_A;
+	const std::vector<T>& m_b;
+	std::vector<T> m_x;
+	const TetrahedralMesh<T>& m_Mesh;
+	const auto basis_f = BasisFuncs{};
+public:
+	using ElementId_t = typename TetrahedralMesh<T>::ElementId_t;
+	using SurfaceId_t = typename TetrahedralMesh<T>::SurfaceId_t;
+	using Point_t = typename TetrahedralMesh<T>::Point_t;
+
+	STMSolver(const TetrahedralMesh<T>& Mesh, const Utility::CSRMatrix<T>& A, const std::vector<T>& b, std::vector<T> x) : m_Mesh{ Mesh }, m_A{ A }, m_b{ b }, m_x{ std::move(x) }
+	{
+		m_x.resize(m_A.GetNumberOfRows());
+		IterativeSolvers::MKL_PARDISO(m_A, m_x, m_b);
+	}
+
+	EvaluateElement(const ElementId_t elemid, const Point_t& x) const
+	{
+		const auto& tetrahedr = m_Mesh.ElementIdToTetrahedron(elemid);
+		const auto& ref_tran = QuadratureFormulas::Tetrahedrons::ReferenceTransform(tetrahedr);
+
+		const auto p = ref_tran.InverseMap(x);
+		return EvaluateElement_Ref(elemid, p);
+	}
+
+	EvaluateElement_Ref(const ElementId_t elemid, const Point_t& p) const
+	{
+		auto pointval = T{0};
+		const auto start_offset = elemid * num_basis;
+		for(auto bi = 0; bi < basis_f.size(); ++bi) {
+			pointval += m_x[start_offset + bi] * basis_f(static_cast<typename BasisFuncs::index_t>(bi), p[0], p[1], p[2]);
+		}
+		return pointval;
 	}
 }

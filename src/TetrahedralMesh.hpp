@@ -1,14 +1,23 @@
+#ifndef TETRAHEDRAL_MESH_HPP
+#define TETRAHEDRAL_MESH_HPP
+
 #include <array>
 #include <memory>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
 
-#include "Tetrahedron.hpp"
-
 template<typename T>
 class TetrahedralMesh {
+	const T m_StartTime;
+	const T m_EndTime;
+
 public:
+	TetrahedralMesh(const T start_time, const T end_time) : m_StartTime{ start_time }, m_EndTime{ end_time }
+	{
+
+	}
+
 	using Point_t = std::array<T, 3>;
 	using NodeId_t = typename std::vector<Point_t>::size_type;
 
@@ -51,9 +60,6 @@ public:
 	   It takes 4N time to construct, where N is the number of elements */
 	std::unordered_map<SurfaceId_t, SurfaceData_t> m_SurfaceList;
 
-	T m_StartTime;
-	T m_EndTime;
-
 	auto ElementToTetrahedron(const Element_t& elem) const {
 		auto retval = std::array<Point_t, 4>;
 		for(auto i = 0; i < 4; ++i)
@@ -84,8 +90,10 @@ public:
 		return m_NodeList.size() - 1;
 	}
 
-	auto InsertElement(Element_t elem_to_insert) {
-		m_ElementList.push_back(std::move(elem_to_insert));
+	auto InsertElement(ElementDescriptor_t elem_to_insert) {
+		auto new_elem = Element_t{};
+		new_elem.corners = std::move(elem_to_insert);
+		m_ElementList.push_back(std::move(new_elem));
 		return m_ElementList.size() - 1;
 	}
 
@@ -218,6 +226,11 @@ public:
 		curelem.h = std::max( curelem.h, std::abs(c - d) );
 	}
 
+	void CalculateAllElementH() {
+		for(auto i = ElementId_t{0}; i < m_ElementList.size(); ++i)
+			CalculateElementH(i);
+	}
+
 	void ConsiderElementForSurfaceList(const ElementId_t curelemid, const SurfaceId_t& surfid, const NodeId_t other_node_id) {
 		// Note that because this is an unordered map, this operation might insert the surface
 		auto& surf = m_SurfaceList[surfid];
@@ -285,12 +298,44 @@ public:
 		}
 	}
 
+	void SplitPrism(const NodeId_t al, const NodeId_t bl, const NodeId_t cl, const NodeId_t au, const NodeId_t bu, const NodeId_t cu)
+	{
+		InsertElement({al, bl, cl, au});
+		InsertElement({au, bu, cu, bl});
+		InsertElement({bl, cl, au, cu});
+	}
+
+	void InsertFullTimePrism(const NodeId_t al, const NodeId_t bl, const NodeId_t cl)
+	{
+		assert( IsInTimeBorder(al, m_StartTime) && IsInTimeBorder(bl, m_StartTime) && IsInTimeBorder(cl, m_StartTime) );
+		const auto& al_node = m_NodeList[al];
+		const auto& bl_node = m_NodeList[bl];
+		const auto& cl_node = m_NodeList[cl];
+		const auto au = InsertNode({al_node[0], al_node[1], m_EndTime});
+		const auto bu = InsertNode({bl_node[0], bl_node[1], m_EndTime});
+		const auto cu = InsertNode({cl_node[0], cl_node[1], m_EndTime});
+
+		SplitPrism(al, bl, cl, au, bu, cu);
+
+		const auto last_elem_id = m_ElementList.size() - 1;
+		auto& lower_elem = m_ElementList[last_elem_id - 2];
+		auto& upper_elem = m_ElementList[last_elem_id - 1];
+		lower_elem.is_border_layer = true;
+		upper_elem.is_border_layer = true;
+		lower_elem.associated_element = last_elem_id - 1;
+		upper_elem.associated_element = last_elem_id - 2;
+	}
+
 public:
 	void UniformRefine() {
-		for(auto i = ElementId_t{0}; i < m_ElementList.size(); ++i) {
+		for(auto i = ElementId_t{0}; i < m_ElementList.size(); ++i)
 			RedRefine(i);
-		}
+		
 		UpdateAllAssociations();
 		CompactElementList();
+		CalculateAllElementH();
+		BuildSurfaceList();
 	}
 };
+
+#endif
