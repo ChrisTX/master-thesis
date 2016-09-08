@@ -118,10 +118,15 @@ public:
 		auto& elem_to_refine = m_ElementList[elemid_to_refine];
 
 		// Use the point naming scheme as in [Bey95]
-		const auto x0_l = m_NodeList[ elem_to_refine.corners[0] ];
-		const auto x1_l = m_NodeList[ elem_to_refine.corners[1] ];
-		const auto x2_l = m_NodeList[ elem_to_refine.corners[2] ];
-		const auto x3_l = m_NodeList[ elem_to_refine.corners[3] ];
+		const auto x0 = elem_to_refine.corners[0];
+		const auto x1 = elem_to_refine.corners[1];
+		const auto x2 = elem_to_refine.corners[2];
+		const auto x3 = elem_to_refine.corners[3];
+
+		const auto x0_l = m_NodeList[ x0 ];
+		const auto x1_l = m_NodeList[ x1 ];
+		const auto x2_l = m_NodeList[ x2 ];
+		const auto x3_l = m_NodeList[ x3 ];
 
 		const auto FIMidNode = [this]( auto x, auto y ) -> auto {
 			auto z = Point_t{};
@@ -130,12 +135,12 @@ public:
 			return FindOrInsertNode(z);
 		};
 
-		const auto x01 = FIMidNode(x0, x1);
-		const auto x02 = FIMidNode(x0, x2);
-		const auto x03 = FIMidNode(x0, x3);
-		const auto x12 = FIMidNode(x1, x2);
-		const auto x13 = FIMidNode(x1, x3);
-		const auto x23 = FIMidNode(x2, x3);
+		const auto x01 = FIMidNode(x0_l, x1_l);
+		const auto x02 = FIMidNode(x0_l, x2_l);
+		const auto x03 = FIMidNode(x0_l, x3_l);
+		const auto x12 = FIMidNode(x1_l, x2_l);
+		const auto x13 = FIMidNode(x1_l, x3_l);
+		const auto x23 = FIMidNode(x2_l, x3_l);
 
 		const auto first_new_element_id = m_ElementList.size();
 
@@ -156,13 +161,18 @@ public:
 		const auto& b = m_NodeList[surfid[1]];
 		const auto& c = m_NodeList[surfid[2]];
 
-		const auto ac = a - c;
-		const auto bc = b - c;
+		const auto ac = Point_t{a[0] - c[0], a[1] - c[1], a[2] - c[2]};
+		const auto bc = Point_t{b[0] - c[0], b[1] - c[1], b[2] - c[2]};
 		auto normal_vector = Point_t{};
-		normal_vector[0] = ac.b * bc.c - ac.c * bc.b;
-		normal_vector[1] = ac.c * bc.a - ac.a * bc.c;
-		normal_vector[2] = ac.a * bc.b - ac.b * bc.a;
-		normal_vector.normalize();
+		normal_vector[0] = ac[1] * bc[2] - ac[2] * bc[1];
+		normal_vector[1] = ac[2] * bc[0] - ac[0] * bc[2];
+		normal_vector[2] = ac[0] * bc[1] - ac[1] * bc[0];
+		auto edist = T{0};
+		for(auto i = 0; i < 3; ++i)
+			edist += normal_vector[i] * normal_vector[i];
+		edist = std::sqrt(edist);
+		for(auto i = 0; i < 3; ++i)
+			normal_vector[i] /= edist;
 		m_SurfaceList[surfid].normal_vector = std::move( normal_vector );
 	}
 
@@ -310,7 +320,7 @@ public:
 
 		/* 	If all elements were inner ones, we'd attain a size of (4N)/2.
 			Hence, 2N is a reasonable reserve for a low effective load factor */
-		m_SurfaceList.reserve( 2 * m_ElementList.size() );
+		//m_SurfaceList.reserve( 2 * m_ElementList.size() );
 		for(auto i = ElementId_t{0}; i < m_ElementList.size(); ++i) {
 			const auto& curelem = m_ElementList[i];
 			const auto a = curelem.corners[0];
