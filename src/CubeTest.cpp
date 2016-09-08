@@ -12,7 +12,9 @@ int main() {
 	const auto dl = mesh.InsertNode( { 1., 1., 0. } );
 
 	mesh.InsertFullTimePrism(al, bl, cl);
-	mesh.InsertFullTimePrism(bl, cl, dl);
+	//mesh.InsertFullTimePrism(bl, cl, dl);
+
+	std::cout << "INSERT" << std::endl;
 
 	mesh.UniformRefine();
 

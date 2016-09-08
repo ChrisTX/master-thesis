@@ -2,6 +2,7 @@
 #define TETRAHEDRAL_MESH_HPP
 
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <limits>
 #include <memory>
@@ -177,7 +178,7 @@ public:
 	}
 
 	void UpdateAssociation(ElementId_t old_elem) {
-		const auto& old_elem_data = m_ElementList[old_elem].element_data;
+		const auto& old_elem_data = m_ElementList[old_elem];
 		assert(old_elem_data.is_border_layer);
 
 		// We do not remove elements from the vector, so we might have an element that was already processed
@@ -186,7 +187,7 @@ public:
 		const auto first_old_child_id = old_elem_data.replacement_first_child;
 		const auto other_old_elem = old_elem_data.associated_element;
 		assert(other_old_elem < m_ElementList.size());
-		const auto& other_old_elem_data = m_ElementList[other_old_elem].element_data;
+		const auto& other_old_elem_data = m_ElementList[other_old_elem];
 		const auto first_other_child_id = other_old_elem_data.replacement_first_child;
 		assert(!other_old_elem_data.is_in_mesh && other_old_elem_data.replacement_first_child && other_old_elem_data.associated_element == old_elem);
 		assert(!other_old_elem_data.is_in_mesh && other_old_elem_data.is_border_layer);
@@ -198,16 +199,12 @@ public:
 			const auto other_elem_child_id = first_other_child_id + i;
 			auto& cur_old_elem_child = m_ElementList[old_elem_child_id];
 			auto& cur_other_elem_child = m_ElementList[other_elem_child_id];
-			auto& cur_child_data = cur_old_elem_child.element_data;
-			auto& cur_other_child_data = cur_other_elem_child.element_data;
 
-			cur_child_data.is_in_mesh = true;
-			cur_other_child_data.is_in_mesh = true;
-			cur_child_data.is_border_layer = true;
-			cur_other_child_data.is_border_layer = true;
+			cur_old_elem_child.is_border_layer = true;
+			cur_other_elem_child.is_border_layer = true;
 
-			cur_child_data.associated_element = other_elem_child_id;
-			cur_other_child_data.associated_element = old_elem_child_id;
+			cur_old_elem_child.associated_element = other_elem_child_id;
+			cur_other_elem_child.associated_element = old_elem_child_id;
 			m_ElementBottomLayer.push_back(old_elem_child_id);
 			m_ElementBottomLayer.push_back(other_elem_child_id);
 		}
@@ -225,10 +222,22 @@ public:
 		auto vec_copy = decltype(m_ElementList){};
 		vec_copy.reserve( m_ElementList.size() );
 
-		for(const auto i : m_ElementList)
-			vec_copy.push_back(i);
+		for(auto i = 0; i < m_ElementList.size(); ++i) {
+			auto elem_copy = m_ElementList[i];
+			if(elem_copy.is_in_mesh) {
+				if(elem_copy.is_border_layer) {
+					const auto assoc_elem = elem_copy.associated_element;
+					if( elem_copy.associated_element > i )
+						m_ElementList[ assoc_elem ].associated_element = vec_copy.size();
+					else
+						vec_copy[ assoc_elem ].associated_element = vec_copy.size();
+				}
+				vec_copy.push_back(std::move(elem_copy));
+			}
+		}
 		
 		vec_copy.shrink_to_fit();
+		m_ElementList = std::move(vec_copy);
 	}
 
 	bool IsInTimeBorder( const SurfaceId_t& surfid, const T time_border ) {
@@ -359,11 +368,13 @@ public:
 		upper_elem.is_border_layer = true;
 		lower_elem.associated_element = last_elem_id - 1;
 		upper_elem.associated_element = last_elem_id - 2;
+		m_ElementBottomLayer.push_back(last_elem_id - 2);
 	}
 
 public:
 	void UniformRefine() {
-		for(auto i = ElementId_t{0}; i < m_ElementList.size(); ++i)
+		auto last_old_elem = m_ElementList.size();
+		for(auto i = ElementId_t{0}; i < last_old_elem; ++i)
 			RedRefine(i);
 		
 		UpdateAllAssociations();
