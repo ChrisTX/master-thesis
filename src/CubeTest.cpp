@@ -22,7 +22,8 @@ int main() {
 	
 	mesh.UniformRefine();
 	
-	/*for(auto surf_p : mesh.m_SurfaceList) {
+#ifdef PRINT_SURFACE_LIST
+	for(auto surf_p : mesh.m_SurfaceList) {
 		auto a = mesh.m_NodeList[surf_p.first[0]];
 		auto b = mesh.m_NodeList[surf_p.first[1]];
 		auto c = mesh.m_NodeList[surf_p.first[2]];
@@ -37,9 +38,10 @@ int main() {
 		else
 			std::cout << " of " << surf.adjacent_elements[0];
 		std::cout << std::endl;
-	}*/ 
+	}
+#endif
 
-	auto stmsol = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD1<double>, QuadratureFormulas::Tetrahedra::Formula_3DT1<double>>{};
+	auto stmsol = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD1<double>, QuadratureFormulas::Tetrahedra::Formula_3DT1<double>>{ mesh, 1., 1., 1., 1. };
 
 	std::cout << "DONE" << std::endl;
 }

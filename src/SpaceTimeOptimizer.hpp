@@ -402,6 +402,11 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 	using SurfaceId_t = typename STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>::SurfaceId_t;
 	using SurfaceType_t = typename TetrahedralMesh<T>::SurfaceType_t;
 
+	STMAssembler(const TetrahedralMesh<T>& mesh, const T par_sigma, const T par_alpha, const T par_beta, const T par_lambda) :
+		STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>( mesh, par_sigma, par_alpha, par_beta, par_lambda )
+	{
+	}
+
 	template<class BasisFuncs, class F>
 	auto AssembleMatrixAndLV(const F& y0, const T yOmega) const {
 		// In a dG approach, we have a given amount of functions ( BasisFuncs' size ) per element
