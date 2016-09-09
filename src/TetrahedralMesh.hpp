@@ -11,6 +11,10 @@
 #include <unordered_map>
 #include <vector>
 
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
 template<typename T>
 class TetrahedralMesh {
 	const T m_StartTime;
@@ -37,14 +41,28 @@ public:
 		T h;
 	};
 
-	using SurfaceId_t = std::array<NodeId_t, 3>;
-
 	enum class SurfaceType_t {
 		Undefined,
 		Inner,
 		StartTime,
 		MidTime,
 		EndTime
+	};
+
+	struct SurfaceId_t : public std::array<NodeId_t, 3> {
+		SurfaceId_t( std::initializer_list<NodeId_t> il ) {
+			assert(il.size() == 3);
+			auto j = std::size_t{0};
+			for( auto val : il )
+				(*this)[j++] = val;
+
+			for( auto n = std::size_t{0}; n < 2; ++n ) {
+				for( auto i = std::size_t{0}; i < 2; ++i ) {
+					if( (*this)[i+1] < (*this)[i] )
+					       std::swap( (*this)[i+1], (*this)[i] );	
+				}
+			}	
+		}
 	};
 
 	struct SurfaceData_t {
@@ -169,10 +187,12 @@ public:
 		normal_vector[1] = ac[2] * bc[0] - ac[0] * bc[2];
 		normal_vector[2] = ac[0] * bc[1] - ac[1] * bc[0];
 		auto edist = T{0};
-		for(auto i = 0; i < 3; ++i)
+		for(auto i = std::size_t{0}; i < 3; ++i)
 			edist += normal_vector[i] * normal_vector[i];
 		edist = std::sqrt(edist);
-		for(auto i = 0; i < 3; ++i)
+		if( normal_vector[2] < 0 )
+			edist *= T{-1};
+		for(auto i = std::size_t{0}; i < 3; ++i)
 			normal_vector[i] /= edist;
 		m_SurfaceList[surfid].normal_vector = std::move( normal_vector );
 	}
@@ -200,6 +220,15 @@ public:
 			auto& cur_old_elem_child = m_ElementList[old_elem_child_id];
 			auto& cur_other_elem_child = m_ElementList[other_elem_child_id];
 
+#ifndef NDEBUG
+			for(auto j = std::size_t{0}; j < 3; ++j) {
+				const auto al = m_NodeList[ cur_old_elem_child.corners[j] ];
+				const auto au = m_NodeList[ cur_other_elem_child.corners[j] ];
+				if( al[0] != au[0] || al[1] != au[1] )
+					std::cout << "MISMATCH: (" << al[0] << ',' << al[1] << ") vs (" << au[0] << ',' << au[1] << ")!" << std::endl;
+			}
+		        	
+#endif
 			cur_old_elem_child.is_border_layer = true;
 			cur_other_elem_child.is_border_layer = true;
 
@@ -241,7 +270,7 @@ public:
 	}
 
 	bool IsInTimeBorder( const SurfaceId_t& surfid, const T time_border ) {
-		for(auto i = 0; i < 3; ++i) {
+		for(auto i = std::size_t{0}; i < 3; ++i) {
 			if( std::abs(m_NodeList[surfid[i]][2] - time_border) > 5 * std::numeric_limits<T>::epsilon() ) {
 				return false;
 			}
@@ -299,9 +328,9 @@ public:
 					const auto surf_node = m_NodeList[surfid[0]];
 					const auto other_node = m_NodeList[other_node_id];
 					auto scalval = T{0};
-					for(auto i = 0; i < 3; ++i)
+					for(auto i = std::size_t{0}; i < 3; ++i)
 						scalval += ( other_node[i] - surf_node[i] ) * surfnm[i];
-					if( scalval == T{0} ) {
+					if( std::abs( surfnm[2] ) < 5 * std::numeric_limits<T>::epsilon()  ) {
 						surf.is_time_orthogonal = true;
 					}
 					else {
@@ -355,9 +384,9 @@ public:
 		const auto& al_node = m_NodeList[al];
 		const auto& bl_node = m_NodeList[bl];
 		const auto& cl_node = m_NodeList[cl];
-		const auto au = InsertNode({al_node[0], al_node[1], m_EndTime});
-		const auto bu = InsertNode({bl_node[0], bl_node[1], m_EndTime});
-		const auto cu = InsertNode({cl_node[0], cl_node[1], m_EndTime});
+		const auto au = FindOrInsertNode({al_node[0], al_node[1], m_EndTime});
+		const auto bu = FindOrInsertNode({bl_node[0], bl_node[1], m_EndTime});
+		const auto cu = FindOrInsertNode({cl_node[0], cl_node[1], m_EndTime});
 
 		SplitPrism(al, bl, cl, au, bu, cu);
 

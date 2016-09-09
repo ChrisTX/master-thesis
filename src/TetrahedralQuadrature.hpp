@@ -1,3 +1,6 @@
+#ifndef TETRAHEDRAL_QUADRATURE_HPP
+#define TETRAHEDRAL_QUADRATURE_HPP
+
 #include <type_traits>
 #include <utility>
 #include <array>
@@ -147,3 +150,5 @@ namespace QuadratureFormulas {
 		};
 	}
 }
+
+#endif

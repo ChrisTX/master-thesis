@@ -1,5 +1,0 @@
-TODO list:
-
-1. Global index assignment
-2. Per side normal computation
-3. Maintaining \Sigma association

@@ -1,3 +1,6 @@
+#ifndef SPACE_TIME_OPTIMIZER_HPP
+#define SPACE_TIME_OPTIMIZER_HPP
+
 #include <cassert>
 #include "TetrahedralMesh.hpp"
 #include "CSRMatrix.hpp"
@@ -476,7 +479,7 @@ class STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					assert(false);
 			}
 		}
-		return matassembler.AssembleMatrix();
+		return std::make_pair( matassembler.AssembleMatrix(), loadvec );
 	}
 }
 
@@ -518,3 +521,5 @@ public:
 		return pointval;
 	}
 }
+
+#endif

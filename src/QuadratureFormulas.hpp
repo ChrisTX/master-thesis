@@ -1,3 +1,6 @@
+#ifndef QUADRATURE_FORMULAS_HPP
+#define QUADRATURE_FORMULAS_HPP
+
 #include <type_traits>
 #include <utility>
 #include <array>
@@ -18,3 +21,5 @@ namespace QuadratureFormulas {
        	return result_value;
 	}
 }
+
+#endif

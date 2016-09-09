@@ -1,8 +1,10 @@
+#ifndef TETRAHEDRAL_BASIS_HPP
+#define TETRAHEDRAL_BASIS_HPP
+
 #include <array>
 #include <cstddef>
 #include <type_traits>
 #include <utility>
-
 
 namespace BasisFunctions {
 
