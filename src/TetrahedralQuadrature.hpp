@@ -9,7 +9,7 @@
 
 namespace QuadratureFormulas {
 
-	namespace Tetrahedrons {
+	namespace Tetrahedra {
 
 		template<typename T>
 		struct Formula_3DT1 {
@@ -43,10 +43,10 @@ namespace QuadratureFormulas {
 			using point_t = std::array<T, 3>;
 			const std::array<T, 4> weights{ T{1}/T{24}, T{1}/T{24}, T{1}/T{24}, T{1}/T{24} };
 			const std::array<point_t, 4> points{
-				{ (T{5} - sqrt_of_five<T>)/T{20}, (T{5} - sqrt_of_five<T>)/T{20}, (T{5} - sqrt_of_five<T>)/T{20} }, 
-				{ (T{5} + T{3} * sqrt_of_five<T>)/T{20}, (T{5} - sqrt_of_five<T>)/T{20}, (T{5} - sqrt_of_five<T>)/T{20} }, 
-				{ (T{5} - sqrt_of_five<T>)/T{20}, (T{5} + T{3} * sqrt_of_five<T>)/T{20}, (T{5} - sqrt_of_five<T>)/T{20} }, 
-				{ (T{5} - sqrt_of_five<T>)/T{20}, (T{5} - sqrt_of_five<T>)/T{20}, (T{5} + T{3} * sqrt_of_five<T>)/T{20} } 
+				{ (T{5} - sqrt_of_five)/T{20}, (T{5} - sqrt_of_five)/T{20}, (T{5} - sqrt_of_five)/T{20} }, 
+				{ (T{5} + T{3} * sqrt_of_five)/T{20}, (T{5} - sqrt_of_five)/T{20}, (T{5} - sqrt_of_five)/T{20} }, 
+				{ (T{5} - sqrt_of_five)/T{20}, (T{5} + T{3} * sqrt_of_five)/T{20}, (T{5} - sqrt_of_five)/T{20} }, 
+				{ (T{5} - sqrt_of_five)/T{20}, (T{5} - sqrt_of_five)/T{20}, (T{5} + T{3} * sqrt_of_five)/T{20} } 
 			};
 
 			template<typename F>
@@ -102,8 +102,8 @@ namespace QuadratureFormulas {
 				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
 					m_TransformMatrix[i] = target_element[i];
 
-				for(auto i = 0; i < tetrahedron_t.size() - 1; ++i)
-					for(auto j = 0; j < point_t.size(); ++j)
+				for(auto i = 0; i < target_element.size() - 1; ++i)
+					for(auto j = 0; j < 3; ++j)
 						m_TransformMatrix[i][j] -= m_d[j];
 				
 				CalculateDeterminant();
@@ -118,10 +118,10 @@ namespace QuadratureFormulas {
 			auto operator()(const point_t& x0) const {
 				auto xt = point_t{};
 				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
-					for(auto j = 0; j < point_t.size(); ++j)
+					for(auto j = 0; j < 3; ++j)
 						xt[j] += m_TransformMatrix[i][j] * x0[j];
 				
-				for(auto j = 0; j < point_t.size(); ++j)
+				for(auto j = 0; j < 3; ++j)
 					xt[j] += m_d[j];
 
 				return std::move(xt);
@@ -131,20 +131,22 @@ namespace QuadratureFormulas {
 				// Do note that this is the transformed multiplication taking place.
 				const auto trans_val = point_t{p[0] - m_d[0], p[1] - m_d[1], p[2] - m_d[2]};
 				auto retval = point_t{};
-				for(auto i = 0; i < 3; ++i)
+				for(auto i = 0; i < 3; ++i) {
 					retval[i] = 0;
 					for(auto j = 0; j < 3; ++j)
 						retval[i] += m_InverseTransformMatrix[j][i] * trans_val[j];
+				}
 				return std::move(retval);
 			}
 
 			auto TransformDerivative_Scalar(const point_t& grad_f) const {
 				// Do note that this is the transformed multiplication taking place.
 				auto retval = point_t{};
-				for(auto i = 0; i < 3; ++i)
+				for(auto i = 0; i < 3; ++i) {
 					retval[i] = 0;
 					for(auto j = 0; j < 3; ++j)
 						retval[i] += m_InverseTransformMatrix[j][i] * grad_f[j];
+				}
 				return std::move(retval);
 			}
 		};

@@ -1,3 +1,6 @@
+#ifndef TRIANGULAR_QUADRATURE_HPP
+#define TRIANGULAR_QUADRATURE_HPP
+
 #include <type_traits>
 #include <utility>
 #include <array>
@@ -74,12 +77,12 @@ namespace QuadratureFormulas {
 		struct Formula_2DD6 {
 		private:
 			constexpr static T sqrt_of_fifteen = T{3.8729833462074168851792653997824};
-			constexpr static T vma = (T{6} - sqrt_of_fifteen<T>)/T{21};
-			constexpr static T vpa = (T{6} + sqrt_of_fifteen<T>)/T{21};
-			constexpr static T vmb = (T{9} + T{2} * sqrt_of_fifteen<T>)/T{21};
-			constexpr static T vpb = (T{9} - T{2} * sqrt_of_fifteen<T>)/T{21};
-			constexpr static T wa = (T{155} - sqrt_of_fifteen<T>)/T{2400};
-			constexpr static T wb = (T{155} + sqrt_of_fifteen<T>)/T{2400};
+			constexpr static T vma = (T{6} - sqrt_of_fifteen)/T{21};
+			constexpr static T vpa = (T{6} + sqrt_of_fifteen)/T{21};
+			constexpr static T vmb = (T{9} + T{2} * sqrt_of_fifteen)/T{21};
+			constexpr static T vpb = (T{9} - T{2} * sqrt_of_fifteen)/T{21};
+			constexpr static T wa = (T{155} - sqrt_of_fifteen)/T{2400};
+			constexpr static T wb = (T{155} + sqrt_of_fifteen)/T{2400};
 		public:
 			using point_t = std::array<T, 2>;
 			const std::array<T, 7> weights{ wa, wa, wa, wb, wb, wb, T{9}/T{80} };
@@ -118,8 +121,8 @@ namespace QuadratureFormulas {
 				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
 					m_TransformMatrix[i] = target_element[i];
 
-				for(auto i = 0; i < triangle_t.size() - 1; ++i)
-					for(auto j = 0; j < point_t.size(); ++j)
+				for(auto i = 0; i < target_element.size() - 1; ++i)
+					for(auto j = 0; j < 3; ++j)
 						m_TransformMatrix[i][j] -= m_c[j];
 				
 				CalculateGramDeterminant();
@@ -132,11 +135,11 @@ namespace QuadratureFormulas {
 			auto operator()(const point_t& x0) {
 				auto xt = point_t{};
 				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
-					for(auto j = 0; j < point_t.size(); ++j)
+					for(auto j = 0; j < 3; ++j)
 						xt[j] += m_TransformMatrix[i][j] * x0[j];
 				
-				for(auto j = 0; j < point_t.size(); ++j)
-					xt[j] += m_d[j];
+				for(auto j = 0; j < 3; ++j)
+					xt[j] += m_c[j];
 
 				return xt;
 			}
@@ -166,8 +169,8 @@ namespace QuadratureFormulas {
 				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
 					m_TransformMatrix[i] = target_element[i];
 
-				for(auto i = 0; i < triangle_t.size() - 1; ++i)
-					for(auto j = 0; j < point_t.size(); ++j)
+				for(auto i = 0; i < target_element.size() - 1; ++i)
+					for(auto j = 0; j < 2; ++j)
 						m_TransformMatrix[i][j] -= m_c[j];
 				
 				CalculateDeterminant();
@@ -180,14 +183,16 @@ namespace QuadratureFormulas {
 			auto operator()(const point_t& x0) {
 				auto xt = point_t{};
 				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
-					for(auto j = 0; j < point_t.size(); ++j)
+					for(auto j = 0; j < 2; ++j)
 						xt[j] += m_TransformMatrix[i][j] * x0[j];
 				
-				for(auto j = 0; j < point_t.size(); ++j)
-					xt[j] += m_d[j];
+				for(auto j = 0; j < 2; ++j)
+					xt[j] += m_c[j];
 
 				return xt;
 			}
 		};
 	}
 }
+
+#endif

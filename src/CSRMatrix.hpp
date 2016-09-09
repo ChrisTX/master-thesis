@@ -15,7 +15,11 @@
 #include <utility>
 #include <vector>
 
+#ifdef HAVE_MKL
 #include <mkl.h>
+#else
+using MKL_INT = int;
+#endif
 
 #include "Utility.hpp"
 
@@ -194,6 +198,7 @@ namespace Utility {
 		template<typename target_value>
 		friend std::ostream& operator<< (std::ostream& os, const CSRMatrix<target_value>& csrmat);
 
+#ifdef HAVE_MKL
 		template<typename K>
 		inline auto operator*(const K& vec) const
 		{
@@ -205,6 +210,7 @@ namespace Utility {
 
 			return resvec;
 		}
+#endif
 
 	protected:
 		const size_type m_Rows;
@@ -341,3 +347,5 @@ namespace Utility {
 		const size_type m_Columns;
 	};
 }
+
+#endif

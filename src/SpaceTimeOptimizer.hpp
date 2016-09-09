@@ -4,7 +4,13 @@
 #include <cassert>
 #include "TetrahedralMesh.hpp"
 #include "CSRMatrix.hpp"
+
+#ifdef HAVE_MKL
 #include "IterativeSolvers.hpp"
+#endif
+
+#include "TriangularQuadrature.hpp"
+#include "TetrahedralQuadrature.hpp"
 
 template<class T, class TriangQuadFm, class TetraQuadFm>
 class STMFormEvaluator {
@@ -15,9 +21,10 @@ protected:
 	const T beta;
 	const T lambda;
 
-	const auto x_scal_eval = [](const auto& u, const auto& v) -> auto {
+	template<typename TK>
+	auto x_scal_eval(const TK& u, const TK& v) {
 		return u[0] * v[0] + u[1] * v[1];
-	};
+	}
 
 	const TriangQuadFm triang_quadfm{};
 	const TetraQuadFm tetra_quadfm{};
@@ -35,7 +42,7 @@ public:
 	template<class BasisFuncs, class BasisIndex>
 	auto EvaluateAh_Element(const ElementId_t elemid, const BasisFuncs& bf, const BasisIndex biu, const BasisIndex biv) const {
 		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
-		const auto ref_tran = QuadratureFormulas::Tetrahedrons::ReferenceTransform(cur_tetrahedron);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
 		const auto ref_tran_det = ref_tran.GetDeterminant();
 
 		const auto integrand = [&](const auto& p) -> auto {
@@ -55,7 +62,7 @@ public:
 			const auto& surf_nm = surfdata.normal_vector;
 
 			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(elemid);
-			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform(cur_triangle);
+			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 
 			const auto integrand_fn = [&](const auto& sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
@@ -82,7 +89,7 @@ public:
 			return triang_quadfm(integrand_fn) / ref_triang_tran_det;
 		};
 
-		const auto& curelem = m_Mesh.m_ElementList[i];
+		const auto& curelem = m_Mesh.m_ElementList[elemid];
 		const auto a = curelem.corners[0];
 		const auto b = curelem.corners[1];
 		const auto c = curelem.corners[2];
@@ -106,13 +113,13 @@ public:
 		const auto& elemid1 = cur_surface_data.adjacent_elements[0];
 		const auto& elemid2 = cur_surface_data.adjacent_elements[1];
 		const auto& tetrahedr1 = m_Mesh.ElementIdToTetrahedron(elemid1);
-		const auto& ref_tran1 = QuadratureFormulas::Tetrahedrons::ReferenceTransform(tetrahedr1);
+		const auto& ref_tran1 = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr1);
 		const auto& tetrahedr2 = m_Mesh.ElementIdToTetrahedron(elemid2);
-		const auto& ref_tran2 = QuadratureFormulas::Tetrahedrons::ReferenceTransform(tetrahedr2);
-		const auto& surf_nm = cur_surface.normal_vector;
+		const auto& ref_tran2 = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr2);
+		const auto& surf_nm = cur_surface_data.normal_vector;
 
-		const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(elemid);
-		const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform(cur_triangle);
+		const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
+		const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 		const auto ref_triang_tran_det = ref_triang_tran.GetDeterminantSqrt();
 
 		const auto integrand_fn = [&](const auto& sp) -> auto {
@@ -133,7 +140,7 @@ public:
 				// First two interface integral terms
 			const auto f1 = T{-1} * ( (T{1}/T{2}) * ( dux * vh + uh * dvx ) );
 			// Third penalty term
-			const auto f2 = ( sigma/surfdata.h ) * ( uh * vh * x_scal_eval(surf_nm, surf_nm) );
+			const auto f2 = ( sigma/cur_surface_data.h ) * ( uh * vh * x_scal_eval(surf_nm, surf_nm) );
 			return f1 + f2;
 		};
 
@@ -143,7 +150,7 @@ public:
 	template<class BasisFuncs, class BasisIndex>
 	auto EvaluateBh_Element(const ElementId_t elemid, const BasisFuncs& bf, const BasisIndex biu, const BasisIndex biv) const {
 		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
-		const auto ref_tran = QuadratureFormulas::Tetrahedrons::ReferenceTransform(cur_tetrahedron);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
 		const auto ref_tran_det = ref_tran.GetDeterminant();
 
 		const auto integrand = [&](const auto& p) -> auto {
@@ -160,7 +167,7 @@ public:
 		// We need to add the three edge terms now
 		const auto surface_integral_part = [&](const auto& surfdata) -> auto {
 			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(elemid);
-			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform(cur_triangle);
+			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
@@ -184,7 +191,7 @@ public:
 			const auto& surf_nm = surfdata.normal_vector;
 
 			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(elemid);
-			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform(cur_triangle);
+			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
@@ -200,7 +207,7 @@ public:
 			return triang_quadfm(integrand_fn) / ref_triang_tran_det;
 		};
 
-		const auto& curelem = m_Mesh.m_ElementList[i];
+		const auto& curelem = m_Mesh.m_ElementList[elemid];
 		const auto a = curelem.corners[0];
 		const auto b = curelem.corners[1];
 		const auto c = curelem.corners[2];
@@ -234,13 +241,13 @@ public:
 
 		const auto& elemid2 = cur_surface_data.adjacent_elements[1];
 		const auto& tetrahedr1 = m_Mesh.ElementIdToTetrahedron(elemid1);
-		const auto& ref_tran1 = QuadratureFormulas::Tetrahedrons::ReferenceTransform(tetrahedr1);
+		const auto& ref_tran1 = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr1);
 		const auto& tetrahedr2 = m_Mesh.ElementIdToTetrahedron(elemid2);
-		const auto& ref_tran2 = QuadratureFormulas::Tetrahedrons::ReferenceTransform(tetrahedr2);
-		const auto& surf_nm = cur_surface.normal_vector;
+		const auto& ref_tran2 = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr2);
+		const auto& surf_nm = cur_surface_data.normal_vector;
 
-		const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(elemid);
-		const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform(cur_triangle);
+		const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
+		const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 		const auto ref_triang_tran_det = ref_triang_tran.GetDeterminantSqrt();
 
 		const auto integrand_fn = [&](const auto& sp) -> auto {
@@ -262,7 +269,7 @@ public:
 		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
 		const auto adj_elem_id = cur_surface_data.adjacent_elements[0];
 		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(adj_elem_id);
-		const auto ref_tran = QuadratureFormulas::Tetrahedrons::ReferenceTransform(cur_tetrahedron);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
 
 		// At this point, first_intval is the part of the bilinear form that isspace integral.
 		// We need to add the three edge terms now
@@ -270,7 +277,7 @@ public:
 			const auto& surf_nm = surfdata.normal_vector;
 
 			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
-			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform(cur_triangle);
+			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
@@ -286,7 +293,7 @@ public:
 			return triang_quadfm(integrand_fn) / ref_triang_tran_det;
 		};
 
-		return beta * beta * surface_integral_part( surfdata ) / lambda;
+		return beta * beta * surface_integral_part( cur_surface_data ) / lambda;
 	}
 
 	template<class BasisFuncs, class BasisIndex>
@@ -314,17 +321,17 @@ public:
 		const auto plain_c = point2d_t{endtime_c[0], endtime_c[1]};
 		const auto plain_trig = std::array<point2d_t, 3>{ plain_a, plain_b, plain_c };
 		// Now the plain points/trig contain the 2D triangle as part of Omega.
-		const auto ref_triang_plain_tran = QuadratureFormulas::Triangles::ReferenceTransform2D(plain_trig);
+		const auto ref_triang_plain_tran = QuadratureFormulas::Triangles::ReferenceTransform2D<T>(plain_trig);
 		const auto ref_triang_plain_tran_det = ref_triang_plain_tran.GetDeterminantAbs();
 
 		const auto& tetrahedr1 = m_Mesh.ElementIdToTetrahedron(elemid_end);
-		const auto& ref_tran1 = QuadratureFormulas::Tetrahedrons::ReferenceTransform(tetrahedr1);
+		const auto& ref_tran1 = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr1);
 
-		const auto elemid_start = entime.associated_element;
+		const auto elemid_start = endtime_elem.associated_element;
 		const auto& starttime_elem = m_Mesh.m_ElementList[elemid_start];
 		assert( starttime_elem.is_in_mesh && starttime_elem.is_border_layer  );
 		const auto& tetrahedr2 = m_Mesh.ElementIdToTetrahedron(elemid_start);
-		const auto& ref_tran2 = QuadratureFormulas::Tetrahedrons::ReferenceTransform(tetrahedr2);
+		const auto& ref_tran2 = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr2);
 
 		const auto starttime_a = m_Mesh.m_NodeList[ starttime_elem.corners[0] ];
 
@@ -369,11 +376,11 @@ public:
 		const auto plain_c = point2d_t{c[0], c[1]};
 		const auto plain_trig = std::array<point2d_t, 3>{ plain_a, plain_b, plain_c };
 		// Now the plain points/trig contain the 2D triangle as part of Omega.
-		const auto ref_triang_plain_tran = QuadratureFormulas::Triangles::ReferenceTransform2D(plain_trig);
+		const auto ref_triang_plain_tran = QuadratureFormulas::Triangles::ReferenceTransform2D<T>(plain_trig);
 		const auto ref_triang_plain_tran_det = ref_triang_plain_tran.GetDeterminantAbs();
 
 		const auto& tetrahedr = m_Mesh.ElementIdToTetrahedron(elemid);
-		const auto& ref_tran = QuadratureFormulas::Tetrahedrons::ReferenceTransform(tetrahedr);
+		const auto& ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
 
 		const auto integrand_fn = [&](const auto& sp) -> auto {
 			const auto p_2d = ref_triang_plain_tran(sp);
@@ -390,7 +397,11 @@ public:
 };
 
 template<class T, class TriangQuadFm, class TetraQuadFm>
-class STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
+struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
+	using ElementId_t = typename STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>::ElementId_t;
+	using SurfaceId_t = typename STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>::SurfaceId_t;
+	using SurfaceType_t = typename TetrahedralMesh<T>::SurfaceType_t;
+
 	template<class BasisFuncs, class F>
 	auto AssembleMatrixAndLV(const F& y0, const T yOmega) const {
 		// In a dG approach, we have a given amount of functions ( BasisFuncs' size ) per element
@@ -410,7 +421,7 @@ class STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 			const auto start_offset = i * num_basis;
 			for(auto bi = 0; bi < num_basis; ++bi) {
 				for(auto bj = 0; bj < num_basis; ++bj) {
-					const auto form_val_AhBh = EvaluateAh_Element(i, basis_f, bi, bj) + EvaluateBh_Element(i, basis_f, bi, bj);
+					const auto form_val_AhBh = this->EvaluateAh_Element(i, basis_f, bi, bj) + this->EvaluateBh_Element(i, basis_f, bi, bj);
 					matassembler(start_offset + bi, start_offset + bj) = form_val_AhBh;
 					matassembler(block_size + start_offset + bi, block_size + start_offset + bj) = form_val_AhBh;
 				}
@@ -419,17 +430,17 @@ class STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 		// Aside from these per element integrals, we have some interface ones:
 		// Ah, Bh both have inner interface terms, Gh only applies on \partial \Omega x (0, T) and Hh applies on \partial \Omega x T.
-		for(const auto& pval : m_Mesh.m_SurfaceList) {
+		for(const auto& pval : this->m_Mesh.m_SurfaceList) {
 			const auto& surf_id = pval.first;
 			const auto& surf_data = pval.second;
-			switch(surf.type) {
+			switch(surf_data.type) {
 				case SurfaceType_t::Inner:
 					{
 						const auto start_offset_u = surf_data.adjacent_elements[0] * num_basis;
 						const auto start_offset_v = surf_data.adjacent_elements[1] * num_basis;
 						for(auto bi = 0; bi < num_basis; ++bi) {
 							for(auto bj = 0; bj < num_basis; ++bj) {
-								const auto form_val_AhBh = EvaluateAh_Surface(surf_id, basis_f, bi, bj) + EvaluateBh_Surface(surf_id, basis_f, bi, bj);
+								const auto form_val_AhBh = this->EvaluateAh_Surface(surf_id, basis_f, bi, bj) + this->EvaluateBh_Surface(surf_id, basis_f, bi, bj);
 								matassembler(start_offset_u + bi, start_offset_v + bj) = form_val_AhBh;
 								matassembler(block_size + start_offset_u + bi, block_size + start_offset_v + bj) = form_val_AhBh;
 							}
@@ -442,7 +453,7 @@ class STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = 0; bi < num_basis; ++bi) {
 							for(auto bj = 0; bj < num_basis; ++bj) {
-								const auto form_val_Gh = EvaluateGh_Surface(surf_id, basis_f, bi, bj);
+								const auto form_val_Gh = this->EvaluateGh_Surface(surf_id, basis_f, bi, bj);
 								matassembler(block_size + start_offset + bi, start_offset + bj) = form_val_Gh;
 							}
 						}
@@ -452,11 +463,11 @@ class STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				case SurfaceType_t::EndTime:
 					{
 						const auto start_offset_u = surf_data.adjacent_elements[0] * num_basis;
-						const auto other_elem = m_Mesh.m_ElementList[ surf_data.adjacent_elements[0] ].associated_element;
+						const auto other_elem = this->m_Mesh.m_ElementList[ surf_data.adjacent_elements[0] ].associated_element;
 						const auto start_offset_v = other_elem * num_basis;
 						for(auto bi = 0; bi < num_basis; ++bi) {
 							for(auto bj = 0; bj < num_basis; ++bj) {
-								const auto form_val_Hh = EvaluateHh_Surface(surf_id, basis_f, bi, bj);
+								const auto form_val_Hh = this->EvaluateHh_Surface(surf_id, basis_f, bi, bj);
 								matassembler(start_offset_u + bi, block_size + start_offset_v + bj) = form_val_Hh;
 							}
 						}
@@ -467,9 +478,9 @@ class STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					{
 						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = 0; bi < num_basis; ++bi) {
-							const auto form_val_LV_up = EvaluateLV_Surface(y0, surf_id, basis_f, bi, bj);
+							const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, bi);
 							loadvec[start_offset + bi] = form_val_LV_up;
-							const auto form_val_LV_low = EvaluateLV_Surface([=yOmega]()->auto{ return yOmega; }, surf_id, basis_f, bi, bj);
+							const auto form_val_LV_low = this->EvaluateLV_Surface([yOmega]()->auto{ return yOmega; }, surf_id, basis_f, bi);
 							loadvec[block_size + start_offset + bi] = T{-1} * form_val_LV_low;
 						}
 					}
@@ -481,8 +492,9 @@ class STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		}
 		return std::make_pair( matassembler.AssembleMatrix(), loadvec );
 	}
-}
+};
 
+#ifdef HAVE_MKL
 template<class T, class BasisFuncs>
 class STMSolver {
 protected:
@@ -505,7 +517,7 @@ public:
 	EvaluateElement(const ElementId_t elemid, const Point_t& x) const
 	{
 		const auto& tetrahedr = m_Mesh.ElementIdToTetrahedron(elemid);
-		const auto& ref_tran = QuadratureFormulas::Tetrahedrons::ReferenceTransform(tetrahedr);
+		const auto& ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
 
 		const auto p = ref_tran.InverseMap(x);
 		return EvaluateElement_Ref(elemid, p);
@@ -521,5 +533,6 @@ public:
 		return pointval;
 	}
 }
+#endif
 
 #endif

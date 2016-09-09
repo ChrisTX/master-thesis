@@ -1,6 +1,9 @@
 #include "TetrahedralMesh.hpp"
 #include "SpaceTimeOptimizer.hpp"
 
+#include "TetrahedralQuadrature.hpp"
+#include "TriangularQuadrature.hpp"
+
 #include <array>
 #include <iostream>
 
@@ -36,7 +39,7 @@ int main() {
 		std::cout << std::endl;
 	}*/ 
 
-	auto stmsol = STMSolver<double, BasisFunctions::TetrahedralLinearBasis>;
+	auto stmsol = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD1<double>, QuadratureFormulas::Tetrahedra::Formula_3DT1<double>>{};
 
 	std::cout << "DONE" << std::endl;
 }
