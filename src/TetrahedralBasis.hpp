@@ -18,7 +18,7 @@ namespace BasisFunctions {
 			phi_4
 		};
 
-		constexpr auto size() cosnt
+		constexpr auto size() const
 		{
 			return 4;
 		}
@@ -70,7 +70,7 @@ namespace BasisFunctions {
 			phi_10
 		};
 
-		constexpr auto size() cosnt
+		constexpr auto size() const
 		{
 			return 10;
 		}
@@ -126,33 +126,33 @@ namespace BasisFunctions {
 											 T{0},
 											 T{1} * (T{2} * linear_basis_t(linear_index_t::phi_4, x, y, z) - T{1})
 											  + linear_basis_t(linear_basis_t::phi_4, x, y, z) * (T{2} * T{1}) };
-				catch index_t::phi_5:
+				case index_t::phi_5:
 					return std::array<T, 3>{ T{4} * ( T{-1} * x + (T{1} - x - y - z) * T{1} ),
 											 T{4} * ( T{-1} * x ),
 											 T{4} * ( T{-1} * x ) };
-				catch index_t::phi_6:
+				case index_t::phi_6:
 					return std::array<T, 3>{ T{4} * ( T{1} * y ),
 											 T{4} * ( T{1} * x ),
 											 T{0} };
-				catch index_t::phi_7:
+				case index_t::phi_7:
 					return std::array<T, 3>{ T{4} * ( T{-1} * y ),
 											 T{4} * ( T{-1} * y + (T{1} - x - y - z) * T{1} ),
 											 T{4} * ( T{-1} * y ) };
-				catch index_t::phi_8:
+				case index_t::phi_8:
 					return std::array<T, 3>{ T{4} * ( T{-1} * z ),
 											 T{4} * ( T{-1} * z ),
 											 T{4} * ( T{-1} * z + (T{1} - x - y - z) * T{1} ) };
-				catch index_t::phi_9:
+				case index_t::phi_9:
 					return std::array<T, 3>{ T{4} * ( T{1} * z ),
 											 T{0},
 											 T{4} * ( T{1} * x ) };
-				catch index_t::phi_10:
+				case index_t::phi_10:
 					return std::array<T, 3>{ T{0},
 											 T{4} * ( T{1} * z ),
 											 T{4} * ( T{1} * y ) };							 
-
+			}
 		}
-	}
+	};
 }
 
 #endif

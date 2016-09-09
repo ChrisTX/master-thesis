@@ -18,7 +18,7 @@ namespace QuadratureFormulas {
 			const std::array<point_t, 1> points{ { T{1}/T{4}, T{1}/T{4}, T{1}/T{4} } };
 
 			template<typename F>
-			auto operator()(const F& f_integrand) {
+			auto operator()(const F& f_integrand) const {
 				return EvaluateQuadrature(points, weights, f_integrand);
 			}
 		};
@@ -30,7 +30,7 @@ namespace QuadratureFormulas {
 			const std::array<point_t, 4> points{ { T{0}, T{0}, T{0} }, { T{1}, T{0}, T{0} }, { T{0}, T{1}, T{0} }, { T{0}, T{0}, T{1} } };
 
 			template<typename F>
-			auto operator()(const F& f_integrand) {
+			auto operator()(const F& f_integrand) const {
 				return EvaluateQuadrature(points, weights, f_integrand);
 			}
 		};
@@ -50,7 +50,7 @@ namespace QuadratureFormulas {
 			};
 
 			template<typename F>
-			auto operator()(const F& f_integrand) {
+			auto operator()(const F& f_integrand) const {
 				return EvaluateQuadrature(points, weights, f_integrand);
 			}
 		};

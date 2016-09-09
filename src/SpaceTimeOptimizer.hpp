@@ -22,7 +22,7 @@ protected:
 	const T lambda;
 
 	template<typename TK>
-	auto x_scal_eval(const TK& u, const TK& v) {
+	auto x_scal_eval(const TK& u, const TK& v) const {
 		return u[0] * v[0] + u[1] * v[1];
 	}
 
@@ -137,7 +137,7 @@ public:
 			const auto dux = x_scal_eval(du, surf_nm);
 			const auto dvx = x_scal_eval(dv, surf_nm);
 
-				// First two interface integral terms
+			// First two interface integral terms
 			const auto f1 = T{-1} * ( (T{1}/T{2}) * ( dux * vh + uh * dvx ) );
 			// Third penalty term
 			const auto f2 = ( sigma/cur_surface_data.h ) * ( uh * vh * x_scal_eval(surf_nm, surf_nm) );
@@ -413,20 +413,22 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		// Hence, the number of *active* elements in the mesh times the BasisFuncs is what we're looking for.
 
 		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
 		const auto num_elems = this->m_Mesh.m_ElementList.size();
 		const auto num_basis = basis_f.size();
 		const auto block_size = num_basis * num_elems;
 		const auto matrix_dim = 2 * block_size;
 
-		auto matassembler = Utility::CSRMatrixAssembler<T>{ matrix_dim, matrix_dim };
-		auto loadvec = std::vector<T>{matrix_dim};
+		using csr_size_t = typename Utility::CSRMatrixAssembler<T>::size_type;
+		auto matassembler = Utility::CSRMatrixAssembler<T>{ static_cast<csr_size_t>(matrix_dim), static_cast<csr_size_t>(matrix_dim) };
+		auto loadvec = std::vector<T>(matrix_dim);
 
 		// We first sum Ah + Bh on the inner-element interfaces up
 		for(auto i = ElementId_t{0}; i < num_elems; ++i) {
 			const auto start_offset = i * num_basis;
 			for(auto bi = 0; bi < num_basis; ++bi) {
 				for(auto bj = 0; bj < num_basis; ++bj) {
-					const auto form_val_AhBh = this->EvaluateAh_Element(i, basis_f, bi, bj) + this->EvaluateBh_Element(i, basis_f, bi, bj);
+					const auto form_val_AhBh = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj)) + this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					matassembler(start_offset + bi, start_offset + bj) = form_val_AhBh;
 					matassembler(block_size + start_offset + bi, block_size + start_offset + bj) = form_val_AhBh;
 				}

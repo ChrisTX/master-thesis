@@ -103,7 +103,7 @@ public:
 		const auto& cur_surface_it = m_SurfaceList.find( surfid );
 		assert( cur_surface_it != m_SurfaceList.end() );
 
-		return *cur_surface_it;
+		return (*cur_surface_it).second;
 	}
 
 	auto InsertNode(Point_t point_to_insert) {

@@ -18,7 +18,7 @@ namespace QuadratureFormulas {
 			const std::array<point_t, 1> points{ { T{1}/T{3}, T{1}/T{3} } };
 
 			template<typename F>
-			auto operator()(const F& f_integrand) {
+			auto operator()(const F& f_integrand) const {
 				return EvaluateQuadrature(points, weights, f_integrand);
 			}
 		};
@@ -30,7 +30,7 @@ namespace QuadratureFormulas {
 			const std::array<point_t, 3> points{ { T{0}, T{0} }, { T{1}, T{0} }, { T{0}, T{1} } };
 
 			template<typename F>
-			auto operator()(const F& f_integrand) {
+			auto operator()(const F& f_integrand) const {
 				return EvaluateQuadrature(points, weights, f_integrand);
 			}
 		};
@@ -42,7 +42,7 @@ namespace QuadratureFormulas {
 			const std::array<point_t, 3> points{ { T{1}/T{2}, T{0} }, { T{1}/T{2}, T{1}/T{2} }, { T{0}, T{1}/T{2} } };
 
 			template<typename F>
-			auto operator()(const F& f_integrand) {
+			auto operator()(const F& f_integrand) const {
 				return EvaluateQuadrature(points, weights, f_integrand);
 			}
 		};
@@ -54,7 +54,7 @@ namespace QuadratureFormulas {
 			const std::array<point_t, 3> points{ { T{1}/T{6}, T{1}/T{6} }, { T{4}/T{6}, T{1}/T{6} }, { T{1}/T{6}, T{4}/T{6} } };
 
 			template<typename F>
-			auto operator()(const F& f_integrand) {
+			auto operator()(const F& f_integrand) const {
 				return EvaluateQuadrature(points, weights, f_integrand);
 			}
 		};
@@ -67,7 +67,7 @@ namespace QuadratureFormulas {
 			const std::array<point_t, 7> points{ { T{0}, T{0} }, { T{1}, T{0} }, { T{0}, T{1} }, { T{1}/T{2}, T{0} }, { T{1}/T{2}, T{1}/T{2} }, { T{0}, T{1}/T{2} }, { T{1}/T{3}, T{1}/T{3} } };
 
 			template<typename F>
-			auto operator()(const F& f_integrand) {
+			auto operator()(const F& f_integrand) const {
 				return EvaluateQuadrature(points, weights, f_integrand);
 			}
 		};
@@ -91,7 +91,7 @@ namespace QuadratureFormulas {
 			};
 
 			template<typename F>
-			auto operator()(const F& f_integrand) {
+			auto operator()(const F& f_integrand) const {
 				return EvaluateQuadrature(points, weights, f_integrand);
 			}
 		};
@@ -132,7 +132,7 @@ namespace QuadratureFormulas {
 				return m_det;
 			}
 
-			auto operator()(const point_t& x0) {
+			auto operator()(const point_t& x0) const {
 				auto xt = point_t{};
 				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
 					for(auto j = 0; j < 3; ++j)
