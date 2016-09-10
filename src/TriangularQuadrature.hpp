@@ -133,7 +133,7 @@ namespace QuadratureFormulas {
 			}
 
 			auto operator()(const point_t& x0) const {
-				auto xt = point_t{};
+				auto xt = surf_point_t{};
 				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
 					for(auto j = 0; j < 3; ++j)
 						xt[j] += m_TransformMatrix[i][j] * x0[j];
@@ -180,7 +180,7 @@ namespace QuadratureFormulas {
 				return std::abs( m_det );
 			}
 
-			auto operator()(const point_t& x0) {
+			auto operator()(const point_t& x0) const {
 				auto xt = point_t{};
 				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
 					for(auto j = 0; j < 2; ++j)

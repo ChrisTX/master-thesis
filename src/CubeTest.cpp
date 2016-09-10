@@ -43,7 +43,7 @@ int main() {
 #endif
 
 	auto stmsol = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD1<double>, QuadratureFormulas::Tetrahedra::Formula_3DT1<double>>{ mesh, 1., 1., 1., 1. };
-	auto matandlv = stmsol.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>( [](double x) -> auto { return 1.; }, 1. );
+	auto matandlv = stmsol.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>( [](auto, auto, auto) -> auto { return 1.; }, 1. );
 
 	std::cout << "DONE" << std::endl;
 }

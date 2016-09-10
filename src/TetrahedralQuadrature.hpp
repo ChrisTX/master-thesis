@@ -111,8 +111,8 @@ namespace QuadratureFormulas {
 				CalculateInverse();
 			}
 
-			auto GetDeterminant() const {
-				return m_det;
+			auto GetDeterminantAbs() const {
+				return std::abs( m_det );
 			}
 
 			auto operator()(const point_t& x0) const {

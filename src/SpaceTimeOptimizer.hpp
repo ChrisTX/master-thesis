@@ -43,7 +43,7 @@ public:
 	auto EvaluateAh_Element(const ElementId_t elemid, const BasisFuncs& bf, const BasisIndex biu, const BasisIndex biv) const {
 		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
 		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
-		const auto ref_tran_det = ref_tran.GetDeterminant();
+		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
 
 		const auto integrand = [&](const auto& p) -> auto {
 			const auto du_org = bf.EvaluateDerivative(biu, p[0], p[1], p[2]);
@@ -151,7 +151,7 @@ public:
 	auto EvaluateBh_Element(const ElementId_t elemid, const BasisFuncs& bf, const BasisIndex biu, const BasisIndex biv) const {
 		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
 		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
-		const auto ref_tran_det = ref_tran.GetDeterminant();
+		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
 
 		const auto integrand = [&](const auto& p) -> auto {
 			const auto uh = bf(biu, p[0], p[1], p[2]);
@@ -179,7 +179,7 @@ public:
 				return uh * vh;
 			};
 
-			const auto ref_triang_tran_det = ref_tran.GetDeterminantSqrt();
+			const auto ref_triang_tran_det = ref_triang_tran.GetDeterminantSqrt();
 			return triang_quadfm(integrand_fn) / ref_triang_tran_det;
 		};
 
@@ -220,8 +220,8 @@ public:
 			else if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::MidTime )
 				intval += alpha * surface_integral_part( si, surfdata );
 			else if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::Inner )
-				intval += alpha * inner_integral_part( si, surfdata );
-			else
+				intval += inner_integral_part( si, surfdata );
+			else if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::Undefined )
 				assert(false);
 		}
 		return intval;
@@ -448,7 +448,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto start_offset_v = surf_data.adjacent_elements[1] * num_basis;
 						for(auto bi = 0; bi < num_basis; ++bi) {
 							for(auto bj = 0; bj < num_basis; ++bj) {
-								const auto form_val_AhBh = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj)
+								const auto form_val_AhBh = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj))
 									 + this->EvaluateBh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								matassembler(start_offset_u + bi, start_offset_v + bj) = form_val_AhBh;
 								matassembler(block_size + start_offset_u + bi, block_size + start_offset_v + bj) = form_val_AhBh;
