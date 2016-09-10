@@ -428,7 +428,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 			const auto start_offset = i * num_basis;
 			for(auto bi = 0; bi < num_basis; ++bi) {
 				for(auto bj = 0; bj < num_basis; ++bj) {
-					const auto form_val_AhBh = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj)) + this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					const auto form_val_AhBh = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj))
+						 + this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					matassembler(start_offset + bi, start_offset + bj) = form_val_AhBh;
 					matassembler(block_size + start_offset + bi, block_size + start_offset + bj) = form_val_AhBh;
 				}
@@ -447,7 +448,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto start_offset_v = surf_data.adjacent_elements[1] * num_basis;
 						for(auto bi = 0; bi < num_basis; ++bi) {
 							for(auto bj = 0; bj < num_basis; ++bj) {
-								const auto form_val_AhBh = this->EvaluateAh_Surface(surf_id, basis_f, bi, bj) + this->EvaluateBh_Surface(surf_id, basis_f, bi, bj);
+								const auto form_val_AhBh = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj)
+									 + this->EvaluateBh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								matassembler(start_offset_u + bi, start_offset_v + bj) = form_val_AhBh;
 								matassembler(block_size + start_offset_u + bi, block_size + start_offset_v + bj) = form_val_AhBh;
 							}
@@ -460,7 +462,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = 0; bi < num_basis; ++bi) {
 							for(auto bj = 0; bj < num_basis; ++bj) {
-								const auto form_val_Gh = this->EvaluateGh_Surface(surf_id, basis_f, bi, bj);
+								const auto form_val_Gh = this->EvaluateGh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								matassembler(block_size + start_offset + bi, start_offset + bj) = form_val_Gh;
 							}
 						}
@@ -474,7 +476,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto start_offset_v = other_elem * num_basis;
 						for(auto bi = 0; bi < num_basis; ++bi) {
 							for(auto bj = 0; bj < num_basis; ++bj) {
-								const auto form_val_Hh = this->EvaluateHh_Surface(surf_id, basis_f, bi, bj);
+								const auto form_val_Hh = this->EvaluateHh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								matassembler(start_offset_u + bi, block_size + start_offset_v + bj) = form_val_Hh;
 							}
 						}
@@ -485,9 +487,9 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					{
 						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = 0; bi < num_basis; ++bi) {
-							const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, bi);
+							const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, static_cast<basis_index_t>(bi));
 							loadvec[start_offset + bi] = form_val_LV_up;
-							const auto form_val_LV_low = this->EvaluateLV_Surface([yOmega]()->auto{ return yOmega; }, surf_id, basis_f, bi);
+							const auto form_val_LV_low = this->EvaluateLV_Surface([yOmega]( auto, auto, auto )->auto{ return yOmega; }, surf_id, basis_f, static_cast<basis_index_t>(bi));
 							loadvec[block_size + start_offset + bi] = T{-1} * form_val_LV_low;
 						}
 					}

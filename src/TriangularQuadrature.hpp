@@ -104,7 +104,7 @@ namespace QuadratureFormulas {
 			using triangle_t = std::array<surf_point_t, 3>;
 		protected:
 			std::array<surf_point_t, 2> m_TransformMatrix;
-			point_t m_c;
+			surf_point_t m_c;
 			T m_det;
 
 			void CalculateGramDeterminant() {
