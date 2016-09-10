@@ -58,10 +58,10 @@ public:
 
 		// At this point, first_intval is the part of the bilinear form that isspace integral.
 		// We need to add the three edge terms now
-		const auto first_integrand_part = [&](const auto& surfdata) -> auto {
+		const auto first_integrand_part = [&](const auto& surfid, const auto& surfdata) -> auto {
 			const auto& surf_nm = surfdata.normal_vector;
 
-			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(elemid);
+			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
 			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 
 			const auto integrand_fn = [&](const auto& sp) -> auto {
@@ -98,7 +98,7 @@ public:
 		for(const auto& si : { SurfaceId_t{a, b, c}, SurfaceId_t{a, b, d}, SurfaceId_t{b, c, d}, SurfaceId_t{a, c, d} }) {
 			const auto& surfdata = m_Mesh.SurfaceDataById(si);
 			if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::Inner )
-				intval += first_integrand_part( surfdata );
+				intval += first_integrand_part( si, surfdata );
 		}
 		return intval;
 	}
@@ -165,8 +165,8 @@ public:
 
 		// At this point, first_intval is the part of the bilinear form that isspace integral.
 		// We need to add the three edge terms now
-		const auto surface_integral_part = [&](const auto& surfdata) -> auto {
-			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(elemid);
+		const auto surface_integral_part = [&](const auto& surfid, const auto& surfdata) -> auto {
+			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
 			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 
 			const auto integrand_fn = [&](auto sp) -> auto {
@@ -183,14 +183,14 @@ public:
 			return triang_quadfm(integrand_fn) / ref_triang_tran_det;
 		};
 
-		const auto inner_integral_part = [&](const auto& surfdata) -> auto {
+		const auto inner_integral_part = [&](const auto& surfid, const auto& surfdata) -> auto {
 			// Given our piecewise polynomial approach, {uh}^up = uh if the time normal is > 0 and 0 otherwise
 			if( surfdata.is_time_orthogonal || surfdata.adjacent_elements[surfdata.top_element] != elemid )
 				return T{0};
 
 			const auto& surf_nm = surfdata.normal_vector;
 
-			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(elemid);
+			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
 			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 
 			const auto integrand_fn = [&](auto sp) -> auto {
@@ -216,11 +216,11 @@ public:
 		for(const auto& si : { SurfaceId_t{a, b, c}, SurfaceId_t{a, b, d}, SurfaceId_t{b, c, d}, SurfaceId_t{a, c, d} }) {
 			const auto& surfdata = m_Mesh.SurfaceDataById(si);
 			if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::EndTime )
-				intval += surface_integral_part( surfdata );
+				intval += surface_integral_part( si, surfdata );
 			else if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::MidTime )
-				intval += alpha * surface_integral_part( surfdata );
+				intval += alpha * surface_integral_part( si, surfdata );
 			else if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::Inner )
-				intval += alpha * inner_integral_part( surfdata );
+				intval += alpha * inner_integral_part( si, surfdata );
 			else
 				assert(false);
 		}
@@ -273,7 +273,7 @@ public:
 
 		// At this point, first_intval is the part of the bilinear form that isspace integral.
 		// We need to add the three edge terms now
-		const auto surface_integral_part = [&](const auto& surfdata) -> auto {
+		const auto surface_integral_part = [&](const auto& surfid, const auto& surfdata) -> auto {
 			const auto& surf_nm = surfdata.normal_vector;
 
 			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
@@ -293,7 +293,7 @@ public:
 			return triang_quadfm(integrand_fn) / ref_triang_tran_det;
 		};
 
-		return beta * beta * surface_integral_part( cur_surface_data ) / lambda;
+		return beta * beta * surface_integral_part( surfid, cur_surface_data ) / lambda;
 	}
 
 	template<class BasisFuncs, class BasisIndex>
