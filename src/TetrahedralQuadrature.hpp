@@ -62,6 +62,7 @@ namespace QuadratureFormulas {
 			using tetrahedron_t = std::array<point_t, 4>;
 
 		protected:
+			using size_type_t = typename tetrahedron_t::size_type;
 			std::array<point_t, 3> m_TransformMatrix;
 			std::array<point_t, 3> m_InverseTransformMatrix;
 			point_t m_d;
@@ -99,15 +100,15 @@ namespace QuadratureFormulas {
 		public:
 			ReferenceTransform(const tetrahedron_t& target_element) {
 				m_d = target_element[3];
-				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
+				for(auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
 					m_TransformMatrix[i] = target_element[i];
 
-				for(auto i = 0; i < target_element.size() - 1; ++i)
-					for(auto j = 0; j < 3; ++j)
+				for(auto i = size_type_t{0}; i + 1 < target_element.size(); ++i)
+					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 						m_TransformMatrix[i][j] -= m_d[j];
 				
 				CalculateDeterminant();
-				assert(m_det != T{0});
+				assert( std::abs( m_det ) > 5 * std::numeric_limits<T>::epsilon() );
 				CalculateInverse();
 			}
 
@@ -117,11 +118,11 @@ namespace QuadratureFormulas {
 
 			auto operator()(const point_t& x0) const {
 				auto xt = point_t{};
-				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
-					for(auto j = 0; j < 3; ++j)
+				for(auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
+					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 						xt[j] += m_TransformMatrix[i][j] * x0[j];
 				
-				for(auto j = 0; j < 3; ++j)
+				for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 					xt[j] += m_d[j];
 
 				return std::move(xt);
@@ -131,9 +132,9 @@ namespace QuadratureFormulas {
 				// Do note that this is the transformed multiplication taking place.
 				const auto trans_val = point_t{p[0] - m_d[0], p[1] - m_d[1], p[2] - m_d[2]};
 				auto retval = point_t{};
-				for(auto i = 0; i < 3; ++i) {
+				for(auto i = size_type_t{0}; i < size_type_t{3}; ++i) {
 					retval[i] = 0;
-					for(auto j = 0; j < 3; ++j)
+					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 						retval[i] += m_InverseTransformMatrix[j][i] * trans_val[j];
 				}
 				return std::move(retval);
@@ -142,9 +143,9 @@ namespace QuadratureFormulas {
 			auto TransformDerivative_Scalar(const point_t& grad_f) const {
 				// Do note that this is the transformed multiplication taking place.
 				auto retval = point_t{};
-				for(auto i = 0; i < 3; ++i) {
+				for(auto i = size_type_t{0}; i < size_type_t{3}; ++i) {
 					retval[i] = 0;
-					for(auto j = 0; j < 3; ++j)
+					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 						retval[i] += m_InverseTransformMatrix[j][i] * grad_f[j];
 				}
 				return std::move(retval);

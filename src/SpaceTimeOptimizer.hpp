@@ -22,7 +22,7 @@ protected:
 	const T lambda;
 
 	template<typename TK>
-	auto x_scal_eval(const TK& u, const TK& v) const {
+	static auto x_scal_eval(const TK& u, const TK& v) {
 		return u[0] * v[0] + u[1] * v[1];
 	}
 
@@ -165,7 +165,7 @@ public:
 
 		// At this point, first_intval is the part of the bilinear form that isspace integral.
 		// We need to add the three edge terms now
-		const auto surface_integral_part = [&](const auto& surfid, const auto& surfdata) -> auto {
+		const auto surface_integral_part = [&](const auto& surfid) -> auto {
 			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
 			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 
@@ -216,9 +216,9 @@ public:
 		for(const auto& si : { SurfaceId_t{a, b, c}, SurfaceId_t{a, b, d}, SurfaceId_t{b, c, d}, SurfaceId_t{a, c, d} }) {
 			const auto& surfdata = m_Mesh.SurfaceDataById(si);
 			if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::EndTime )
-				intval += surface_integral_part( si, surfdata );
+				intval += surface_integral_part( si );
 			else if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::MidTime )
-				intval += alpha * surface_integral_part( si, surfdata );
+				intval += alpha * surface_integral_part( si );
 			else if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::Inner )
 				intval += inner_integral_part( si, surfdata );
 			else if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::Undefined )
@@ -273,9 +273,7 @@ public:
 
 		// At this point, first_intval is the part of the bilinear form that isspace integral.
 		// We need to add the three edge terms now
-		const auto surface_integral_part = [&](const auto& surfid, const auto& surfdata) -> auto {
-			const auto& surf_nm = surfdata.normal_vector;
-
+		const auto surface_integral_part = [&]() -> auto {
 			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
 			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
 
@@ -293,7 +291,7 @@ public:
 			return triang_quadfm(integrand_fn) / ref_triang_tran_det;
 		};
 
-		return beta * beta * surface_integral_part( surfid, cur_surface_data ) / lambda;
+		return beta * beta * surface_integral_part() / lambda;
 	}
 
 	template<class BasisFuncs, class BasisIndex>
@@ -314,7 +312,7 @@ public:
 		const auto endtime_b = m_Mesh.m_NodeList[endtime_b_id];
 		const auto endtime_c = m_Mesh.m_NodeList[endtime_c_id];
 
-		assert( endtime_a[2] == endtime_b[2] && endtime_a[2] == endtime_c[2] );
+		assert( std::abs( endtime_a[2] - endtime_b[2] ) + std::abs( endtime_a[2] - endtime_c[2] ) < 5 * std::numeric_limits<T>::epsilon() );
 		using point2d_t = std::array<T, 2>;
 		const auto plain_a = point2d_t{endtime_a[0], endtime_a[1]};
 		const auto plain_b = point2d_t{endtime_b[0], endtime_b[1]};
@@ -369,7 +367,7 @@ public:
 		const auto b = m_Mesh.m_NodeList[b_id];
 		const auto c = m_Mesh.m_NodeList[c_id];
 
-		assert( a[2] == b[2] && a[2] == c[2] );
+		assert( std::abs( a[2] - b[2] ) + std::abs( a[2] - c[2] ) < 5 * std::numeric_limits<T>::epsilon() );
 		using point2d_t = std::array<T, 2>;
 		const auto plain_a = point2d_t{a[0], a[1]};
 		const auto plain_b = point2d_t{b[0], b[1]};
@@ -401,6 +399,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 	using ElementId_t = typename STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>::ElementId_t;
 	using SurfaceId_t = typename STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>::SurfaceId_t;
 	using SurfaceType_t = typename TetrahedralMesh<T>::SurfaceType_t;
+	using Point_t = typename TetrahedralMesh<T>::Point_t;
 
 	STMAssembler(const TetrahedralMesh<T>& mesh, const T par_sigma, const T par_alpha, const T par_beta, const T par_lambda) :
 		STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>( mesh, par_sigma, par_alpha, par_beta, par_lambda )
@@ -495,7 +494,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					}
 					break;
 
-				default:
+				case SurfaceType_t::Undefined:
 					assert(false);
 			}
 		}

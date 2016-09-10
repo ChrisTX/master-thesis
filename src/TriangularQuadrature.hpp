@@ -103,6 +103,7 @@ namespace QuadratureFormulas {
 			using surf_point_t = std::array<T, 3>;
 			using triangle_t = std::array<surf_point_t, 3>;
 		protected:
+			using size_type_t = typename triangle_t::size_type;
 			std::array<surf_point_t, 2> m_TransformMatrix;
 			surf_point_t m_c;
 			T m_det;
@@ -118,11 +119,11 @@ namespace QuadratureFormulas {
 		public:
 			ReferenceTransform(const triangle_t& target_element) {
 				m_c = target_element[2];
-				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
+				for(auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
 					m_TransformMatrix[i] = target_element[i];
 
-				for(auto i = 0; i < target_element.size() - 1; ++i)
-					for(auto j = 0; j < 3; ++j)
+				for(auto i = size_type_t{0}; i + 1 < target_element.size(); ++i)
+					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 						m_TransformMatrix[i][j] -= m_c[j];
 				
 				CalculateGramDeterminant();
@@ -134,11 +135,11 @@ namespace QuadratureFormulas {
 
 			auto operator()(const point_t& x0) const {
 				auto xt = surf_point_t{};
-				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
-					for(auto j = 0; j < 3; ++j)
+				for(auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
+					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 						xt[j] += m_TransformMatrix[i][j] * x0[j];
 				
-				for(auto j = 0; j < 3; ++j)
+				for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 					xt[j] += m_c[j];
 
 				return xt;
@@ -151,6 +152,7 @@ namespace QuadratureFormulas {
 			using point_t = std::array<T, 2>;
 			using triangle_t = std::array<point_t, 3>;
 		protected:
+			using size_type_t = typename triangle_t::size_type;
 			std::array<point_t, 2> m_TransformMatrix;
 			point_t m_c;
 			T m_det;
@@ -166,11 +168,11 @@ namespace QuadratureFormulas {
 		public:
 			ReferenceTransform2D(const triangle_t& target_element) {
 				m_c = target_element[2];
-				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
+				for(auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
 					m_TransformMatrix[i] = target_element[i];
 
-				for(auto i = 0; i < target_element.size() - 1; ++i)
-					for(auto j = 0; j < 2; ++j)
+				for(auto i = size_type_t{0}; i + 1 < target_element.size(); ++i)
+					for(auto j = size_type_t{0}; j < size_type_t{2}; ++j)
 						m_TransformMatrix[i][j] -= m_c[j];
 				
 				CalculateDeterminant();
@@ -182,11 +184,11 @@ namespace QuadratureFormulas {
 
 			auto operator()(const point_t& x0) const {
 				auto xt = point_t{};
-				for(auto i = 0; i < m_TransformMatrix.size(); ++i)
-					for(auto j = 0; j < 2; ++j)
+				for(auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
+					for(auto j = size_type_t{0}; j < size_type_t{2}; ++j)
 						xt[j] += m_TransformMatrix[i][j] * x0[j];
 				
-				for(auto j = 0; j < 2; ++j)
+				for(auto j = size_type_t{0}; j < size_type_t{2}; ++j)
 					xt[j] += m_c[j];
 
 				return xt;

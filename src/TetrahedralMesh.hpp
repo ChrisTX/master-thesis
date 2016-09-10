@@ -2,13 +2,14 @@
 #define TETRAHEDRAL_MESH_HPP
 
 #include <array>
+#include <cstddef>
 #include <cassert>
 #include <cmath>
 #include <limits>
 #include <memory>
 #include <tuple>
 #include <map>
-#include <unordered_map>
+//#include <unordered_map>
 #include <vector>
 
 #ifndef NDEBUG
@@ -224,7 +225,7 @@ public:
 			for(auto j = std::size_t{0}; j < 3; ++j) {
 				const auto al = m_NodeList[ cur_old_elem_child.corners[j] ];
 				const auto au = m_NodeList[ cur_other_elem_child.corners[j] ];
-				if( al[0] != au[0] || al[1] != au[1] )
+				if( std::abs( al[0] - au[0] ) + std::abs( al[1] - au[1] ) > 5 * std::numeric_limits<T>::epsilon()  )
 					std::cout << "MISMATCH: (" << al[0] << ',' << al[1] << ") vs (" << au[0] << ',' << au[1] << ")!" << std::endl;
 			}
 		        	
@@ -251,7 +252,7 @@ public:
 		auto vec_copy = decltype(m_ElementList){};
 		vec_copy.reserve( m_ElementList.size() );
 
-		for(auto i = 0; i < m_ElementList.size(); ++i) {
+		for(auto i = decltype(m_ElementList.size()){0}; i < m_ElementList.size(); ++i) {
 			auto elem_copy = m_ElementList[i];
 			if(elem_copy.is_in_mesh) {
 				if(elem_copy.is_border_layer) {
@@ -346,7 +347,9 @@ public:
 				surf.h += curelem.h;
 				surf.h /= T{2};
 				break;
-			default:
+			case SurfaceType_t::EndTime:
+			case SurfaceType_t::Inner:
+			case SurfaceType_t::StartTime:
 				// Start, End time elements or inner. Error.
 				throw std::logic_error{ "Reconsidering finalized surface" };
 				break;

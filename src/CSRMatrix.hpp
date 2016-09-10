@@ -134,7 +134,7 @@ namespace Utility {
 			return const_iterator(this, m_RowIndices[Row] - 1);
 		}
 
-		inline const_iterator BeginRow(size_type Row, const MatrixNaturalIndexing& natindex) const
+		inline const_iterator BeginRow(size_type Row, const MatrixNaturalIndexing) const
 		{
 			assert(Row);
 			return BeginRow(Row - 1);
@@ -153,7 +153,7 @@ namespace Utility {
 			return const_iterator(this, rowend);
 		}
 
-		inline const_iterator EndRow(size_type Row, const MatrixNaturalIndexing& natindex) const
+		inline const_iterator EndRow(size_type Row, const MatrixNaturalIndexing) const
 		{
 			assert(Row);
 			return EndRow(Row - 1);
@@ -179,7 +179,7 @@ namespace Utility {
 			}
 		}
 
-		inline T operator()(size_type Row, size_type Column, const MatrixNaturalIndexing& natindex) const
+		inline T operator()(size_type Row, size_type Column, const MatrixNaturalIndexing) const
 		{
 			assert(Row && Column);
 			return this->operator()(Row - 1, Column - 1);
@@ -294,12 +294,12 @@ namespace Utility {
 			// Note that a std::pair is compared lexographically in its elements. This means that if we iterate through the map,
 			// we will pass the first entry in ascending order and then the second entry.
 
-			std::size_t AmountOfNonZeroEntries = 0;
+			size_type  AmountOfNonZeroEntries = 0;
 			for (auto it = m_EntriesBuildUpMap.cbegin(); it != m_EntriesBuildUpMap.cend(); ++it)
 				AmountOfNonZeroEntries += it->second.size();
 
-			std::size_t RowCounter = 0;
-			std::size_t EntryPosition = 0;
+			size_type RowCounter = 0;
+			size_type EntryPosition = 0;
 
 			using CSR_vector_type = typename CSRMatrix<T>::vector_type;
 			using CSR_index_vector_type = typename CSRMatrix<T>::index_vector_type;
@@ -312,9 +312,9 @@ namespace Utility {
 			RowIndices[0] = 1;
 
 			for (auto it = m_EntriesBuildUpMap.cbegin(); it != m_EntriesBuildUpMap.cend(); ++it) {
-				const std::size_t i = it->first;
+				const auto i = it->first;
 
-				for (std::size_t k = RowCounter + 1; k <= i; ++k)
+				for (auto k = RowCounter + 1; k <= i; ++k)
 					RowIndices[k] = EntryPosition + 1;
 				RowCounter = i;
 				
@@ -333,7 +333,7 @@ namespace Utility {
 			std::vector<T> DenseMatrix(m_Rows * m_Columns, T{ 0 });
 
 			for (auto it = m_EntriesBuildUpMap.cbegin(); it != m_EntriesBuildUpMap.cend(); ++it) {
-				const std::size_t i = it->first;
+				const auto i = it->first;
 
 				for (auto colit = it->second.cbegin(); colit != it->second.cend(); ++colit)
 					DenseMatrix[i * m_Columns + colit->first] = colit->second;

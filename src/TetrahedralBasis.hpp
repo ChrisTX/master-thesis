@@ -75,7 +75,7 @@ namespace BasisFunctions {
 			return 10;
 		}
 
-		constexpr auto operator()(index_t i, T x, T y, T z) const
+		constexpr auto operator()(index_t i, T, T, T) const
 		{
 			switch(i) {
 				case index_t::phi_1:
