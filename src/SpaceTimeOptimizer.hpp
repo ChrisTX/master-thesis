@@ -427,8 +427,9 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 			const auto start_offset = i * num_basis;
 			for(auto bi = 0; bi < num_basis; ++bi) {
 				for(auto bj = 0; bj < num_basis; ++bj) {
-					const auto form_val_AhBh = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj))
-						 + this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					const auto form_val_AhBh = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+						 //+ this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					assert(std::isfinite(form_val_AhBh));
 					matassembler(start_offset + bi, start_offset + bj) = form_val_AhBh;
 					matassembler(block_size + start_offset + bi, block_size + start_offset + bj) = form_val_AhBh;
 				}
@@ -437,7 +438,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 		// Aside from these per element integrals, we have some interface ones:
 		// Ah, Bh both have inner interface terms, Gh only applies on \partial \Omega x (0, T) and Hh applies on \partial \Omega x T.
-		for(const auto& pval : this->m_Mesh.m_SurfaceList) {
+		/* for(const auto& pval : this->m_Mesh.m_SurfaceList) {
 			const auto& surf_id = pval.first;
 			const auto& surf_data = pval.second;
 			switch(surf_data.type) {
@@ -449,6 +450,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 							for(auto bj = 0; bj < num_basis; ++bj) {
 								const auto form_val_AhBh = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj))
 									 + this->EvaluateBh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+								assert(std::isfinite(form_val_AhBh));
 								matassembler(start_offset_u + bi, start_offset_v + bj) = form_val_AhBh;
 								matassembler(block_size + start_offset_u + bi, block_size + start_offset_v + bj) = form_val_AhBh;
 							}
@@ -462,6 +464,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						for(auto bi = 0; bi < num_basis; ++bi) {
 							for(auto bj = 0; bj < num_basis; ++bj) {
 								const auto form_val_Gh = this->EvaluateGh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+								assert(std::isfinite(form_val_Gh));
 								matassembler(block_size + start_offset + bi, start_offset + bj) = form_val_Gh;
 							}
 						}
@@ -476,6 +479,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						for(auto bi = 0; bi < num_basis; ++bi) {
 							for(auto bj = 0; bj < num_basis; ++bj) {
 								const auto form_val_Hh = this->EvaluateHh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+								assert(std::isfinite(form_val_Hh));
 								matassembler(start_offset_u + bi, block_size + start_offset_v + bj) = form_val_Hh;
 							}
 						}
@@ -487,8 +491,10 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = 0; bi < num_basis; ++bi) {
 							const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, static_cast<basis_index_t>(bi));
+							assert(std::isfinite(form_val_LV_up));
 							loadvec[start_offset + bi] = form_val_LV_up;
 							const auto form_val_LV_low = this->EvaluateLV_Surface([yOmega]( auto, auto, auto )->auto{ return yOmega; }, surf_id, basis_f, static_cast<basis_index_t>(bi));
+							assert(std::isfinite(form_val_LV_low));
 							loadvec[block_size + start_offset + bi] = T{-1} * form_val_LV_low;
 						}
 					}
@@ -497,7 +503,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				case SurfaceType_t::Undefined:
 					assert(false);
 			}
-		}
+		}*/
 		return std::make_pair( matassembler.AssembleMatrix(), loadvec );
 	}
 };
@@ -510,19 +516,29 @@ protected:
 	const std::vector<T>& m_b;
 	std::vector<T> m_x;
 	const TetrahedralMesh<T>& m_Mesh;
-	const auto basis_f = BasisFuncs{};
+	const BasisFuncs basis_f{};
 public:
 	using ElementId_t = typename TetrahedralMesh<T>::ElementId_t;
 	using SurfaceId_t = typename TetrahedralMesh<T>::SurfaceId_t;
 	using Point_t = typename TetrahedralMesh<T>::Point_t;
 
-	STMSolver(const TetrahedralMesh<T>& Mesh, const Utility::CSRMatrix<T>& A, const std::vector<T>& b, std::vector<T> x) : m_Mesh{ Mesh }, m_A{ A }, m_b{ b }, m_x{ std::move(x) }
+	STMSolver(const TetrahedralMesh<T>& Mesh, const Utility::CSRMatrix<T>& A, const std::vector<T>& b) : m_Mesh{ Mesh }, m_A{ A }, m_b{ b }
 	{
 		m_x.resize(m_A.GetNumberOfRows());
+#ifndef NDEBUG
+		for (const auto bi : m_b)
+			assert(std::isfinite(bi));
+		for (const auto Ai : m_A.m_Entries)
+			assert(std::isfinite(Ai));
+#endif
 		IterativeSolvers::MKL_PARDISO(m_A, m_x, m_b);
+#ifndef NDEBUG
+		for (const auto xi : m_x)
+			assert(std::isfinite(xi));
+#endif
 	}
 
-	EvaluateElement(const ElementId_t elemid, const Point_t& x) const
+	auto EvaluateElement(const ElementId_t elemid, const Point_t& x) const
 	{
 		const auto& tetrahedr = m_Mesh.ElementIdToTetrahedron(elemid);
 		const auto& ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
@@ -531,16 +547,17 @@ public:
 		return EvaluateElement_Ref(elemid, p);
 	}
 
-	EvaluateElement_Ref(const ElementId_t elemid, const Point_t& p) const
+	auto EvaluateElement_Ref(const ElementId_t elemid, const Point_t& p) const
 	{
 		auto pointval = T{0};
-		const auto start_offset = elemid * num_basis;
+		const auto start_offset = elemid * basis_f.size();
 		for(auto bi = 0; bi < basis_f.size(); ++bi) {
 			pointval += m_x[start_offset + bi] * basis_f(static_cast<typename BasisFuncs::index_t>(bi), p[0], p[1], p[2]);
+			assert(std::isfinite(pointval));
 		}
 		return pointval;
 	}
-}
+};
 #endif
 
 #endif

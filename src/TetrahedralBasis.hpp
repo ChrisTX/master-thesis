@@ -2,9 +2,16 @@
 #define TETRAHEDRAL_BASIS_HPP
 
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <type_traits>
 #include <utility>
+
+#ifdef HAVE_ECONSTEXPR
+#define ECONSTEXPR constexpr
+#else
+#define ECONSTEXPR
+#endif
 
 namespace BasisFunctions {
 
@@ -23,7 +30,7 @@ namespace BasisFunctions {
 			return 4;
 		}
 
-		constexpr auto operator()(index_t i, T x, T y, T z) const
+		ECONSTEXPR auto operator()(index_t i, T x, T y, T z) const
 		{
 			switch(i) {
 				case index_t::phi_1:
@@ -35,9 +42,12 @@ namespace BasisFunctions {
 				case index_t::phi_4:
 					return z;
 			}
+
+			assert(false);
+			return T{};
 		}
 
-		constexpr auto EvaluateDerivative(index_t i, T, T, T) const
+		ECONSTEXPR auto EvaluateDerivative(index_t i, T, T, T) const
 		{
 			switch(i) {
 				case index_t::phi_1:
@@ -49,6 +59,9 @@ namespace BasisFunctions {
 				case index_t::phi_4:
 					return std::array<T, 3>{ T{0}, T{0}, T{1} };
 			}
+
+			assert(false);
+			return std::array<T, 3>{};
 		}
 	};
 
@@ -75,7 +88,7 @@ namespace BasisFunctions {
 			return 10;
 		}
 
-		constexpr auto operator()(index_t i, T, T, T) const
+		ECONSTEXPR auto operator()(index_t i, T, T, T) const
 		{
 			switch(i) {
 				case index_t::phi_1:
@@ -101,7 +114,7 @@ namespace BasisFunctions {
 			}
 		}
 
-		constexpr auto EvaluateDerivative(index_t i, T x, T y, T z) const
+		ECONSTEXPR auto EvaluateDerivative(index_t i, T x, T y, T z) const
 		{
 			switch(i) {
 				case index_t::phi_1:

@@ -62,7 +62,13 @@ public:
 					if( (*this)[i+1] < (*this)[i] )
 					       std::swap( (*this)[i+1], (*this)[i] );	
 				}
-			}	
+			}
+
+#ifndef NDEBUG
+			for (auto i = std::size_t{ 0 }; i < 2; ++i) {
+				assert((*this)[i + 1] != (*this)[i]);
+			}
+#endif
 		}
 	};
 
@@ -113,6 +119,12 @@ public:
 	}
 
 	auto InsertElement(ElementDescriptor_t elem_to_insert) {
+#ifndef NDEBUG
+		for (auto i = std::size_t{ 0 }; i < 4; ++i)
+			for (auto j = std::size_t{ 0 }; j < 4; ++j)
+				assert((i == j) || (elem_to_insert[j] != elem_to_insert[i]));
+#endif
+
 		auto new_elem = Element_t{};
 		new_elem.corners = std::move(elem_to_insert);
 		m_ElementList.push_back(std::move(new_elem));
@@ -203,7 +215,8 @@ public:
 		assert(old_elem_data.is_border_layer);
 
 		// We do not remove elements from the vector, so we might have an element that was already processed
-		assert(!old_elem_data.is_in_mesh);
+		if(old_elem_data.is_in_mesh)
+			return;
 
 		const auto first_old_child_id = old_elem_data.replacement_first_child;
 		const auto other_old_elem = old_elem_data.associated_element;
@@ -384,12 +397,14 @@ public:
 
 	void InsertFullTimePrism(const NodeId_t al, const NodeId_t bl, const NodeId_t cl)
 	{
-		const auto& al_node = m_NodeList[al];
-		const auto& bl_node = m_NodeList[bl];
-		const auto& cl_node = m_NodeList[cl];
+		assert(al != bl && al != cl && bl != cl);
+		const auto al_node = m_NodeList[al];
+		const auto bl_node = m_NodeList[bl];
+		const auto cl_node = m_NodeList[cl];
 		const auto au = FindOrInsertNode({al_node[0], al_node[1], m_EndTime});
 		const auto bu = FindOrInsertNode({bl_node[0], bl_node[1], m_EndTime});
 		const auto cu = FindOrInsertNode({cl_node[0], cl_node[1], m_EndTime});
+		assert(au != bu && au != cu && bu != cu);
 
 		SplitPrism(al, bl, cl, au, bu, cu);
 
@@ -408,7 +423,11 @@ public:
 		auto last_old_elem = m_ElementList.size();
 		for(auto i = ElementId_t{0}; i < last_old_elem; ++i)
 			RedRefine(i);
-		
+
+		UpdateMesh();
+	}
+
+	void UpdateMesh() {
 		UpdateAllAssociations();
 		CompactElementList();
 		CalculateAllElementH();

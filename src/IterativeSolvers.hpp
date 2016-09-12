@@ -74,10 +74,11 @@ namespace IterativeSolvers {
 		nrhs = 1;
 	#ifndef NDEBUG
 		msglvl = 1;
+		iparm[26] = 1;
 	#else
 		msglvl = 0;
 	#endif
-		PARDISO(pt.data(), &maxfct, &mnum, &mtype, &phase, &N, A.m_Entries.data(), A.m_RowIndices.data(), A.m_ColumnIndices.data(), &perm_dum, &nrhs, iparm.data(), &msglvl, const_cast<double*>(&b[0]), &x[0], &error);
+		PARDISO(pt.data(), &maxfct, &mnum, &mtype, &phase, &N, A.m_Entries.data(), A.m_RowIndices.data(), A.m_ColumnIndices.data(), &perm_dum, &nrhs, iparm.data(), &msglvl, const_cast<double*>( b.data() ), x.data(), &error);
 
 		if(error != 0)
 			throw std::runtime_error("PARDISO failed!");

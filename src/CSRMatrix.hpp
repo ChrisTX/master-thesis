@@ -320,6 +320,7 @@ namespace Utility {
 				
 				for (auto colit = it->second.cbegin(); colit != it->second.cend(); ++colit) {
 					Entries[EntryPosition] = colit->second;
+					assert(std::isfinite(colit->second));
 					ColumnIndices[EntryPosition++] = colit->first + 1;
 				}
 			}

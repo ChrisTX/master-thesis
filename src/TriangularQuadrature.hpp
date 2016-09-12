@@ -130,14 +130,15 @@ namespace QuadratureFormulas {
 			}
 
 			auto GetDeterminantSqrt() const {
+				assert(std::isfinite(m_det) && m_det > 5 * std::numeric_limits<T>::epsilon());
 				return m_det;
 			}
 
 			auto operator()(const point_t& x0) const {
 				auto xt = surf_point_t{};
-				for(auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
-					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
-						xt[j] += m_TransformMatrix[i][j] * x0[j];
+				for (auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
+					for (auto j = size_type_t{0}; j < size_type_t{3}; ++j)
+						xt[j] += m_TransformMatrix[i][j] * x0[i];
 				
 				for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 					xt[j] += m_c[j];
@@ -162,7 +163,7 @@ namespace QuadratureFormulas {
 				const auto det12 = m_TransformMatrix[1][0];
 				const auto det21 = m_TransformMatrix[0][1];
 				const auto det22 = m_TransformMatrix[1][1];
-				m_det = std::sqrt( det11 * det22 - det21 * det12 );
+				m_det = std::abs( det11 * det22 - det21 * det12 );
 			}
 
 		public:
@@ -179,14 +180,15 @@ namespace QuadratureFormulas {
 			}
 
 			auto GetDeterminantAbs() const {
-				return std::abs( m_det );
+				assert(std::isfinite(m_det) && std::abs(m_det) > 5 * std::numeric_limits<T>::epsilon());
+				return m_det;
 			}
 
 			auto operator()(const point_t& x0) const {
 				auto xt = point_t{};
 				for(auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
 					for(auto j = size_type_t{0}; j < size_type_t{2}; ++j)
-						xt[j] += m_TransformMatrix[i][j] * x0[j];
+						xt[j] += m_TransformMatrix[i][j] * x0[i];
 				
 				for(auto j = size_type_t{0}; j < size_type_t{2}; ++j)
 					xt[j] += m_c[j];
