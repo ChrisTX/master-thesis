@@ -65,7 +65,7 @@ namespace QuadratureFormulas {
 			using size_type_t = typename tetrahedron_t::size_type;
 			std::array<point_t, 3> m_TransformMatrix;
 			std::array<point_t, 3> m_InverseTransformMatrix;
-			point_t m_d;
+			point_t m_a;
 			T m_det;
 
 			void CalculateDeterminant() {
@@ -99,13 +99,13 @@ namespace QuadratureFormulas {
 
 		public:
 			ReferenceTransform(const tetrahedron_t& target_element) {
-				m_d = target_element[3];
+				m_a = target_element[0];
 				for(auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
-					m_TransformMatrix[i] = target_element[i];
+					m_TransformMatrix[i] = target_element[i + 1];
 
 				for(auto i = size_type_t{0}; i + 1 < target_element.size(); ++i)
 					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
-						m_TransformMatrix[i][j] -= m_d[j];
+						m_TransformMatrix[i][j] -= m_a[j];
 				
 				CalculateDeterminant();
 				assert( std::abs( m_det ) > 5 * std::numeric_limits<T>::epsilon() );
@@ -124,14 +124,14 @@ namespace QuadratureFormulas {
 						xt[j] += m_TransformMatrix[i][j] * x0[i];
 				
 				for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
-					xt[j] += m_d[j];
+					xt[j] += m_a[j];
 
 				return std::move(xt);
 			}
 
 			auto InverseMap(const point_t& p) const {
 				// Do note that this is the transformed multiplication taking place.
-				const auto trans_val = point_t{p[0] - m_d[0], p[1] - m_d[1], p[2] - m_d[2]};
+				const auto trans_val = point_t{p[0] - m_a[0], p[1] - m_a[1], p[2] - m_a[2]};
 				auto retval = point_t{};
 				for(auto i = size_type_t{0}; i < m_InverseTransformMatrix.size(); ++i) {
 					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)

@@ -18,10 +18,10 @@
 
 template<typename T>
 class TetrahedralMesh {
+public:
 	const T m_StartTime;
 	const T m_EndTime;
 
-public:
 	TetrahedralMesh(const T start_time, const T end_time) : m_StartTime{ start_time }, m_EndTime{ end_time }
 	{
 
@@ -36,9 +36,6 @@ public:
 		ElementDescriptor_t corners;
 
 		bool is_in_mesh = true;
-		ElementId_t replacement_first_child;
-		bool is_border_layer = false;
-		ElementId_t associated_element;
 		T h;
 	};
 
@@ -76,14 +73,40 @@ public:
 		SurfaceType_t type = SurfaceType_t::Undefined;
 		std::array<ElementId_t, 2> adjacent_elements;
 		bool is_time_orthogonal;
-		std::size_t top_element;
-		Point_t normal_vector;
 		T h;
+
+		const auto normal_vector_by_elemid(const ElementId_t elemid) const{
+			if (elemid == adjacent_elements[0]) {
+				return normal_vector_first();
+			}
+			else {
+				assert(elemid == adjacent_elements[1]);
+				return normal_vector_second();
+			}
+		}
+
+		const auto& normal_vector_first() const {
+			assert(type != SurfaceType_t::Undefined);
+			return m_normal_vector;
+		}
+
+		auto normal_vector_second() const {
+			assert(type == SurfaceType_t::Inner);
+			return Point_t{ -m_normal_vector[0], -m_normal_vector[1], -m_normal_vector[2] };
+		}
+
+		auto get_upstream_element() const {
+			assert(!is_time_orthogonal);
+			return (m_normal_vector[2] > T{ 0 } ? adjacent_elements[0] : adjacent_elements[1]);
+		}
+
+		// We save the normal vector of the first adjacent element
+		// The second one is minus this one.
+		Point_t m_normal_vector;
 	};
 
 	std::vector<Point_t> m_NodeList;
 	std::vector<Element_t> m_ElementList;
-	std::vector<ElementId_t> m_ElementBottomLayer;
 	/* The surface list can be built on demand from the current element list
 	   It takes 4N time to construct, where N is the number of elements */
 	std::map<SurfaceId_t, SurfaceData_t> m_SurfaceList;
@@ -123,18 +146,21 @@ public:
 		for (auto i = std::size_t{ 0 }; i < 4; ++i)
 			for (auto j = std::size_t{ 0 }; j < 4; ++j)
 				assert((i == j) || (elem_to_insert[j] != elem_to_insert[i]));
+
+		for (auto i = std::size_t{ 0 }; i < m_ElementList.size(); ++i) {
+			auto matching_nodes = 0;
+			for (auto j = std::size_t{ 0 }; j < 4; ++j)
+				for (auto k = std::size_t{ 0 }; k < 4; ++k)
+					if (m_ElementList[i].corners[j] == elem_to_insert[k])
+						++matching_nodes;
+			assert(matching_nodes != 4);
+		}
 #endif
 
 		auto new_elem = Element_t{};
 		new_elem.corners = std::move(elem_to_insert);
 		m_ElementList.push_back(std::move(new_elem));
 		return m_ElementList.size() - 1;
-	}
-
-	void ReplaceElement(ElementId_t elem_to_replace, ElementId_t first_child_elem) {
-		auto& elem_data = m_ElementList[elem_to_replace];
-		elem_data.is_in_mesh = false;
-		elem_data.replacement_first_child = first_child_elem;
 	}
 
 	auto FindOrInsertNode(Point_t NodeTarget) {
@@ -148,6 +174,7 @@ public:
 
 	void RedRefine(ElementId_t elemid_to_refine) {
 		auto& elem_to_refine = m_ElementList[elemid_to_refine];
+		elem_to_refine.is_in_mesh = false;
 
 		// Use the point naming scheme as in [Bey95]
 		const auto x0 = elem_to_refine.corners[0];
@@ -174,8 +201,6 @@ public:
 		const auto x13 = FIMidNode(x1_l, x3_l);
 		const auto x23 = FIMidNode(x2_l, x3_l);
 
-		const auto first_new_element_id = m_ElementList.size();
-
 		InsertElement({x0, x01, x02, x03});
 		InsertElement({x01, x1, x12, x13});
 		InsertElement({x02, x12, x2, x23});
@@ -184,11 +209,9 @@ public:
 		InsertElement({x01, x02, x12, x13});
 		InsertElement({x02, x03, x13, x23});
 		InsertElement({x02, x12, x13, x23});
-
-		ReplaceElement(elemid_to_refine, first_new_element_id);
 	}
 
-	void UpdateNormal(const SurfaceId_t& surfid) {
+	auto CalculateNormal(const SurfaceId_t& surfid) const {
 		const auto& a = m_NodeList[surfid[0]];
 		const auto& b = m_NodeList[surfid[1]];
 		const auto& c = m_NodeList[surfid[2]];
@@ -203,62 +226,9 @@ public:
 		for(auto i = std::size_t{0}; i < 3; ++i)
 			edist += normal_vector[i] * normal_vector[i];
 		edist = std::sqrt(edist);
-		if( normal_vector[2] < 0 )
-			edist *= T{-1};
 		for(auto i = std::size_t{0}; i < 3; ++i)
 			normal_vector[i] /= edist;
-		m_SurfaceList[surfid].normal_vector = std::move( normal_vector );
-	}
-
-	void UpdateAssociation(ElementId_t old_elem) {
-		const auto& old_elem_data = m_ElementList[old_elem];
-		assert(old_elem_data.is_border_layer);
-
-		// We do not remove elements from the vector, so we might have an element that was already processed
-		if(old_elem_data.is_in_mesh)
-			return;
-
-		const auto first_old_child_id = old_elem_data.replacement_first_child;
-		const auto other_old_elem = old_elem_data.associated_element;
-		assert(other_old_elem < m_ElementList.size());
-		const auto& other_old_elem_data = m_ElementList[other_old_elem];
-		const auto first_other_child_id = other_old_elem_data.replacement_first_child;
-		assert(!other_old_elem_data.is_in_mesh && other_old_elem_data.replacement_first_child && other_old_elem_data.associated_element == old_elem);
-		assert(!other_old_elem_data.is_in_mesh && other_old_elem_data.is_border_layer);
-
-		/* 	We assume: a, b, c correspond to each other, and d is inside. Then, x01 = x01, ... by the way of the construction.
-			As of such, the elements that are in the border layers are 0, 1, 2 and 5 (all elements with only one 3 in its nodes) */
-		for(auto i : {0, 1, 2, 5}) {
-			const auto old_elem_child_id = first_old_child_id + i;
-			const auto other_elem_child_id = first_other_child_id + i;
-			auto& cur_old_elem_child = m_ElementList[old_elem_child_id];
-			auto& cur_other_elem_child = m_ElementList[other_elem_child_id];
-
-#ifndef NDEBUG
-			for(auto j = std::size_t{0}; j < 3; ++j) {
-				const auto al = m_NodeList[ cur_old_elem_child.corners[j] ];
-				const auto au = m_NodeList[ cur_other_elem_child.corners[j] ];
-				if( std::abs( al[0] - au[0] ) + std::abs( al[1] - au[1] ) > 5 * std::numeric_limits<T>::epsilon()  )
-					std::cout << "MISMATCH: (" << al[0] << ',' << al[1] << ") vs (" << au[0] << ',' << au[1] << ")!" << std::endl;
-			}
-		        	
-#endif
-			cur_old_elem_child.is_border_layer = true;
-			cur_other_elem_child.is_border_layer = true;
-
-			cur_old_elem_child.associated_element = other_elem_child_id;
-			cur_other_elem_child.associated_element = old_elem_child_id;
-			m_ElementBottomLayer.push_back(old_elem_child_id);
-			m_ElementBottomLayer.push_back(other_elem_child_id);
-		}
-	}
-
-	void UpdateAllAssociations() {
-		const auto oldbottomlayer = m_ElementBottomLayer;
-		m_ElementBottomLayer.clear();
-
-		for(const auto i : oldbottomlayer)
-			UpdateAssociation(i);
+		return std::move( normal_vector );
 	}
 
 	void CompactElementList() {
@@ -267,16 +237,8 @@ public:
 
 		for(auto i = decltype(m_ElementList.size()){0}; i < m_ElementList.size(); ++i) {
 			auto elem_copy = m_ElementList[i];
-			if(elem_copy.is_in_mesh) {
-				if(elem_copy.is_border_layer) {
-					const auto assoc_elem = elem_copy.associated_element;
-					if( elem_copy.associated_element > i )
-						m_ElementList[ assoc_elem ].associated_element = vec_copy.size();
-					else
-						vec_copy[ assoc_elem ].associated_element = vec_copy.size();
-				}
+			if(elem_copy.is_in_mesh)
 				vec_copy.push_back(std::move(elem_copy));
-			}
 		}
 		
 		vec_copy.shrink_to_fit();
@@ -322,8 +284,6 @@ public:
 	void ConsiderElementForSurfaceList(const ElementId_t curelemid, const SurfaceId_t& surfid, const NodeId_t other_node_id) {
 		// Note that because this is an unordered map, this operation might insert the surface
 		auto& surf = m_SurfaceList[surfid];
-		UpdateNormal(surfid);
-		const auto surfnm = surf.normal_vector;
 		const auto& curelem = m_ElementList[curelemid]; 
 		switch(surf.type) {
 			case SurfaceType_t::Undefined:
@@ -339,18 +299,20 @@ public:
 					surf.adjacent_elements[0] = curelemid;
 					surf.h = curelem.h;
 
+					auto surfnm = CalculateNormal(surfid);
+
 					const auto surf_node = m_NodeList[surfid[0]];
 					const auto other_node = m_NodeList[other_node_id];
 					auto scalval = T{0};
 					for(auto i = std::size_t{0}; i < 3; ++i)
 						scalval += ( other_node[i] - surf_node[i] ) * surfnm[i];
-					if( std::abs( surfnm[2] ) < 5 * std::numeric_limits<T>::epsilon()  ) {
-						surf.is_time_orthogonal = true;
-					}
-					else {
-						surf.top_element = ( scalval > 0 ) ? 0 : 1;
-						surf.is_time_orthogonal = false;
-					}
+					surf.is_time_orthogonal = (std::abs(surfnm[2]) < 5 * std::numeric_limits<T>::epsilon());
+
+					assert(std::abs(scalval) >= 5 * std::numeric_limits<T>::epsilon());
+					if (scalval < 0)
+						surf.m_normal_vector = std::move(surfnm);
+					else
+						surf.m_normal_vector = Point_t{ -surfnm[0], -surfnm[1], -surfnm[2] };
 				}
 				break;
 			case SurfaceType_t::MidTime:
@@ -374,18 +336,23 @@ public:
 
 		/* 	If all elements were inner ones, we'd attain a size of (4N)/2.
 			Hence, 2N is a reasonable reserve for a low effective load factor */
-		//m_SurfaceList.reserve( 2 * m_ElementList.size() );
-		for(auto i = ElementId_t{0}; i < m_ElementList.size(); ++i) {
+			//m_SurfaceList.reserve( 2 * m_ElementList.size() );
+		for (auto i = ElementId_t{ 0 }; i < m_ElementList.size(); ++i) {
 			const auto& curelem = m_ElementList[i];
 			const auto a = curelem.corners[0];
 			const auto b = curelem.corners[1];
 			const auto c = curelem.corners[2];
 			const auto d = curelem.corners[3];
-			ConsiderElementForSurfaceList(i, {a, b, c}, d);
-			ConsiderElementForSurfaceList(i, {a, b, d}, c);
-			ConsiderElementForSurfaceList(i, {b, c, d}, a);
-			ConsiderElementForSurfaceList(i, {a, c, d}, b);
+			ConsiderElementForSurfaceList(i, { a, b, c }, d);
+			ConsiderElementForSurfaceList(i, { a, b, d }, c);
+			ConsiderElementForSurfaceList(i, { b, c, d }, a);
+			ConsiderElementForSurfaceList(i, { a, c, d }, b);
 		}
+#ifndef NDEBUG
+		for (auto& surf_p : m_SurfaceList) {
+			assert(surf_p.second.type != SurfaceType_t::MidTime || surf_p.second.is_time_orthogonal);
+		}
+#endif
 	}
 
 	void SplitPrism(const NodeId_t al, const NodeId_t bl, const NodeId_t cl, const NodeId_t au, const NodeId_t bu, const NodeId_t cu)
@@ -407,15 +374,6 @@ public:
 		assert(au != bu && au != cu && bu != cu);
 
 		SplitPrism(al, bl, cl, au, bu, cu);
-
-		const auto last_elem_id = m_ElementList.size() - 1;
-		auto& lower_elem = m_ElementList[last_elem_id - 2];
-		auto& upper_elem = m_ElementList[last_elem_id - 1];
-		lower_elem.is_border_layer = true;
-		upper_elem.is_border_layer = true;
-		lower_elem.associated_element = last_elem_id - 1;
-		upper_elem.associated_element = last_elem_id - 2;
-		m_ElementBottomLayer.push_back(last_elem_id - 2);
 	}
 
 public:
@@ -428,7 +386,6 @@ public:
 	}
 
 	void UpdateMesh() {
-		UpdateAllAssociations();
 		CompactElementList();
 		CalculateAllElementH();
 		BuildSurfaceList();

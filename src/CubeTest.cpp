@@ -18,12 +18,12 @@ int main() {
 	const auto dl = mesh.InsertNode( { 1., 1., 0. } );
 
 	mesh.InsertFullTimePrism(al, bl, cl);
-	//mesh.InsertFullTimePrism(dl, bl, cl);
+	mesh.InsertFullTimePrism(bl, cl, dl);
 
 	std::cout << "INSERT" << std::endl;
-	
-	//mesh.UniformRefine();
-	mesh.UpdateMesh();
+	for(auto i = 0; i < 5; ++i)
+		mesh.UniformRefine();
+	//mesh.UpdateMesh();
 
 #ifdef PRINT_SURFACE_LIST
 	for(auto surf_p : mesh.m_SurfaceList) {
@@ -43,24 +43,37 @@ int main() {
 		std::cout << std::endl;
 	}
 #endif
-	auto stmass = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD1<double>, QuadratureFormulas::Tetrahedra::Formula_3DT2<double>>{ mesh, 1., 1., 1., 1. };
-	auto matandlv = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>( [](double, double, double) -> double { return 1.; }, 1. );
+	auto beta = 1.;
+	auto lambda = 1.;
 
+	auto stmass = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD2<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, 10., 0., beta, lambda };
+	auto matandlv = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>( [](double, double) -> double { return 1.; }, [](double, double) -> double { return 100.; } );
+
+#ifdef PRINT_LV
+	std::ofstream lvbut("lvs.txt");
+	for(auto i = std::size_t{0}; i < matandlv.second.size(); ++i)
+		lvbut << matandlv.second[i] << std::endl;
+	lvbut.close();
+#endif
+
+//#define PRINT_MATRIX
+#ifdef PRINT_MATRIX
 	std::ofstream matbut("matvals.txt");
 	matbut << matandlv.first << std::endl;
 	matbut.close();
-	
-	/*auto csrmatas = Utility::CSRMatrixAssembler<double>(matandlv.first.GetNumberOfRows(), matandlv.first.GetNumberOfColumns());
-	for (auto i = 0; i < matandlv.first.GetNumberOfRows(); ++i)
-		csrmatas(i, i) = 1.;
-	auto csrmatsimp = csrmatas.AssembleMatrix();
+#endif
 
 #ifdef HAVE_MKL
-	auto stmsol = STMSolver<double, BasisFunctions::TetrahedralLinearBasis<double>>{ mesh, csrmatsimp, matandlv.second };
+	std::cout << "SOLVING" << std::endl;
+	
+	auto stmsol = STMSolver<double, BasisFunctions::TetrahedralLinearBasis<double>>{ beta, lambda, mesh, matandlv.first, matandlv.second };
 
-	for (auto i = std::size_t{ 0 }; i < mesh.m_ElementList.size(); ++i) {
-		std::cout << "Element " << i << " midvalue " << stmsol.EvaluateElement_Ref(i, {0.5, 0.5, 0.5})  << std::endl;
-	}
-#endif*/
+	//for (auto i = std::size_t{ 0 }; i < mesh.m_ElementList.size(); ++i) {
+	//	std::cout << "Element " << i << " midvalue " << stmsol.uEvaluateElement_Ref(i, {0.5, 0.5, 0.5})  << std::endl;
+	//}
+
+	stmsol.PrintToVTU("testfile-u.vtu", false);
+	stmsol.PrintToVTU("testfile-y.vtu", true);
+#endif
 	std::cout << "DONE" << std::endl;
 }
