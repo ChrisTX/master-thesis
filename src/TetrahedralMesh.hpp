@@ -100,6 +100,11 @@ public:
 			return (m_normal_vector[2] > T{ 0 } ? adjacent_elements[0] : adjacent_elements[1]);
 		}
 
+		auto get_downstream_element() const {
+			assert(!is_time_orthogonal);
+			return (m_normal_vector[2] < T{ 0 } ? adjacent_elements[0] : adjacent_elements[1]);
+		}
+
 		// We save the normal vector of the first adjacent element
 		// The second one is minus this one.
 		Point_t m_normal_vector;

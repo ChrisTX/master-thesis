@@ -546,18 +546,20 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 								matassembler(offset_vj, offset_ui) += form_val_Ah;
 								matassembler(block_size + offset_ui, block_size + offset_vj) += form_val_Ah;
 								matassembler(block_size + offset_vj, block_size + offset_ui) += form_val_Ah;
+							}
+						}
 
-								if (!surf_data.is_time_orthogonal) {
+						if (!surf_data.is_time_orthogonal) {
+							const auto start_offset_up = surf_data.get_upstream_element() * num_basis;
+							const auto start_offset_down = surf_data.get_downstream_element() * num_basis;
+
+							for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+								for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
 									const auto form_val_Bh = this->EvaluateBh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 									assert(std::isfinite(form_val_Bh));
-									if (surf_data.get_upstream_element() == surf_data.adjacent_elements[0]) {
-										matassembler(offset_ui, offset_vj) += form_val_Bh;
-										matassembler(block_size + offset_vj, block_size + offset_ui) -= form_val_Bh;
-									}
-									else {
-										matassembler(offset_vj, offset_ui) += form_val_Bh;
-										matassembler(block_size + offset_ui, block_size + offset_vj) -= form_val_Bh;
-									}
+
+									matassembler(start_offset_down + bi, start_offset_up + bj) += form_val_Bh;
+									matassembler(block_size + start_offset_up + bi, block_size + start_offset_down + bj) -= form_val_Bh;
 								}
 							}
 						}

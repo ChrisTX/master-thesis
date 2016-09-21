@@ -23,7 +23,6 @@ int main() {
 	std::cout << "INSERT" << std::endl;
 	for(auto i = 0; i < 5; ++i)
 		mesh.UniformRefine();
-	//mesh.UpdateMesh();
 
 #ifdef PRINT_SURFACE_LIST
 	for(auto surf_p : mesh.m_SurfaceList) {
@@ -47,7 +46,7 @@ int main() {
 	auto lambda = 1.;
 
 	auto stmass = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD2<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, 10., 0., beta, lambda };
-	auto matandlv = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>( [](double, double) -> double { return 1.; }, [](double, double) -> double { return 100.; } );
+	auto matandlv = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>( [](double, double) -> double { return 0.; }, [](double x, double y) -> double { return (x-0.5)*(x-0.5)*(y-0.5)*(y-0.5); } );
 
 #ifdef PRINT_LV
 	std::ofstream lvbut("lvs.txt");
@@ -67,10 +66,6 @@ int main() {
 	std::cout << "SOLVING" << std::endl;
 	
 	auto stmsol = STMSolver<double, BasisFunctions::TetrahedralLinearBasis<double>>{ beta, lambda, mesh, matandlv.first, matandlv.second };
-
-	//for (auto i = std::size_t{ 0 }; i < mesh.m_ElementList.size(); ++i) {
-	//	std::cout << "Element " << i << " midvalue " << stmsol.uEvaluateElement_Ref(i, {0.5, 0.5, 0.5})  << std::endl;
-	//}
 
 	stmsol.PrintToVTU("testfile-u.vtu", false);
 	stmsol.PrintToVTU("testfile-y.vtu", true);
