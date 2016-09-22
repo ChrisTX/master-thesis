@@ -17,16 +17,17 @@ int main() {
 	const auto cl = mesh.InsertNode( { 1., 0., 0. } );
 	const auto dl = mesh.InsertNode( { 1., 1., 0. } );
 
-#define TRIANGLE
-
 	mesh.InsertFullTimePrism(al, bl, cl);
 #ifndef TRIANGLE
 	mesh.InsertFullTimePrism(cl, dl, bl);
 #endif
 
 	std::cout << "INSERT" << std::endl;
-#ifndef NDEBUG
+
+#if defined(PRINT_MATRIX)
 	const auto reflim = 0;
+#elif !defined(NDEBUG)
+	const auto reflim = 2;
 #else
 	const auto reflim = 5;
 #endif
@@ -85,14 +86,15 @@ int main() {
 
 	auto beta = 1.;
 	auto lambda = 1.;
-	auto alpha = 1.;
+	auto alpha = 0.;
 	auto sigma = 10.;
 
+#ifdef HEAT_SYSTEM
 	auto stmass = HeatAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda };
-	auto matandlv = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double) -> double { return 1.; }, [](double, double) -> double { return 1.; });
-
-#define PRINT_LV
-#define PRINT_MATRIX
+#else
+	auto stmass = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda };
+#endif
+	auto matandlv = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double) -> double { return 1.; }, [](double, double) -> double { return 5.; });
 
 #ifdef PRINT_LV
 	std::ofstream lvbut("lvs.txt");
@@ -116,7 +118,9 @@ int main() {
 	
 	auto stmsol = STMSolver<double, BasisFunctions::TetrahedralLinearBasis<double>>{ beta, lambda, mesh, matandlv.first, matandlv.second };
 
-	//stmsol.PrintToVTU("testfile-u.vtu", false);
+#ifndef HEAT_SYSTEM
+	stmsol.PrintToVTU("testfile-u.vtu", false);
+#endif
 	stmsol.PrintToVTU("testfile-y.vtu", true);
 #endif
 	std::cout << "DONE" << std::endl;
