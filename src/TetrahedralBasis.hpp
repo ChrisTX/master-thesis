@@ -4,6 +4,7 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <limits>
 #include <type_traits>
 #include <utility>
 
@@ -18,6 +19,8 @@ namespace BasisFunctions {
 	template<typename T>
 	class TetrahedralLinearBasis {
 	public:
+		using point_t = std::array<T, 3>;
+
 		enum class index_t {
 			phi_1,
 			phi_2,
@@ -30,38 +33,38 @@ namespace BasisFunctions {
 			return 4;
 		}
 
-		ECONSTEXPR auto operator()(index_t i, T x, T y, T z) const
+		ECONSTEXPR auto operator()(const index_t i, const point_t& p) const
 		{
 			switch(i) {
 				case index_t::phi_1:
-					return 1 - x - y - z;
+					return 1 - p[0] - p[1] - p[2];
 				case index_t::phi_2:
-					return x;
+					return p[0];
 				case index_t::phi_3:
-					return y;
+					return p[1];
 				case index_t::phi_4:
-					return z;
+					return p[2];
 			}
 
 			assert(false);
-			return T{};
+			return std::move(std::numeric_limits<T>::signaling_NaN());
 		}
 
-		ECONSTEXPR auto EvaluateDerivative(index_t i, T, T, T) const
+		ECONSTEXPR auto EvaluateDerivative(const index_t i, const point_t&) const
 		{
 			switch(i) {
 				case index_t::phi_1:
-					return std::array<T, 3>{ T{-1}, T{-1}, T{-1} };
+					return std::move(std::array<T, 3>{ T{-1}, T{-1}, T{-1} });
 				case index_t::phi_2:
-					return std::array<T, 3>{ T{1}, T{0}, T{0} };
+					return std::move(std::array<T, 3>{ T{1}, T{0}, T{0} });
 				case index_t::phi_3:
-					return std::array<T, 3>{ T{0}, T{1}, T{0} };
+					return std::move(std::array<T, 3>{ T{0}, T{1}, T{0} });
 				case index_t::phi_4:
-					return std::array<T, 3>{ T{0}, T{0}, T{1} };
+					return std::move(std::array<T, 3>{ T{0}, T{0}, T{1} });
 			}
 
 			assert(false);
-			return std::array<T, 3>{};
+			return std::move(std::array<T, 3>{std::numeric_limits<T>::signaling_NaN(), std::numeric_limits<T>::signaling_NaN(), std::numeric_limits<T>::signaling_NaN()});
 		}
 	};
 
@@ -70,6 +73,8 @@ namespace BasisFunctions {
 		using linear_basis_t = TetrahedralLinearBasis<T>;
 		using linear_index_t = typename linear_basis_t::index_t;
 	public:
+		using point_t = std::array<T, 3>;
+
 		enum class index_t {
 			phi_1,
 			phi_2,
@@ -88,7 +93,7 @@ namespace BasisFunctions {
 			return 10;
 		}
 
-		ECONSTEXPR auto operator()(index_t i, T, T, T) const
+		ECONSTEXPR auto operator()(const index_t i, const point_t&) const
 		{
 			switch(i) {
 				case index_t::phi_1:
@@ -114,55 +119,55 @@ namespace BasisFunctions {
 			}
 		}
 
-		ECONSTEXPR auto EvaluateDerivative(index_t i, T x, T y, T z) const
+		ECONSTEXPR auto EvaluateDerivative(const index_t i, const point_t& p) const
 		{
 			switch(i) {
 				case index_t::phi_1:
-					return std::array<T, 3>{ T{-1} * (T{2} * linear_basis_t(linear_index_t::phi_1, x, y, z) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_1, x, y, z) * (T{2} * T{-1}),
-											 T{-1} * (T{2} * linear_basis_t(linear_index_t::phi_1, x, y, z) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_1, x, y, z) * (T{2} * T{-1}),
-											 T{-1} * (T{2} * linear_basis_t(linear_index_t::phi_1, x, y, z) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_1, x, y, z) * (T{2} * T{-1}) };
+					return std::array<T, 3>{ T{-1} * (T{2} * linear_basis_t(linear_index_t::phi_1, p) - T{1})
+											  + linear_basis_t(linear_basis_t::phi_1, p) * (T{2} * T{-1}),
+											 T{-1} * (T{2} * linear_basis_t(linear_index_t::phi_1, p) - T{1})
+											  + linear_basis_t(linear_basis_t::phi_1, p) * (T{2} * T{-1}),
+											 T{-1} * (T{2} * linear_basis_t(linear_index_t::phi_1, p) - T{1})
+											  + linear_basis_t(linear_basis_t::phi_1, p) * (T{2} * T{-1}) };
 				case index_t::phi_2:
-					return std::array<T, 3>{ T{1} * (T{2} * linear_basis_t(linear_index_t::phi_2, x, y, z) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_2, x, y, z) * (T{2} * T{1}),
+					return std::array<T, 3>{ T{1} * (T{2} * linear_basis_t(linear_index_t::phi_2, p) - T{1})
+											  + linear_basis_t(linear_basis_t::phi_2, p) * (T{2} * T{1}),
 											 T{0},
 											 T{0} };
 				case index_t::phi_3:
 					return std::array<T, 3>{ T{0},
-											 T{1} * (T{2} * linear_basis_t(linear_index_t::phi_3, x, y, z) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_3, x, y, z) * (T{2} * T{1}),
+											 T{1} * (T{2} * linear_basis_t(linear_index_t::phi_3, p) - T{1})
+											  + linear_basis_t(linear_basis_t::phi_3, p) * (T{2} * T{1}),
 											 T{0} };
 				case index_t::phi_4:
 					return std::array<T, 3>{ T{0},
 											 T{0},
-											 T{1} * (T{2} * linear_basis_t(linear_index_t::phi_4, x, y, z) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_4, x, y, z) * (T{2} * T{1}) };
+											 T{1} * (T{2} * linear_basis_t(linear_index_t::phi_4, p) - T{1})
+											  + linear_basis_t(linear_basis_t::phi_4, p) * (T{2} * T{1}) };
 				case index_t::phi_5:
-					return std::array<T, 3>{ T{4} * ( T{-1} * x + (T{1} - x - y - z) * T{1} ),
-											 T{4} * ( T{-1} * x ),
-											 T{4} * ( T{-1} * x ) };
+					return std::array<T, 3>{ T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_2, p) + linear_basis_t(linear_index_t::phi_1, p) * T{1} ),
+											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_2, p) ),
+											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_2, p) ) };
 				case index_t::phi_6:
-					return std::array<T, 3>{ T{4} * ( T{1} * y ),
-											 T{4} * ( T{1} * x ),
+					return std::array<T, 3>{ T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_3, p) ),
+											 T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_2, p) ),
 											 T{0} };
 				case index_t::phi_7:
-					return std::array<T, 3>{ T{4} * ( T{-1} * y ),
-											 T{4} * ( T{-1} * y + (T{1} - x - y - z) * T{1} ),
-											 T{4} * ( T{-1} * y ) };
+					return std::array<T, 3>{ T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_3, p) ),
+											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_3, p) + linear_basis_t(linear_index_t::phi_1, p) * T{1} ),
+											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_3, p) ) };
 				case index_t::phi_8:
-					return std::array<T, 3>{ T{4} * ( T{-1} * z ),
-											 T{4} * ( T{-1} * z ),
-											 T{4} * ( T{-1} * z + (T{1} - x - y - z) * T{1} ) };
+					return std::array<T, 3>{ T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_4, p) ),
+											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_4, p) ),
+											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_4, p) + linear_basis_t(linear_index_t::phi_1, p) * T{1} ) };
 				case index_t::phi_9:
-					return std::array<T, 3>{ T{4} * ( T{1} * z ),
+					return std::array<T, 3>{ T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_4, p) ),
 											 T{0},
-											 T{4} * ( T{1} * x ) };
+											 T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_2, p) ) };
 				case index_t::phi_10:
 					return std::array<T, 3>{ T{0},
-											 T{4} * ( T{1} * z ),
-											 T{4} * ( T{1} * y ) };							 
+											 T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_4, p) ),
+											 T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_3, p) ) };							 
 			}
 		}
 	};

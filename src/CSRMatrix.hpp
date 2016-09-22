@@ -206,7 +206,7 @@ namespace Utility {
 			std::vector<value_type> resvec(m_Rows);
 
 			char transa = 'N';
-			Utility::MKL_csrgemv(&transa, const_cast<MKL_INT*>(&m_Rows), const_cast<value_type*>(m_Entries.data()), const_cast<MKL_INT*>(m_RowIndices.data()), const_cast<MKL_INT*>(m_ColumnIndices.data()), const_cast<value_type*>(&vec[0]), &resvec[0]);
+			Utility::MKL_csrgemv(&transa, const_cast<MKL_INT*>(&m_Rows), const_cast<value_type*>(m_Entries.data()), const_cast<MKL_INT*>(m_RowIndices.data()), const_cast<MKL_INT*>(m_ColumnIndices.data()), const_cast<value_type*>(vec.data()), resvec.data());
 
 			return resvec;
 		}

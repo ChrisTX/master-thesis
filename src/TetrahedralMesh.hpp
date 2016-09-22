@@ -36,7 +36,7 @@ public:
 		ElementDescriptor_t corners;
 
 		bool is_in_mesh = true;
-		T h;
+		T h = std::numeric_limits<T>::signaling_NaN();
 	};
 
 	enum class SurfaceType_t {

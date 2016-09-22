@@ -55,16 +55,16 @@ public:
 	}
 
 	template<class BasisFuncs, class BasisIndex>
-	auto EvaluateAh_Element(const ElementId_t elemid, const BasisFuncs& bf, const BasisIndex biu, const BasisIndex biv) const {
+	auto EvaluateAh_Element(const ElementId_t elemid, const BasisFuncs bf, const BasisIndex biu, const BasisIndex biv) const {
 		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
 		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
 		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
 
-		const auto integrand = [&](const auto& p) -> auto {
-			const auto du_org = bf.EvaluateDerivative(biu, p[0], p[1], p[2]);
-			const auto du = ref_tran.TransformDerivative_Scalar(du_org);
-			const auto dv_org = bf.EvaluateDerivative(biv, p[0], p[1], p[2]);
-			const auto dv = ref_tran.TransformDerivative_Scalar(dv_org);
+		const auto integrand = [&](const auto& sp) -> auto {
+			const auto p_space = ref_tran(sp);
+
+			const auto du = ref_tran.EvaluateTransformedBasisDerivative(bf, biu, p_space);
+			const auto dv = ref_tran.EvaluateTransformedBasisDerivative(bf, biv, p_space);
 
 			return x_scal_eval(du, dv); 
 		};
@@ -73,7 +73,7 @@ public:
 
 		// At this point, first_intval is the part of the bilinear form that isspace integral.
 		// We need to add the three edge terms now
-		const auto first_integrand_part = [&](const auto& surfid, const auto& surfdata) -> auto {
+		const auto inner_integrand_part = [&](const auto& surfid, const auto& surfdata) -> auto {
 			const auto surf_nm = surfdata.normal_vector_by_elemid(elemid);
 
 			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
@@ -81,14 +81,11 @@ public:
 
 			const auto integrand_fn = [&](const auto& sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
-				const auto p = ref_tran.InverseMap(p_space); 
 
-				const auto uh = bf(biu, p[0], p[1], p[2]);
-				const auto vh = bf(biv, p[0], p[1], p[2]);
-				const auto du_org = bf.EvaluateDerivative(biu, p[0], p[1], p[2]);
-				const auto du = ref_tran.TransformDerivative_Scalar(du_org);
-				const auto dv_org = bf.EvaluateDerivative(biv, p[0], p[1], p[2]);
-				const auto dv = ref_tran.TransformDerivative_Scalar(dv_org);
+				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
+				const auto du = ref_tran.EvaluateTransformedBasisDerivative(bf, biu, p_space);
+				const auto dv = ref_tran.EvaluateTransformedBasisDerivative(bf, biv, p_space);
 
 				const auto dux_n = x_scal_eval(du, surf_nm);
 				const auto dvx_n = x_scal_eval(dv, surf_nm);
@@ -110,10 +107,9 @@ public:
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
-				const auto p = ref_tran.InverseMap(p_space);
 
-				const auto uh = bf(biu, p[0], p[1], p[2]);
-				const auto vh = bf(biv, p[0], p[1], p[2]);
+				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
 
 				return uh * vh;
 			};
@@ -131,7 +127,7 @@ public:
 		for(const auto si : { SurfaceId_t{a, b, c}, SurfaceId_t{a, b, d}, SurfaceId_t{b, c, d}, SurfaceId_t{a, c, d} }) {
 			const auto& surfdata = m_Mesh.SurfaceDataById(si);
 			if (surfdata.type == TetrahedralMesh<T>::SurfaceType_t::Inner)
-				intval += first_integrand_part(si, surfdata);
+				intval += inner_integrand_part(si, surfdata);
 			else if (surfdata.type == TetrahedralMesh<T>::SurfaceType_t::MidTime)
 				intval += alpha * surface_integral_part(si);
 		}
@@ -160,15 +156,11 @@ public:
 
 		const auto integrand_fn = [&](const auto& sp) -> auto {
 			const auto p_space = ref_triang_tran(sp);
-			const auto p1 = ref_tran1.InverseMap(p_space); 
-			const auto p2 = ref_tran2.InverseMap(p_space); 
 
-			const auto uh = bf(biu, p1[0], p1[1], p1[2]);
-			const auto vh = bf(biv, p2[0], p2[1], p2[2]);
-			const auto du_org = bf.EvaluateDerivative(biu, p1[0], p1[1], p1[2]);
-			const auto du = ref_tran1.TransformDerivative_Scalar(du_org);
-			const auto dv_org = bf.EvaluateDerivative(biv, p2[0], p2[1], p2[2]);
-			const auto dv = ref_tran2.TransformDerivative_Scalar(dv_org);
+			const auto uh = ref_tran1.EvaluateTransformedBasis(bf, biu, p_space);
+			const auto vh = ref_tran2.EvaluateTransformedBasis(bf, biv, p_space);
+			const auto du = ref_tran1.EvaluateTransformedBasisDerivative(bf, biu, p_space);
+			const auto dv = ref_tran2.EvaluateTransformedBasisDerivative(bf, biv, p_space);
 
 			const auto dux_nsecond = x_scal_eval(du, surf_nm_second);
 			const auto dvx_nfirst = x_scal_eval(dv, surf_nm_first);
@@ -189,10 +181,11 @@ public:
 		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
 		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
 
-		const auto integrand = [&](const auto& p) -> auto {
-			const auto uh = bf(biu, p[0], p[1], p[2]);
-			const auto dv_org = bf.EvaluateDerivative(biv, p[0], p[1], p[2]);
-			const auto dv = ref_tran.TransformDerivative_Scalar(dv_org);
+		const auto integrand = [&](const auto& sp) -> auto {
+			const auto p_space = ref_tran(sp);
+
+			const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+			const auto dv = ref_tran.EvaluateTransformedBasisDerivative(bf, biv, p_space);
 
 			return uh * dv[2]; 
 		};
@@ -207,10 +200,9 @@ public:
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
-				const auto p = ref_tran.InverseMap(p_space); 
 
-				const auto uh = bf(biu, p[0], p[1], p[2]);
-				const auto vh = bf(biv, p[0], p[1], p[2]);
+				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
 
 				return uh * vh;
 			};
@@ -231,10 +223,9 @@ public:
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
-				const auto p = ref_tran.InverseMap(p_space); 
 
-				const auto uh = bf(biu, p[0], p[1], p[2]);
-				const auto vh = bf(biv, p[0], p[1], p[2]);
+				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
 
 				return uh * vh * surf_nm[2];
 			};
@@ -251,7 +242,7 @@ public:
 
 		for(const auto si : { SurfaceId_t{a, b, c}, SurfaceId_t{a, b, d}, SurfaceId_t{b, c, d}, SurfaceId_t{a, c, d} }) {
 			const auto& surfdata = m_Mesh.SurfaceDataById(si);
-			if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::EndTime )
+			if (surfdata.type == TetrahedralMesh<T>::SurfaceType_t::EndTime)
 				intval += surface_integral_part( si );
 			else if( surfdata.type == TetrahedralMesh<T>::SurfaceType_t::Inner )
 				intval += inner_integral_part( si, surfdata );
@@ -267,10 +258,14 @@ public:
 		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
 		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
 
+		if (elemid == 0 && biu == 4 && biv == 1)
+			DebugBreak();
+
 		const auto integrand = [&](const auto& p) -> auto {
-			const auto uh = bf(biu, p[0], p[1], p[2]);
-			const auto dv_org = bf.EvaluateDerivative(biv, p[0], p[1], p[2]);
-			const auto dv = ref_tran.TransformDerivative_Scalar(dv_org);
+			const auto p_space = ref_triang_tran(sp);
+
+			const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+			const auto dv = ref_tran.EvaluateTransformedBasisDerivative(bf, biv, p_space);
 
 			return uh * dv[2];
 		};
@@ -285,10 +280,9 @@ public:
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
-				const auto p = ref_tran.InverseMap(p_space);
 
-				const auto uh = bf(biu, p[0], p[1], p[2]);
-				const auto vh = bf(biv, p[0], p[1], p[2]);
+				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
 
 				return uh * vh;
 			};
@@ -309,10 +303,9 @@ public:
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
-				const auto p = ref_tran.InverseMap(p_space);
 
-				const auto uh = bf(biu, p[0], p[1], p[2]);
-				const auto vh = bf(biv, p[0], p[1], p[2]);
+				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
 
 				return uh * vh * surf_nm[2];
 			};
@@ -348,21 +341,20 @@ public:
 		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
 		assert( cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::Inner );
 
-		const auto elemid1 = cur_surface_data.adjacent_elements[0];
+		const auto elemid1 = cur_surface_data.get_downstream_element();
 		// If the element is time orthogonal, {{uh}}^up is zero by definition and we can stop.
 		// Otherwise, the form is not symmetrical. {{uh}}^up = uh for the upper element and zero for the lower one.
 		// Hence this form is NOT SYMMETRICAL. It needs to be added to the appropriate matrix position.
 		if( cur_surface_data.is_time_orthogonal )
 			return T{0};
 
-		const auto elemid2 = cur_surface_data.adjacent_elements[1];
+		const auto elemid2 = cur_surface_data.get_upstream_element();
 		const auto tetrahedr1 = m_Mesh.ElementIdToTetrahedron(elemid1);
 		const auto ref_tran1 = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr1);
 		const auto tetrahedr2 = m_Mesh.ElementIdToTetrahedron(elemid2);
 		const auto ref_tran2 = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr2);
 
-		const auto elemid_up = cur_surface_data.get_upstream_element();
-		const auto surf_nm_up = cur_surface_data.normal_vector_by_elemid(elemid_up);
+		const auto surf_nm_down = cur_surface_data.normal_vector_by_elemid(elemid1);
 
 		const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
 		const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
@@ -370,13 +362,11 @@ public:
 
 		const auto integrand_fn = [&](const auto& sp) -> auto {
 			const auto p_space = ref_triang_tran(sp);
-			const auto p1 = ref_tran1.InverseMap(p_space); 
-			const auto p2 = ref_tran2.InverseMap(p_space); 
 
-			const auto uh = bf(biu, p1[0], p1[1], p1[2]);
-			const auto vh = bf(biv, p2[0], p2[1], p2[2]);
+			const auto uh = ref_tran1.EvaluateTransformedBasis(bf, biu, p_space);
+			const auto vh = ref_tran2.EvaluateTransformedBasis(bf, biv, p_space);
 			
-			return uh * vh * surf_nm_up[2];
+			return uh * vh * surf_nm_down[2];
 		};
 
 		return triang_quadfm(integrand_fn) * ref_triang_tran_det;
@@ -397,10 +387,9 @@ public:
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
-				const auto p = ref_tran.InverseMap(p_space); 
 
-				const auto uh = bf(biu, p[0], p[1], p[2]);
-				const auto vh = bf(biv, p[0], p[1], p[2]);
+				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
 
 				return uh * vh;
 			};
@@ -427,10 +416,9 @@ public:
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
-				const auto p = ref_tran.InverseMap(p_space);
 
-				const auto uh = bf(biu, p[0], p[1], p[2]);
-				const auto vh = bf(biv, p[0], p[1], p[2]);
+				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
 
 				return uh * vh;
 			};
@@ -445,7 +433,7 @@ public:
 	template<class F, class BasisFuncs, class BasisIndex>
 	auto EvaluateLV_Surface(const F& rhs_func, const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv) const {
 		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
-		assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::StartTime || cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::EndTime);
+		//assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::StartTime || cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::EndTime);
 
 		const auto adj_elem_id = cur_surface_data.adjacent_elements[0];
 		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(adj_elem_id);
@@ -457,10 +445,9 @@ public:
 
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
-				const auto p = ref_tran.InverseMap(p_space);
 
 				const auto uh = rhs_func(p_space[0], p_space[1]);
-				const auto vh = bf(biv, p[0], p[1], p[2]);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
 
 				return uh * vh;
 			};
@@ -656,50 +643,50 @@ public:
 #endif
 	}
 
-	auto pEvaluateElement(const ElementId_t elemid, const Point_t& x) const
+	auto pEvaluateElement(const ElementId_t elemid, const Point_t& p) const
 	{
-		const auto& tetrahedr = m_Mesh.ElementIdToTetrahedron(elemid);
-		const auto& ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
+		const auto tetrahedr = m_Mesh.ElementIdToTetrahedron(elemid);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
 
-		const auto p = ref_tran.InverseMap(x);
-		return pEvaluateElement_Ref(elemid, p);
+		return pEvaluateElement_Ref(elemid, ref_tran.InverseMap(p));
+	}
+
+	auto uEvaluateElement(const ElementId_t elemid, const Point_t& p) const
+	{
+		const auto tetrahedr = m_Mesh.ElementIdToTetrahedron(elemid);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
+
+		return uEvaluateElement_Ref(elemid, ref_tran.InverseMap(p));
+	}
+
+	auto yEvaluateElement(const ElementId_t elemid, const Point_t& p) const
+	{
+		const auto tetrahedr = m_Mesh.ElementIdToTetrahedron(elemid);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
+
+		return yEvaluateElement_Ref(elemid, ref_tran.InverseMap(p));
 	}
 
 	auto pEvaluateElement_Ref(const ElementId_t elemid, const Point_t& p) const
 	{
-		auto pointval = T{0};
+		auto pointval = T{ 0 };
 
 		const auto num_elems = this->m_Mesh.m_ElementList.size();
 		const auto num_basis = basis_f.size();
 		const auto block_size = num_basis * num_elems;
 
 		const auto start_offset = elemid * num_basis;
-		for(auto bi = 0; bi < num_basis; ++bi) {
-			pointval += m_x[block_size + start_offset + bi] * basis_f(static_cast<typename BasisFuncs::index_t>(bi), p[0], p[1], p[2]);
+		for (auto bi = 0; bi < num_basis; ++bi) {
+			pointval += m_x[block_size + start_offset + bi] * basis_f(static_cast<typename BasisFuncs::index_t>(bi), p);
 			assert(std::isfinite(pointval));
 		}
 		return pointval;
 	}
 
-	auto uEvaluateElement(const ElementId_t elemid, const Point_t& x) const
-	{
-		auto pointval = pEvaluateElement(elemid, p);
-		return T{ -1 } * (m_beta / m_lambda) * pointval;
-	}
-
 	auto uEvaluateElement_Ref(const ElementId_t elemid, const Point_t& p) const
 	{
 		auto pointval = pEvaluateElement_Ref(elemid, p);
-		return T{ -1 } * (m_beta / m_lambda) * pointval;
-	}
-
-	auto yEvaluateElement(const ElementId_t elemid, const Point_t& x) const
-	{
-		const auto& tetrahedr = m_Mesh.ElementIdToTetrahedron(elemid);
-		const auto& ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
-
-		const auto p = ref_tran.InverseMap(x);
-		return yEvaluateElement_Ref(elemid, p);
+		return T{ -1 } *(m_beta / m_lambda) * pointval;
 	}
 
 	auto yEvaluateElement_Ref(const ElementId_t elemid, const Point_t& p) const
@@ -711,7 +698,7 @@ public:
 
 		const auto start_offset = elemid * num_basis;
 		for (auto bi = 0; bi < num_basis; ++bi) {
-			pointval += m_x[start_offset + bi] * basis_f(static_cast<typename BasisFuncs::index_t>(bi), p[0], p[1], p[2]);
+			pointval += m_x[start_offset + bi] * basis_f(static_cast<typename BasisFuncs::index_t>(bi), p);
 			assert(std::isfinite(pointval));
 		}
 		return pointval;
@@ -724,30 +711,17 @@ public:
 		auto dataarr = vtkSmartPointer<vtkDoubleArray>::New();
 		for (auto i = ElementId_t{ 0 }; i < m_Mesh.m_ElementList.size(); ++i) {
 			const auto& curelem = m_Mesh.m_ElementList[i];
-#ifndef NDEBUG
-			const auto& tetrahedr = m_Mesh.ElementIdToTetrahedron(i);
-			const auto& ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
-#endif
+
+			const auto tetrahedr = m_Mesh.ElementIdToTetrahedron(i);
+			const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
+
 			auto tetra = vtkSmartPointer<vtkTetra>::New();
 			for (auto j = NodeId_t{ 0 }; j < curelem.corners.size(); ++j) {
 				const auto p = m_Mesh.m_NodeList[curelem.corners[j]];
 				const auto p_VtkId = points->InsertNextPoint(p[0], p[1], p[2]);
 				tetra->GetPointIds()->SetId(j, p_VtkId);
 
-				auto p_Ref = Point_t{ T{ 0 }, T{ 0 }, T{ 0 } };
-				if (j == 1)
-					p_Ref = Point_t{ T{ 1 }, T{ 0 }, T{ 0 } };
-				else if (j == 2)
-					p_Ref = Point_t{ T{ 0 }, T{ 1 }, T{ 0 } };
-				else if (j == 3)
-					p_Ref = Point_t{ T{ 0 }, T{ 0 }, T{ 1 } };
-#ifndef NDEBUG
-				auto diff_z = T{ 0 };
-				auto p_Tran = ref_tran(p_Ref);
-				for (auto k = 0; k < p.size(); ++k)
-					diff_z += std::abs(p_Tran[k] - p[k]);
-				assert(diff_z < 10 * std::numeric_limits<T>::epsilon());
-#endif
+				auto p_Ref = ref_tran.InverseMap(p);
 				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : uEvaluateElement_Ref(i, p_Ref)));
 			}
 
@@ -765,5 +739,129 @@ public:
 	}
 };
 #endif
+
+template<class T, class TriangQuadFm, class TetraQuadFm>
+struct HeatAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
+	using ElementId_t = typename STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>::ElementId_t;
+	using SurfaceId_t = typename STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>::SurfaceId_t;
+	using SurfaceType_t = typename TetrahedralMesh<T>::SurfaceType_t;
+	using Point_t = typename TetrahedralMesh<T>::Point_t;
+
+	HeatAssembler(const TetrahedralMesh<T>& mesh, const T par_sigma, const T par_alpha, const T par_beta, const T par_lambda) :
+		STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>(mesh, par_sigma, par_alpha, par_beta, par_lambda)
+	{
+	}
+
+	template<class BasisFuncs, class F0, class FT>
+	auto AssembleMatrixAndLV(const F0& y0, const FT& gN) const {
+		// In a dG approach, we have a given amount of functions ( BasisFuncs' size ) per element
+		// Hence, the number of *active* elements in the mesh times the BasisFuncs is what we're looking for.
+
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		const auto block_size = num_basis * num_elems;
+		const auto matrix_dim = block_size;
+
+		using csr_size_t = typename Utility::CSRMatrixAssembler<T>::size_type;
+		auto matassembler = Utility::CSRMatrixAssembler<T>{ static_cast<csr_size_t>(matrix_dim), static_cast<csr_size_t>(matrix_dim) };
+		auto loadvec = std::vector<T>(matrix_dim);
+
+		// We first sum Ah + Bh on the inner-element interfaces up
+		for (auto i = ElementId_t{ 0 }; i < num_elems; ++i) {
+			const auto start_offset = i * num_basis;
+			for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+				for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+					const auto offset_vj = start_offset + bj;
+					const auto offset_ui = start_offset + bi;
+
+					auto form_val = T{ 0 };
+					//const auto form_val_Ah = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					//assert(std::isfinite(form_val_Ah));
+					//form_val += form_val_Ah;
+
+					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					assert(std::isfinite(form_val_Bh));
+					form_val += form_val_Bh;
+
+					matassembler(offset_vj, offset_ui) = form_val;
+				}
+			}
+		}
+
+		// Aside from these per element integrals, we have some interface ones:
+		// Ah, Bh both have inner interface terms, Gh only applies on \partial \Omega x (0, T) and Hh applies on \partial \Omega x T.
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+				case SurfaceType_t::Inner:
+					{
+						/*const auto start_offset_u = surf_data.adjacent_elements[0] * num_basis;
+						const auto start_offset_v = surf_data.adjacent_elements[1] * num_basis;
+						for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+							for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+								const auto offset_ui = start_offset_u + bi;
+								const auto offset_vj = start_offset_v + bj;
+
+								const auto form_val_Ah = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+								assert(std::isfinite(form_val_Ah));
+
+								matassembler(offset_ui, offset_vj) += form_val_Ah;
+								matassembler(offset_vj, offset_ui) += form_val_Ah;
+							}
+						}*/
+
+						if (!surf_data.is_time_orthogonal) {
+							const auto start_offset_up = surf_data.get_upstream_element() * num_basis;
+							const auto start_offset_down = surf_data.get_downstream_element() * num_basis;
+
+							for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+								for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+									const auto form_val_Bh = this->EvaluateBh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+									assert(std::isfinite(form_val_Bh));
+
+									matassembler(start_offset_down + bi, start_offset_up + bj) += form_val_Bh;
+								}
+							}
+						}
+					}
+					break;
+
+				/*case SurfaceType_t::MidTime:
+					{
+						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+						for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+							const auto offset_ui = start_offset + bi;
+
+							const auto form_val_LV_low = this->EvaluateLV_Surface(gN, surf_id, basis_f, static_cast<basis_index_t>(bi));
+							assert(std::isfinite(form_val_LV_low));
+							loadvec[offset_ui] += form_val_LV_low;
+						}
+					}
+					break;*/
+
+				case SurfaceType_t::StartTime:
+					{
+						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+						for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+							const auto offset_ui = start_offset + bi;
+
+							const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, static_cast<basis_index_t>(bi));
+							assert(std::isfinite(form_val_LV_up));
+							loadvec[offset_ui] += form_val_LV_up;
+						}
+					}
+					break;
+
+				case SurfaceType_t::Undefined:
+					assert(false);
+			}
+		}
+		return std::make_pair(matassembler.AssembleMatrix(), loadvec);
+	}
+};
 
 #endif

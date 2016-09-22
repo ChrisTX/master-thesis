@@ -119,9 +119,11 @@ namespace QuadratureFormulas {
 
 			auto operator()(const point_t& x0) const {
 				auto xt = point_t{};
-				for(auto i = size_type_t{0}; i < m_TransformMatrix.size(); ++i)
-					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
+				for (auto i = size_type_t{ 0 }; i < m_TransformMatrix.size(); ++i) {
+					assert(x0[i] < T{ 1 } + std::numeric_limits<T>::epsilon());
+					for (auto j = size_type_t{ 0 }; j < size_type_t{ 3 }; ++j)
 						xt[j] += m_TransformMatrix[i][j] * x0[i];
+				}
 				
 				for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 					xt[j] += m_a[j];
@@ -137,6 +139,11 @@ namespace QuadratureFormulas {
 					for(auto j = size_type_t{0}; j < size_type_t{3}; ++j)
 						retval[j] += m_InverseTransformMatrix[i][j] * trans_val[i];
 				}
+#ifndef NDEBUG
+				for (auto i = size_type_t{ 0 }; i < retval.size(); ++i) {
+					assert(retval[i] < T{ 1 } + std::numeric_limits<T>::epsilon());
+				}
+#endif
 				return std::move(retval);
 			}
 
@@ -148,6 +155,19 @@ namespace QuadratureFormulas {
 						retval[j] += m_InverseTransformMatrix[j][i] * grad_f[i];
 				}
 				return std::move(retval);
+			}
+
+			template<class BasisFuncs, class BasisIndex>
+			auto EvaluateTransformedBasis(const BasisFuncs bf, const BasisIndex biu, const point_t& p) const {
+				const auto ref_p = InverseMap(p);
+				return bf(biu, ref_p);
+			}
+
+			template<class BasisFuncs, class BasisIndex>
+			auto EvaluateTransformedBasisDerivative(const BasisFuncs bf, const BasisIndex biu, const point_t& p) const {
+				const auto ref_p = InverseMap(p);
+				const auto df = bf.EvaluateDerivative(biu, ref_p);
+				return TransformDerivative_Scalar(df);
 			}
 		};
 	}
