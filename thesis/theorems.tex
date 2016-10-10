@@ -1,0 +1,34 @@
+% -*- root: lecture-notes.tex -*-
+
+\newcounter{dummythm}
+\numberwithin{dummythm}{chapter}
+\mdfdefinestyle{theoremframing}{skipabove=\topskip,skipbelow=\topskip,nobreak=true,innerleftmargin=7pt,innerrightmargin=7pt}
+
+\theoremseparator{.}
+\theoremstyle{plain}
+\newmdtheoremenv[style=theoremframing,backgroundcolor=LimeGreen!100!white!20,linecolor=LimeGreen]{theorem}[dummythm]{Theorem}
+\crefname{theorem}{Theorem}{Theorems}
+\newmdtheoremenv[style=theoremframing,backgroundcolor=LimeGreen!100!white!10,linecolor=LimeGreen]{lemma}[dummythm]{Lemma}
+\crefname{lemma}{Lemma}{Lemmata}
+\newmdtheoremenv[style=theoremframing,backgroundcolor=LimeGreen!100!white!10,linecolor=LimeGreen]{corollary}[dummythm]{Corollary}
+\crefname{corollary}{Corollary}{Corollaries}
+\newmdtheoremenv[style=theoremframing,backgroundcolor=LimeGreen!100!white!10,linecolor=LimeGreen]{proposition}[dummythm]{Proposition}
+\crefname{proposition}{Proposition}{Propositions}
+\theorembodyfont{\normalfont}
+\newmdtheoremenv[style=theoremframing,backgroundcolor=cyan!100!white!10,linecolor=cyan!100!white!90]{definition}[dummythm]{Definition}
+\crefname{definition}{Definition}{Definitions}
+
+\theoremstyle{nonumberplain}
+\newtheorem{example}{Example}
+\crefname{example}{Example}{Examples}
+\theoremheaderfont{\itshape}
+\newtheorem{remark}{Remark}
+\crefname{remark}{Remark}{Remarks}
+
+\theoremstyle{nonumberplain}
+\theoremheaderfont{\normalfont \scshape}
+\theorembodyfont{\upshape}
+\theoremseparator{.}
+\theoremsymbol{\rule{1ex}{1ex}}
+\newtheorem{proof}{Proof}
+\crefname{proof}{Proof}{Proofs}

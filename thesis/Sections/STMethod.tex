@@ -1,0 +1,268 @@
+\documentclass[../thesis.tex]{subfiles}
+
+\begin{document}
+\section{The dG method for the instationary heat equation}
+As a next step, we will introduce a dG method for the heat equation based on the work \cite{Neumueller}. Some expansion of his theory is required given that his work does not consider mixed boundary conditions, but rather assumes separate boundary conditions that would be either pure Neumann or pure Dirichlet boundary conditions.
+
+We will keep the method as general as possible so that both, boundary and inner heat source formulations can be discretized. As seen during the derivation of the weak formulation of the state system, we require a certain smoothness of the domain, so in the following we assume that $\Omega \subset \R^d$, $d = 1, 2, 3$ is a bounded Lipschitz domain.
+For its boundary we assume that $\partial \Omega = \bar{\Gamma}_D \cup \bar{\Gamma}_R$, $\Gamma_D \cap \Gamma_R = \emptyset$ holds, where $\Gamma_D$ and $\Gamma_R$ denote the part of the boundary with Dirichlet and Robin boundary conditions in effect, respectively.
+
+The problem we consider is then
+\begin{IEEEeqnarray*}{rCl"lCl}
+\frac{\partial f}{\partial t} (x, t) - \lapl f(x, t) &=& g_I(x, t) & \text{for } (x, t) \in \Omega &\coloneqq& \Omega \times (0, T), \\
+f(x, t) &=& 0 & \text{for } (x, t) \in \Sigma_D &\coloneqq& \Gamma_D \times (0, T) \\
+n_x(x,t) \cdot \nabla_x f(x, t) + \alpha f(x, t) &=& g_R(x, t) & \text{for } (x, t) \in \Sigma_R &\coloneqq& \Gamma_R \times (0, T) \\
+f(x, 0) &=& f_0(x) & \text{for } (x, t) \in \Omega.
+\end{IEEEeqnarray*}
+Note that by choosing $g_I$ and $g_R$ appropriately, we can cover both, inner and boundary heat sources. 
+Following the proceedings of \cite[Chapter 2]{Neumueller}, we can derive a space-time dG method for this problem.
+
+In order to arrive at a discretization, we make an approach of decomposing the space-time cylinder $Q$ into $N \in \mathbb{N}$ finite elements, whose collection we denote by $\meshT_N$. More precisely we work with simplexes and assume the space-time domain $Q$ can be decomposed into simplexes without error, i.e.
+\[
+	\bar{Q} = \bar{\meshT}_N.
+\]
+For two neighboring elements $\tau_k, \tau_\ell \in \meshT_N$, we define the interior facet $\Gamma_{k \ell}$ as
+\[
+	\Gamma_{k \ell} \coloneqq \bar{\tau}_k \cap \bar{\tau}_\ell
+\]
+if the set $\Gamma_{k \ell}$ is a $d$-dimensional manifold, that is of dimensional one smaller than the dimension of the space-time cylinder $Q$. The set of all interior facets of the decomposition $\meshT_N$ will be denoted by $\intfI_N$.
+
+The general idea for the dG formulation we're going to use is to use a symmetric interior penalty approach for the term $\lapl f$ and an upstream bilinear form for $\partial_t f$.
+For both approaches, local continuity on the elements of the mesh $\meshT_N$ is going to be assumed, while permitting discontinuities on the interfaces. In order to make up for this, jumps across the interfaces are going to be punished using penalty terms.
+Given that we're working with two very different terms, one operating only as space derivative, and the other only operating as time derivative, we have to punish jumps in time and space directions differently.
+Hence, we have to introduce some more notations before being able to proceed with the discretization itself.
+
+For an element $\tau_k$ we denote the outer unit normal vector on an interface $\Gamma_{k \ell} \in \intfI_N$ as
+\[
+	\markvec{n_k} = \left( \markvec{n_{k, x}}, n_{k, t} \right)^\tp.
+\]
+Consequently, $\markvec{n_\ell} = - \markvec{n_k}$ on that interface.
+If we have more than one space dimension $\markvec{n_{k, x}}$ will be a vector, whereas $n_{k, t}$ will always be a scalar value.
+
+In order to introduce dG bilinear forms, we require notations for jumps and averages across interfaces.
+Therefore, we introduce the following notations for a scalar function $v$ on an interface $\Gamma_{k \ell}$:
+\begin{itemize}
+\item The jump in space direction will be denoted by
+\[
+	\ljump v \rjump_{\Gamma_{k \ell}, x} (x, t) \coloneqq \left. v \right|_{\tau_k} (x, t) \cdot \markvec{n_{k, x}} + \left. v \right|_{\tau_\ell} (x, t) \cdot \markvec{n_{\ell, x}} \quad \text{for } (x, t) \in \Gamma_{k, \ell}.
+\]
+\item For the jump in time direction we write
+\[
+	\ljump v \rjump_{\Gamma_{k \ell}, t} (x, t) \coloneqq \left. v \right|_{\tau_k} (x, t) \cdot n_{k, t} + \left. v \right|_{\tau_\ell} (x, t) \cdot  n_{\ell, t} \quad \text{for } (x, t) \in \Gamma_{k, \ell}.
+\]
+\item The average of $v$ on the interface is going to be denoted as
+\[
+	\lavg v \ravg_{\Gamma_{k \ell}} (x, t) \coloneqq \frac{1}{2} \left[ v|_{\tau_k} (x, t) + v|_{\tau_\ell}(x, t) \right] \quad \text{for } (x, t) \in \Gamma_{k, \ell}.
+\]
+\item The so called upwind in time direction is defined by
+\[
+	\lupw v \rupw_{\Gamma_{k \ell}} (x, t) \coloneqq \begin{cases}
+	v|_{\tau_k}(x, t) & \text{for } n_{k, t} > 0, \\
+	0 & \text{for } n_{k, t} = 0,\\
+	v|_{\tau_\ell}(x, t) & \text{for } n_{k, t} < 0,
+	\end{cases} \quad \text{for } (x, t) \in \Gamma_{k \ell}.
+\]
+\end{itemize}
+Note that with these definitions, the jump in space direction is a vector itself, whereas the jump in time direction is a scalar value.
+
+With these notations introduced, we can proceed. As already remarked, we're looking for an overall discontinuous approach while maintaining elementwise continuity. As of such, we simply demand for our ansatz space that the functions in it restricted to every element are polynomial of order $p$, where $p$ can be freely chosen.
+In precise terms, we obtain an ansatz space of
+\[
+	S_h^p(\mathcal{T}_N) \coloneqq \left\{ v_h \in L_2(Q) \gmid v_h |_{\tau_\ell} \in \mathbb{P}_p(\tau_\ell) \text{ for all } \tau_\ell \in \mathcal{T}_N \text{ and } v_h = 0 \text{ on } \Sigma_D \right\}.
+\]
+As it is common practice, we demand zero values on the Dirichlet boundary.
+In order to obtain a dG formulation in this space, we multiply the differential equation with a test function $v$ of this space and integrate over the space-time cylinder:
+\[
+	\iint_Q \partial_t f(x, t) v(x, t) \dd x \dd t - \iint_Q \lapl f(x, t) v(x, t) \dd x \dd t = \iint_Q g_I(x, t) v(x, t) \dd x \dd t.
+\]
+We begin by working with the second term containing the Laplace operator.
+As before, we apply Green's first identity to deal with it and make use of the given boundary conditions
+\begin{IEEEeqnarray*}{rCl}
+	- \iint_Q \lapl f v \dd x \dd t &=& \iint_Q \nabla f \nabla v \dd x \dd t - \iint_{\Sigma} (\nabla f v) \cdot \nu \dd s(x) \dd t \\
+	&=& \iint_Q \nabla f \nabla v \dd x \dd t - \iint_{\Sigma_R} \left(-\alpha f + g_R \right) v \dd s(x) \dd t \\
+	&=& \iint_Q \nabla f \nabla v \dd x \dd t + \alpha \iint_{\Sigma_R} f v \dd s(x) \dd t - \iint_{\Sigma_R} g_R v \dd s(x) \dd t
+\end{IEEEeqnarray*}
+Here, we used that $v$ is zero on the Dirichlet boundary, so that the term vanishes.
+
+Exploiting the simplex decomposition, we know that the boundary $\Sigma_R$ can be decomposed into triangles, each belonging to exactly one element of $\meshT_N$. On each of those triangles, functions of our ansatz space are polynomial and therefore in particular continuous. The remainder of the $\Sigma_R$ has zero measure and therefore no effect on integration.
+Alas, it's not necessary to treat these boundary terms separately. The last term would be added to the right hand side of a dG equation system.
+
+In order to obtain an approach for the remaining term,
+\[
+	\iint_Q \nabla u \nabla v \dd x \dd t
+\]
+we use the so called ``symmetric interior penalty'' method, see \cite[Chapter 4.2]{DiPietroErn} for the derivation of the method and \cite[(4.12), p.\ 125]{DiPietroErn} for the final result\footnote{In comparison to \cite[(4.12), p.\ 125]{DiPietroErn} the bilinear form looks slightly different, as we use a different definition of jumps, compare \cite[Remark 1.20, p.\ 12]{DiPietroErn}.}:
+\begin{IEEEeqnarray*}{rCl}
+	a_h^{\mathrm{sip}}(f_h, v_h) &\coloneqq& \sum_{\ell = 1}^N \iint_{\tau_\ell} \nabla_x f_h(x, t) \cdot \nabla_x v_h(x, t) \dd x \dd t \\
+	&& {} - \sum_{\Gamma_{k\ell} \in \intfI_N} \iint_{\Gamma_{k \ell}} \lavg \nabla_x f_h \ravg_{\Gamma_{k \ell}} (x, t) \ljump v_h \rjump_{\Gamma_{k \ell}, x} (x, t) \dd s(x) \dd t \\
+	&& {} - \sum_{\Gamma_{k\ell} \in \intfI_N} \iint_{\Gamma_{k \ell}} \ljump f_h \rjump_{\Gamma_{k \ell}, x} (x, t) \lavg \nabla_x v_h \ravg_{\Gamma_{k \ell}} (x, t) \dd s(x) \dd t \\
+	&& {} + \sum_{\Gamma_{k \ell} \in \intfI_N} \frac{\sigma}{\bar{h}_{k\ell}} \iint_{\Gamma_{k \ell}} \ljump f_h \rjump_{\Gamma_{k \ell}, x} \cdot \ljump v_h \rjump_{\Gamma_{k \ell}, x} \dd s(x) \dd t.
+\end{IEEEeqnarray*}
+Here, $\bar{h}_{k \ell}$ is a local length scale associated with the interior facet $\Gamma_{k \ell}$. Several choices are possible, see \cite[Remark 4.6, p.\ 125]{DiPietroErn}. We will use the average of the longest edges of the elements $\tau_k$ and $\tau_\ell$, denoted by $h_k$ and $h_\ell$, respectively:
+\[
+	\bar{h}_{k \ell} = \lavg h \ravg_{\Gamma_{k \ell}} \coloneqq \frac{1}{2} \left( h_k + h_\ell \right).
+\]
+Keeping the other term in mind, we define:
+\[
+	a_h(f_h, v_h) = a_h^{\mathrm{sip}}(f_h, v_h) + \sum_{\ell=1}^N \iint_{\partial \tau_\ell \cap \Sigma_R} f_h v_h \dd s(x) \dd t.
+\]
+
+We still need to discretize the remaining term,
+\[
+	\iint_Q \frac{\partial f}{\partial t} v \dd x \dd t.
+\]
+As we have differentiability inside single elements of $\meshT_N$, we proceed element wise and use integration by parts:
+\begin{IEEEeqnarray*}{rCl}
+	\iint_Q \frac{\partial f}{\partial t}(x, t) v(x, t) \dd x \dd t &=& \sum_{\ell = 1}^N \iint_{\tau_\ell} \frac{\partial f}{\partial t}(x, t) v(x, t) \dd x \dd t \\
+	&=& - \sum_{\ell = 1}^N \bigg( \iint_{\tau_\ell} \frac{\partial v}{\partial t}(x, t) f(x, t) \dd x \dd t \\
+	&& {} \qquad\quad {} + \iint_{\partial \tau_\ell} v(x, t) f(x, t) \cdot n_{k, t} \dd s(x) \dd t \bigg) \\
+	&=& - \sum_{\ell = 1}^N \iint_{\tau_\ell} \frac{\partial v}{\partial t}(x, t) f(x, t) \dd x \dd t \\
+	&& {} + \sum_{\Gamma_{k \ell} \in \intfI_N} \iint_{\Gamma_{k \ell}} \ljump f (x, t) v(x, t) \rjump_{\Gamma_{k \ell}, t} \dd s(x) \dd t \\
+	&& {} + \int_{\Omega} f(x, T) v(x, T) \dd s(x) - \int_{\Omega} f(x, 0) v(x, 0) \dd s(x)
+\end{IEEEeqnarray*}
+Given the boundary condition $f(\cdot, 0) = f_0(\cdot)$, we can add the term
+\[
+	\int_{\Omega} f(x, t) v(x, t) \dd s(x) = \int_{\Omega} f_0(x) v(x, t) \dd s(x)
+\]
+to the right-hand side. For continuous $f$ and $v$, the term
+\[
+	\iint_{\Gamma_{k \ell}} \ljump f(x, t) v(x, t) \rjump_{\Gamma_{k \ell}, t} \dd s(x) \dd t
+\]
+will be zero. For our discontinuous approach however it is not necessary going to vanish.
+Considering we aim for using an upstream approach, i.e.\ using values in direction of the derivative.
+Thus, we use that for a \textit{continuous} function $f$ we would have the following equality on any interface $\Gamma_{k \ell} \in \intfI_N$:
+\begin{IEEEeqnarray*}{rCl}
+	\iint_{\Gamma_{k \ell}} \ljump f (x, t) v(x, t) \rjump_{\Gamma_{k \ell}, t} \dd s(x) \dd t &=& \iint_{\Gamma_{k \ell}} f (x, t) \ljump v \rjump_{\Gamma_{k \ell}, t} (x, t) \dd s(x) \dd t \\
+	&=& \iint_{\Gamma_{k \ell}} \lupw f \rupw_{\Gamma_{kl}} (x, t) \ljump v \rjump_{\Gamma_{k \ell}, t} (x, t) \dd s(x) \dd t.
+\end{IEEEeqnarray*}
+For elements of the \textit{discrete} function spaces this equality will not hold, but it will penalize jumps in a way we desire.
+Overall, obtain a second bilinear form:
+\begin{IEEEeqnarray*}{rCl}
+	b(f_h, v_h) &\coloneqq& - \sum_{\ell = 1}^N \iint_{\tau_\ell} f_h(x, t) \frac{\partial v_h}{\partial t}(x, t) \dd x \dd t + \int_{\Omega} f_h(x, T) v_h(x, T) \dd s(x) \dd t \\
+	&& {} + \sum_{\Gamma_{k\ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \lupw f_h \rupw_{\Gamma_{k \ell}} (x, t) \ljump v_h \rjump_{\Gamma_{k \ell}, t} (x, t) \dd s(x) \dd t.
+\end{IEEEeqnarray*}
+Before moving on, we remark that if we integrate by parts, we obtain:
+\begin{equation}
+\label{eq:b-up-down-equal}
+\begin{IEEEeqnarraybox}{rCl}
+b(f_h, v_h) &=& - \sum_{\ell = 1}^N \iint_{\tau_\ell} f_h(x, t) \frac{\partial v_h}{\partial t}(x, t) \dd x \dd t + \int_{\Omega} f_h(x, T) v_h(x, T) \dd s(x) \\
+&& {} + \sum_{\Gamma_{k\ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \lupw f_h \rupw_{\Gamma_{k \ell}} (x, t)\ljump v_h \rjump_{\Gamma_{k \ell}, t} (x, t) \dd s(x) \dd t . \\
+&=& \sum_{\ell = 1}^N \iint_{\tau_\ell} \frac{\partial f_h}{\partial t}(x, t) v_h(x, t) \dd x \dd t + \int_{\Omega} f_h(x, 0) v_h(x, 0) \dd s(x) \\
+&& {} - \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \ljump f_h \rjump_{\Gamma_{k \ell}, t}(x, t) \ldwnd v_h \rdwnd_{\Gamma_{k \ell}}(x, t) \dd s(x) \dd t
+\end{IEEEeqnarraybox}
+\end{equation}
+for all $f_h, v_h \in S_h^p(\mathcal{T}_N)$, where the downwind in time direction on an interior facet $\Gamma_{k \ell} \in \intfI_N$ is given by
+\[
+	\ldwnd v \rdwnd_{\Gamma_{k \ell}} (x, t) \coloneqq \begin{cases}
+	v|_{\tau_\ell}(x, t) & \text{for } n_{k, t} > 0, \\
+	0 & \text{for } n_{k, t} = 0,\\
+	v|_{\tau_k}(x, t) & \text{for } n_{k, t} < 0,
+	\end{cases} \quad \text{for } (x, t) \in \Gamma_{k \ell}.
+\]
+In order to see this equivalence, we apply integration by parts
+\begin{IEEEeqnarray*}{rCl}
+	- \sum_{\ell = 1}^{N} \iint_{\tau_\ell} f_h(x, t) \frac{\partial v}{\partial t}(x, t) \dd s(x) \dd t &=& \sum_{\ell = 1}^{N} \iint_{\tau_\ell} \frac{\partial f}{\partial t}(x, t) v_h(x, t) \dd s(x) \dd t \\
+	&& {} + \int_{\Omega} u_h(x, T) v_h(x, T) \dd s(x) \\
+	&& {} - \int_{\Omega} u_h(x, 0) v_h(x, 0) \dd s(x) \\
+	&& {} + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \ljump u_h(x, t) v_h(x, t) \cdot n_{k, t} \rjump_{\Gamma_{k \ell}, t} \dd s(x) \dd t 
+\end{IEEEeqnarray*}
+By definition $\lupw n_{k, t} \rupw_{\Gamma_{k \ell}}$ is the value of the time component of the outer normal on the upstream element and $\lupw n_{k, t} \rupw_{\Gamma_{k \ell}} = - \ldwnd n_{k, t} \rdwnd_{\Gamma_{k \ell}}$ holds. 
+\begin{IEEEeqnarray*}{l}
+	\sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \ljump u_h(x, t) v_h(x, t) \cdot n_{k, t} \rjump_{\Gamma_{k \ell}, t} \dd s(x) \dd t \\
+	\IEEEeqnarraymulticol{1}{r}{ \qquad\qquad {} = \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \left( \lupw f_h \rupw_{\Gamma_{k \ell}} \lupw v_h \rupw_{\Gamma_{k \ell}} - \ldwnd f_h \rdwnd_{\Gamma_{k \ell}} \ldwnd v_h \rdwnd_{\Gamma_{k \ell}} \right) \lupw n_{k, t} \rupw_{\Gamma_{k \ell}} \dd s(x) \dd t}
+\end{IEEEeqnarray*}
+By definition, one sees that for any function $v$ we have:
+\begin{IEEEeqnarray*}{rCl}
+	\ljump v \rjump_{\Gamma_{k \ell}, t}(x, t)  &=& \left. v \right|_{\tau_k} (x, t) \cdot  n_{k, t} + \left. v \right|_{\tau_\ell} (x, t) \cdot  n_{\ell, t} \\
+	&=& \left( \lupw v \rupw_{\Gamma_{k\ell}}(x, t) - \ldwnd v \rdwnd_{\Gamma_{k\ell}} (x, t) \right) \lupw n_{k, t} \rupw_{\Gamma_{k \ell}}
+\end{IEEEeqnarray*}
+As of such:
+\begin{IEEEeqnarray*}{l}
+	\lupw f_h \rupw_{\Gamma_{k\ell}} \ljump v_h \rjump_{\Gamma_{k \ell}, t} - \left( \lupw f_h \rupw_{\Gamma_{k \ell}} \lupw v_h \rupw_{\Gamma_{k \ell}} - \ldwnd f_h \rdwnd_{\Gamma_{k \ell}} \ldwnd v_h \rdwnd_{\Gamma_{k \ell}} \right) \lupw n_{k, t} \rupw_{\Gamma_{k \ell}} \\
+	\qquad {} = - \left( \lupw f_h \rupw_{\Gamma_{k\ell}} - \ldwnd f_h \rdwnd_{\Gamma_{k\ell}} \right) \lupw n_{k, t} \rupw_{\Gamma_{k \ell}} \ldwnd v_h \rdwnd_{\Gamma_{k \ell}} \\
+	\qquad {} = - \ljump f_h \rjump_{\Gamma_{k\ell}, t} \ldwnd v_h \rdwnd_{\Gamma_{k \ell}}
+\end{IEEEeqnarray*}
+By adding up using this equation, we have shown that the above two forms of the bilinear form $b(\cdot, \cdot)$ are equivalent.
+
+We can additionally transport the same approach to obtain a discretization of $- \partial_t f$, which is useful in the sense that it will later on enable us to work without the transformation $\tilde{p}(x, t) = p(x, T - t)$ when treating the adjoined state equation.
+For this purpose, let us start with the term
+\[
+	\iint_Q - \frac{\partial f}{\partial t} v \dd x \dd t.
+\]
+Applying the same testing procedure as before, we obtain:
+\begin{IEEEeqnarray*}{rCl}
+	\int_Q - \frac{\partial f}{\partial t}(x, t) v(x, t) \dd x \dd t &=& \sum_{\ell = 1}^N \iint_{\tau_\ell} f(x, t) \frac{\partial v}{\partial t}(x, t) \dd x \dd t - \int_{\Omega} f(x, T) v(x, T) \dd s(x) \\
+	&& {} - \iint_{\Gamma_{k \ell}} \ljump f(x, t) v(x, t) \rjump_{\Gamma_{k \ell}, t} \dd s(x) \dd t  + \int_{\Omega} u(x, 0) v(x, 0) \dd s(x) \dd t .
+\end{IEEEeqnarray*}
+In this case we need to impose boundary conditions at the end time $T$ instead of the start time $0$, i.e.
+\[
+	\int_{\Omega} f(x, T) v(x, T) \dd s(x) = \int_{\Omega} f_T(x) v(x, T) \dd s(x).
+\]
+This term can be moved to the right hand side, as before.
+
+Given the derivative is now going against the time, it is reasonable to demand a propagation of information via downstream, instead of via upstream. The choice of the upstream was arbitrary anyways, as for continuous $u$, the up- and downstream values are going to be the same.
+Thus, we make an alternative approach $b'$ as follows:
+\begin{equation}
+\label{eq:b-prime}
+\begin{IEEEeqnarraybox}{rCl}
+	b'(f_h, v_h) &\coloneqq& \sum_{\ell = 1}^N \iint_{\tau_\ell} f_h(x, t) \frac{\partial v_h}{\partial t}(x, t) \dd x \dd t + \int_{\Omega} f_h(x, 0) v_h(x, 0) \dd s(x) \\
+	&& {} - \sum_{\Gamma_{k\ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \ldwnd f_h \rdwnd_{\Gamma_{k \ell}} (x, t)\ljump v_h \rjump_{\Gamma_{k \ell}, t} (x, t) \dd s(x) \dd t.
+\end{IEEEeqnarraybox}
+\end{equation}
+The reason why we're giving this formulation is that we can see it to be equivalent to the original $b(\cdot, \cdot)$ in the following sense: For a $f_h$, let $\tilde{f}_h(x, t) = f_h(x, T - t)$ and let $Q'$ and $\meshT_N'$ be the result of transforming $Q$ and $\meshT_N$ via the same transformation $(x, t) \mapsto (x, T - t)$. Then:
+ \begin{IEEEeqnarray*}{rCl}
+	b'(f_h, v_h) &\coloneqq& \sum_{\ell = 1}^N \iint_{\tau_\ell} f_h(x, t) \frac{\partial v_h}{\partial t}(x, t) \dd x \dd t + \int_{\Omega} f_h(x, 0) v_h(x, 0) \dd s(x) \\
+	&& {} - \sum_{\Gamma_{k\ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \ldwnd f_h \rdwnd_{\Gamma_{k \ell}} (x, t)\ljump v_h \rjump_{\Gamma_{k \ell}, t} (x, t) \dd s(x) \dd t \\
+	&=& - \sum_{\ell = 1}^N \iint_{\tau_\ell} \tilde{f}_h(x, T - t) \frac{\partial \tilde{v}_h}{\partial t}(x, T - t) \dd x \dd t + \int_{\Omega} \tilde{f}_h(x, T) \tilde{v}_h(x, T) \dd s(x) \\
+	&& {} + \sum_{\Gamma_{k\ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \ldwnd \tilde{f}_h \rdwnd_{\Gamma_{k \ell}} (x, T - t) \ljump \tilde{v}_h \rjump_{\Gamma_{k \ell}, t} (x, T - t) \dd s(x) \dd t \\
+	&=& \sum_{\ell = 1}^N \iint_{\tau_\ell'} \tilde{f}_h(x, t) \frac{\partial \tilde{v}_h}{\partial t}(x, t) \dd x \dd t + \int_{\Omega} \tilde{f}_h(x, T) \tilde{v}_h(x, T) \dd s(x) \\
+	&& {} - \sum_{\Gamma_{k\ell}' \in \mathcal{I}_N'} \iint_{\Gamma_{k \ell}'} \lupw \tilde{f}_h \rupw_{\Gamma_{k \ell}'} (x, t) \ljump \tilde{v}_h \rjump_{\Gamma_{k \ell}', t} (x, t) \dd s(x) \dd t.
+\end{IEEEeqnarray*}
+Note that for a given $\Gamma_{k\ell} \in \mathcal{I}_N$, the associated $\Gamma_{k\ell}'$ after the transformation possesses the outer normal vector normal vector with respect to its element $\tau_k'$
+\[
+	n_k' = (n_{k,x}, -n_{k,t})^\tp
+\]
+Hence, by definition this translates into $\ldwnd \tilde{f}_h \rdwnd_{\Gamma_{k \ell}}(x, T - t) = \lupw \tilde{f}_h \rupw_{\Gamma_{k \ell}'}(x, t)$.
+We conclude therefore, that using $b'$ on the problem for $f_h$ is the same as using $b$ on the transformed geometry for $\tilde{f}_h$. Given that the mesh was an arbitrary simplicial decomposition, this does not restrict us in any way whatsoever.
+However, if we can prove that using $b$ yields a working method - which we will do in the next chapter - then so does $b'$ for the formulation with $- \partial_t f$.
+
+A closer examination reveals even one more thing:
+\[
+	b'(f_h, v_h) = b(v_h, f_h).
+\]
+In fact, we have already proven this statement. The downstream formulation of $b$, \cref{eq:b-up-down-equal}, compared with the definition of $b'$, \cref{eq:b-prime} is the same with the roles of $v_h$ and $f_h$ interchanged.
+
+With this work done, we define the bilinear form $A(\cdot, \cdot)$ as
+\[
+	A(f_h, v_h) \coloneqq b(f_h, v_h) + a(f_h, v_h).
+\]
+Then we have a right hand side of
+\[
+	\tilde{g}(v_h) \coloneqq \iint_Q g_I v_h \dd x \dd t + \int_\Omega u_0(x) v_h(x, 0) \dd x + \int_{\Sigma_R} g_R v_h \dd s(x) \dd t 
+\]
+
+Using a basis $\varphi_j$, $j = 1, \ldots, M$ of $S_h^p$, i.e.
+\[
+	S_h^p(\mathcal{T}_N) = \spn \{ \varphi_j \}_{j=1}^m, \quad f_h(x, t) = \sum_{j=1}^M \boldsymbol{g}[j] \varphi_j(x, t) \quad \text{for } f_h \in S_h^p(\mathcal{T}_N),
+\]
+we obtain a formulation as a linear system:
+\[
+	A_h \boldsymbol{u} = \boldsymbol{g}
+\]
+with
+\[
+	A_h[i, j] \coloneqq A(\varphi_j, \varphi_i) \quad \text{and} \quad \boldsymbol{g}[i] \coloneqq \tilde{g}(\varphi_i). 
+\]
+
+Let us define some energy norms with respect to the bilinear form $a(\cdot, \cdot)$.
+For a function $u \in H^2(\mathcal{T}_N)$ with $s > \frac{3}{2}$ we define
+\begin{IEEEeqnarray*}{rCl}
+\| f \|_A^2 &\coloneqq& \sum_{\ell = 1}^N \| \nabla_x f \|_{[L_2(\tau_\ell)]^d}^2 + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \frac{\sigma}{\bar{h}_{k \ell}} \left\| \ljump u \rjump_{\Gamma_{k \ell}, x} \right\|_{[L_2(\Gamma_{k \ell})]^d}^2, \\
+\| f \|_{A, *}^2 &\coloneqq& \| u \|_A^2 + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \bar{h}_{k \ell} \left\| \lavg \nabla_x u \ravg_{\Gamma_{k \ell}} \right\|_{[L_2(\Gamma_{k \ell})]^d}^2.
+\end{IEEEeqnarray*}
+In the same vein, we define for $b(\cdot, \cdot)$ two norms for functions $u \in H^s(\mathcal{T}_N)$, $s \geq 1$:
+\begin{IEEEeqnarray*}{rCl}
+\| f \|_B^2 &\coloneqq& \sum_{\ell = 1}^N h_\ell \| \partial_t u \|_{L^2(\tau_\ell)}^2 + \| u \|_{\Sigma_0}^2 + \alpha \| u \|_{\Sigma}^2 + \| u \|_{\Sigma_T}^2  + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \left\| \ljump u \rjump_{\Gamma_{k \ell}, t} \right\|_{L_2(\Gamma_{k \ell})}^2, \\
+\| f \|_{B, *}^2 &\coloneqq& \sum_{\ell = 1}^N h_\ell^{-1} \| u \|_{L^2(\tau_\ell)}^2 + \alpha \| u \|_{\Sigma}^2 + \| u \|_{\Sigma_T}^2  + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \left\| \lupw u \rupw_{\Gamma_{k \ell}} \right\|_{L_2(\Gamma_{k \ell})}^2.
+\end{IEEEeqnarray*}
+\end{document}

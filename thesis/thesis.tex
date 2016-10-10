@@ -1,0 +1,133 @@
+\documentclass{scrbook}
+\KOMAoptions{twoside=false,parskip=yes}
+
+% This document is only designed for
+% XeLaTeX, LuaLaTeX or pdfLaTeX
+% 
+\usepackage{iftex}
+
+\newif\ifHaveUnicodeTeX
+
+\ifXeTeX
+	\global\HaveUnicodeTeXtrue
+\else
+	\ifLuaTeX
+		\global\HaveUnicodeTeXtrue
+	\fi
+\fi	
+
+\ifHaveUnicodeTeX
+	\usepackage{mathtools}
+	\usepackage{unicode-math}
+	\usepackage{polyglossia}
+	\setdefaultlanguage[variant=us]{english}
+\else
+	\usepackage[USenglish]{babel}
+	\usepackage[utf8]{inputenc}
+	\usepackage[T1]{fontenc}
+	\usepackage{mathtools}
+	\usepackage{amssymb}
+	\usepackage{stmaryrd}
+	\SetSymbolFont{stmry}{bold}{U}{stmry}{m}{n}
+\fi
+
+\usepackage{subfiles}
+\usepackage{csquotes}
+\usepackage[backend=biber,style=alphabetic,maxbibnames=4]{biblatex}
+
+\usepackage{relsize}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{enumerate}
+\usepackage{acro}
+\usepackage[xindy]{imakeidx}
+
+\usepackage{subfig}
+
+\usepackage{tikz}
+\usepackage{chngcntr}
+\usepackage{caption}
+\usepackage{dsfont}
+\usepackage{esvect}
+\usepackage{tabularx}
+
+\usepackage{needspace} 	% Needed so we can glue theorems right after sections
+
+\usepackage{ifpdf}
+\ifpdf
+	\pdfminorversion=7
+	\usepackage[pdfpagelabels,hyperindex=false]{hyperref}
+\else
+	\usepackage[hyperindex=false]{hyperref}
+\fi
+
+\usepackage{microtype}
+
+% Proprietary Adobe font packages
+% WARNING:
+%	These are *NOT* included with normal, free LaTeX redistributions
+% 	In order to acquire these fonts, one has to install "FontPro" and provide the appropriate OpenType font files.
+% NOTE: This is not supported with XeLaTeX or LuaLaTeX because MnSymbol does not work in a reasonable way with unicode-math
+%		There is a font called Minion Math for this purpose, but it's also proprietary		
+\ifHaveUnicodeTeX
+\else
+	\ifx\adobefonts\undefined
+		\usepackage{lmodern}								% Without Adobe fonts, lmodern is preferable over the default
+	\else
+		\usepackage{CronosPro} 								% Replaces sans-serif fonts only
+		\usepackage[minionint,mathlf,swash]{MinionPro} 		% Replaces serif text fonts and math fonts. Also pulls in MnSymbol.
+	\fi
+\fi
+
+% Document structure
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+\counterwithout{equation}{chapter}
+
+\newcommand\myshade{85}
+\colorlet{mylinkcolor}{NavyBlue}
+\colorlet{mycitecolor}{YellowOrange}
+\colorlet{myurlcolor}{violet}
+
+\definecolor{shadecolor}{RGB}{229, 218, 38}
+
+\hypersetup{
+  linkcolor  = mylinkcolor!\myshade!black,
+  citecolor  = mycitecolor!\myshade!black,
+  urlcolor   = myurlcolor!\myshade!black,
+  colorlinks = true,
+}
+
+\usepackage{algorithm2e}
+\DontPrintSemicolon
+\SetKwRepeat{Do}{do}{while}
+
+% These have to be loaded after hyperref!
+\usepackage[amsmath,hyperref,thmmarks]{ntheorem}
+\usepackage[ntheorem,framemethod=tikz]{mdframed}
+
+\usepackage[capitalize,nameinlink]{cleveref}
+\usepackage[a4paper]{geometry}
+\usepackage{IEEEtrantools}
+
+% Theorems
+\input{theorems.tex}
+
+% Abbreviations
+\input{defines.tex}
+
+\bibliography{literature}
+
+\begin{document}
+\frontmatter
+
+%\printacronyms
+\tableofcontents
+
+\mainmatter
+\subfile{Sections/ControlProblem.tex}
+\subfile{Sections/STMethod.tex}
+
+\backmatter
+\printbibliography[heading=bibintoc]
+
+\end{document}
