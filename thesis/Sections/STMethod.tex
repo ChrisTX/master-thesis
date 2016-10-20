@@ -8,18 +8,21 @@ We will keep the method as general as possible so that both, boundary and inner 
 For its boundary we assume that $\partial \Omega = \bar{\Gamma}_D \cup \bar{\Gamma}_R$, $\Gamma_D \cap \Gamma_R = \emptyset$ holds, where $\Gamma_D$ and $\Gamma_R$ denote the part of the boundary with Dirichlet and Robin boundary conditions in effect, respectively.
 
 The problem we consider is then
-\begin{IEEEeqnarray*}{rCl"lCl}
+\begin{equation}
+\label{eq:dg-model-prob}
+\begin{IEEEeqnarraybox}[][c]{rCl"lCl}
 \frac{\partial f}{\partial t} (x, t) - \lapl f(x, t) &=& g_I(x, t) & \text{for } (x, t) \in \Omega &\coloneqq& \Omega \times (0, T), \\
 f(x, t) &=& 0 & \text{for } (x, t) \in \Sigma_D &\coloneqq& \Gamma_D \times (0, T) \\
 n_x(x,t) \cdot \nabla_x f(x, t) + \alpha f(x, t) &=& g_R(x, t) & \text{for } (x, t) \in \Sigma_R &\coloneqq& \Gamma_R \times (0, T) \\
 f(x, 0) &=& f_0(x) & \text{for } (x, t) \in \Omega.
-\end{IEEEeqnarray*}
+\end{IEEEeqnarraybox}
+\end{equation}
 Note that by choosing $g_I$ and $g_R$ appropriately, we can cover both, inner and boundary heat sources. 
 Following the proceedings of \cite[Chapter 2]{Neumueller}, we can derive a space-time dG method for this problem.
 
-In order to arrive at a discretization, we make an approach of decomposing the space-time cylinder $Q$ into $N \in \mathbb{N}$ finite elements, whose collection we denote by $\meshT_N$. More precisely we work with simplexes and assume the space-time domain $Q$ can be decomposed into simplexes without error, i.e.
+In order to arrive at a discretization, we make an approach of decomposing the space-time cylinder $Q$ into $N \in \mathbb{N}$ finite elements, whose collection we denote by $\meshT_N$. More precisely we work with simplexes of mesh size $h_\ell = \sqrt[d+1]{|\tau_\ell|}$ and assume the space-time domain $Q$ can be decomposed into simplexes without error, i.e.
 \[
-	\bar{Q} = \bar{\meshT}_N.
+	\bar{Q} = \bar{\meshT}_N \coloneqq \bigcup_{\ell=1}^N \bar{\tau}_\ell.
 \]
 For two neighboring elements $\tau_k, \tau_\ell \in \meshT_N$, we define the interior facet $\Gamma_{k \ell}$ as
 \[
@@ -68,7 +71,7 @@ Note that with these definitions, the jump in space direction is a vector itself
 With these notations introduced, we can proceed. As already remarked, we're looking for an overall discontinuous approach while maintaining elementwise continuity. As of such, we simply demand for our ansatz space that the functions in it restricted to every element are polynomial of order $p$, where $p$ can be freely chosen.
 In precise terms, we obtain an ansatz space of
 \[
-	S_h^p(\mathcal{T}_N) \coloneqq \left\{ v_h \in L_2(Q) \gmid v_h |_{\tau_\ell} \in \mathbb{P}_p(\tau_\ell) \text{ for all } \tau_\ell \in \mathcal{T}_N \text{ and } v_h = 0 \text{ on } \Sigma_D \right\}.
+	S_h^p(\mathcal{T}_N) \coloneqq \left\{ v_h \in L_2(Q) \gmid v_h |_{\tau_\ell} \in \polyP_p(\tau_\ell) \text{ for all } \tau_\ell \in \mathcal{T}_N \text{ and } v_h = 0 \text{ on } \Sigma_D \right\}.
 \]
 As it is common practice, we demand zero values on the Dirichlet boundary.
 In order to obtain a dG formulation in this space, we multiply the differential equation with a test function $v$ of this space and integrate over the space-time cylinder:
@@ -93,7 +96,7 @@ In order to obtain an approach for the remaining term,
 \]
 we use the so called ``symmetric interior penalty'' method, see \cite[Chapter 4.2]{DiPietroErn} for the derivation of the method and \cite[(4.12), p.\ 125]{DiPietroErn} for the final result\footnote{In comparison to \cite[(4.12), p.\ 125]{DiPietroErn} the bilinear form looks slightly different, as we use a different definition of jumps, compare \cite[Remark 1.20, p.\ 12]{DiPietroErn}.}:
 \begin{IEEEeqnarray*}{rCl}
-	a_h^{\mathrm{sip}}(f_h, v_h) &\coloneqq& \sum_{\ell = 1}^N \iint_{\tau_\ell} \nabla_x f_h(x, t) \cdot \nabla_x v_h(x, t) \dd x \dd t \\
+	a^\sip(f_h, v_h) &\coloneqq& \sum_{\ell = 1}^N \iint_{\tau_\ell} \nabla_x f_h(x, t) \cdot \nabla_x v_h(x, t) \dd x \dd t \\
 	&& {} - \sum_{\Gamma_{k\ell} \in \intfI_N} \iint_{\Gamma_{k \ell}} \lavg \nabla_x f_h \ravg_{\Gamma_{k \ell}} (x, t) \ljump v_h \rjump_{\Gamma_{k \ell}, x} (x, t) \dd s(x) \dd t \\
 	&& {} - \sum_{\Gamma_{k\ell} \in \intfI_N} \iint_{\Gamma_{k \ell}} \ljump f_h \rjump_{\Gamma_{k \ell}, x} (x, t) \lavg \nabla_x v_h \ravg_{\Gamma_{k \ell}} (x, t) \dd s(x) \dd t \\
 	&& {} + \sum_{\Gamma_{k \ell} \in \intfI_N} \frac{\sigma}{\bar{h}_{k\ell}} \iint_{\Gamma_{k \ell}} \ljump f_h \rjump_{\Gamma_{k \ell}, x} \cdot \ljump v_h \rjump_{\Gamma_{k \ell}, x} \dd s(x) \dd t.
@@ -102,11 +105,14 @@ Here, $\bar{h}_{k \ell}$ is a local length scale associated with the interior fa
 \[
 	\bar{h}_{k \ell} = \lavg h \ravg_{\Gamma_{k \ell}} \coloneqq \frac{1}{2} \left( h_k + h_\ell \right).
 \]
-Keeping the other term in mind, we define:
+For the term stemming from the Robin boundary we define:
 \[
-	a_h(f_h, v_h) = a_h^{\mathrm{sip}}(f_h, v_h) + \sum_{\ell=1}^N \iint_{\partial \tau_\ell \cap \Sigma_R} f_h v_h \dd s(x) \dd t.
+	a^R(f_h, v_h) \coloneqq \alpha \iint_{\Sigma_R} f_h v_h \dd s(x) \dd t.
 \]
-
+With these definitions, we set
+\[
+	a(f_h, v_h) = a^\sip(f_h, v_h) + a^R(f_h, v_h).
+\]
 We still need to discretize the remaining term,
 \[
 	\iint_Q \frac{\partial f}{\partial t} v \dd x \dd t.
@@ -144,7 +150,7 @@ Overall, obtain a second bilinear form:
 Before moving on, we remark that if we integrate by parts, we obtain:
 \begin{equation}
 \label{eq:b-up-down-equal}
-\begin{IEEEeqnarraybox}{rCl}
+\begin{IEEEeqnarraybox}[][c]{rCl}
 b(f_h, v_h) &=& - \sum_{\ell = 1}^N \iint_{\tau_\ell} f_h(x, t) \frac{\partial v_h}{\partial t}(x, t) \dd x \dd t + \int_{\Omega} f_h(x, T) v_h(x, T) \dd s(x) \\
 && {} + \sum_{\Gamma_{k\ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \lupw f_h \rupw_{\Gamma_{k \ell}} (x, t)\ljump v_h \rjump_{\Gamma_{k \ell}, t} (x, t) \dd s(x) \dd t . \\
 &=& \sum_{\ell = 1}^N \iint_{\tau_\ell} \frac{\partial f_h}{\partial t}(x, t) v_h(x, t) \dd x \dd t + \int_{\Omega} f_h(x, 0) v_h(x, 0) \dd s(x) \\
@@ -184,15 +190,60 @@ As of such:
 \end{IEEEeqnarray*}
 By adding up using this equation, we have shown that the above two forms of the bilinear form $b(\cdot, \cdot)$ are equivalent.
 
-We can additionally transport the same approach to obtain a discretization of $- \partial_t f$, which is useful in the sense that it will later on enable us to work without the transformation $\tilde{p}(x, t) = p(x, T - t)$ when treating the adjoined state equation.
+With this work done, we define the bilinear form $A(\cdot, \cdot)$ as
+\[
+	A(f_h, v_h) \coloneqq b(f_h, v_h) + a(f_h, v_h).
+\]
+Then we have a right hand side of
+\[
+	\tilde{g}(v_h) \coloneqq \iint_Q g_I v_h \dd x \dd t + \int_\Omega f_0(x) v_h(x, 0) \dd x + \int_{\Sigma_R} g_R v_h \dd s(x) \dd t 
+\]
+The problem formulation we obtain is then
+\begin{equation}
+\label{eq:dg-discrete-form}
+	A(f_h, v_h) = \tilde{g}(v_h).
+\end{equation}
+Taking the exact solution $f$ of \cref{eq:dg-model-prob}, one can see
+\begin{equation}
+\label{eq:dg-Galerkin-orthogonality}
+	A(f - f_h, v_h) = 0 \quad \text{for all } v_h \in S_h^p(\meshT_N).
+\end{equation}
+This can be verified to hold by considering that $f$ is continuous and therefore all interface penalty terms vanish. Using partial integration for the remaining term of $a^\sip(f, v_h)$ (and for $b(f, v_h)$, which is equivalent to taking the steps we performed in reverse order), one can see right away that $A(f, v_h)$ and $A(f_h, v_h)$ yield the same right hand side.
+
+Using a basis $\varphi_j$, $j = 1, \ldots, M$ of $S_h^p$, i.e.
+\[
+	S_h^p(\mathcal{T}_N) = \spn \{ \varphi_j \}_{j=1}^m, \quad f_h(x, t) = \sum_{j=1}^M \boldsymbol{f}[j] \varphi_j(x, t) \quad \text{for } f_h \in S_h^p(\mathcal{T}_N),
+\]
+we obtain a formulation as a linear system:
+\begin{equation}
+\label{eq:dg-discrete-prob}
+	A_h \boldsymbol{f} = \boldsymbol{g}
+\end{equation}
+with
+\[
+	A_h[i, j] \coloneqq A(\varphi_j, \varphi_i) \quad \text{and} \quad \boldsymbol{g}[i] \coloneqq \tilde{g}(\varphi_i). 
+\]
+\subsubsection{Adjoint problem treatment}
+We can additionally transport the same approach to obtain a discretization of $- \partial_t f$. For this we consider the problem
+\begin{equation}
+\label{eq:dg-adjoint-prob}
+\begin{IEEEeqnarraybox}[][c]{rCl"lCl}
+- \frac{\partial f}{\partial t} (x, t) - \lapl f(x, t) &=& g_I(x, t) & \text{for } (x, t) \in \Omega &\coloneqq& \Omega \times (0, T), \\
+f(x, t) &=& 0 & \text{for } (x, t) \in \Sigma_D &\coloneqq& \Gamma_D \times (0, T) \\
+n_x(x,t) \cdot \nabla_x f(x, t) + \alpha f(x, t) &=& g_R(x, t) & \text{for } (x, t) \in \Sigma_R &\coloneqq& \Gamma_R \times (0, T) \\
+f(x, T) &=& f_T(x) & \text{for } (x, t) \in \Omega.
+\end{IEEEeqnarraybox}
+\end{equation}
+It will later on enable us to work without the transformation $\tilde{p}(x, t) = p(x, T - t)$ when treating the adjoined state equation.
 For this purpose, let us start with the term
 \[
 	\iint_Q - \frac{\partial f}{\partial t} v \dd x \dd t.
 \]
 Applying the same testing procedure as before, we obtain:
 \begin{IEEEeqnarray*}{rCl}
-	\int_Q - \frac{\partial f}{\partial t}(x, t) v(x, t) \dd x \dd t &=& \sum_{\ell = 1}^N \iint_{\tau_\ell} f(x, t) \frac{\partial v}{\partial t}(x, t) \dd x \dd t - \int_{\Omega} f(x, T) v(x, T) \dd s(x) \\
-	&& {} - \iint_{\Gamma_{k \ell}} \ljump f(x, t) v(x, t) \rjump_{\Gamma_{k \ell}, t} \dd s(x) \dd t  + \int_{\Omega} u(x, 0) v(x, 0) \dd s(x) \dd t .
+	\int_Q - \frac{\partial f}{\partial t}(x, t) v(x, t) \dd x \dd t &=& \sum_{\ell = 1}^N \iint_{\tau_\ell} f(x, t) \frac{\partial v}{\partial t}(x, t) \dd x \dd t  \\
+	&& {} - \iint_{\Gamma_{k \ell}} \ljump f(x, t) v(x, t) \rjump_{\Gamma_{k \ell}, t} \dd s(x) \dd t \\
+	&& {} - \int_{\Omega} f(x, T) v(x, T) \dd s(x) + \int_{\Omega} u(x, 0) v(x, 0) \dd s(x) \dd t .
 \end{IEEEeqnarray*}
 In this case we need to impose boundary conditions at the end time $T$ instead of the start time $0$, i.e.
 \[
@@ -232,37 +283,17 @@ A closer examination reveals even one more thing:
 \]
 In fact, we have already proven this statement. The downstream formulation of $b$, \cref{eq:b-up-down-equal}, compared with the definition of $b'$, \cref{eq:b-prime} is the same with the roles of $v_h$ and $f_h$ interchanged.
 
-With this work done, we define the bilinear form $A(\cdot, \cdot)$ as
+Noting that $a(\cdot, \cdot)$ was symmetric anyways, we can define the discontinuous Galerkin method using the bilinear form $A(v_h, f_h)$ instead of $A(f_h, v_h)$.
+The corresponding right hand side is then
 \[
-	A(f_h, v_h) \coloneqq b(f_h, v_h) + a(f_h, v_h).
-\]
-Then we have a right hand side of
-\[
-	\tilde{g}(v_h) \coloneqq \iint_Q g_I v_h \dd x \dd t + \int_\Omega u_0(x) v_h(x, 0) \dd x + \int_{\Sigma_R} g_R v_h \dd s(x) \dd t 
-\]
-
-Using a basis $\varphi_j$, $j = 1, \ldots, M$ of $S_h^p$, i.e.
-\[
-	S_h^p(\mathcal{T}_N) = \spn \{ \varphi_j \}_{j=1}^m, \quad f_h(x, t) = \sum_{j=1}^M \boldsymbol{g}[j] \varphi_j(x, t) \quad \text{for } f_h \in S_h^p(\mathcal{T}_N),
+	\tilde{g}'(v_h) \coloneqq \iint_Q g_I v_h \dd x \dd t + \int_\Omega f_T(x) v_h(x, T) \dd x + \int_{\Sigma_R} g_R v_h \dd s(x) \dd t 
 \]
 we obtain a formulation as a linear system:
 \[
-	A_h \boldsymbol{u} = \boldsymbol{g}
+	A_h^\tp \boldsymbol{u} = \boldsymbol{g}'
 \]
 with
 \[
-	A_h[i, j] \coloneqq A(\varphi_j, \varphi_i) \quad \text{and} \quad \boldsymbol{g}[i] \coloneqq \tilde{g}(\varphi_i). 
+	\boldsymbol{g}'[i] \coloneqq \tilde{g}'(\varphi_i). 
 \]
-
-Let us define some energy norms with respect to the bilinear form $a(\cdot, \cdot)$.
-For a function $u \in H^2(\mathcal{T}_N)$ with $s > \frac{3}{2}$ we define
-\begin{IEEEeqnarray*}{rCl}
-\| f \|_A^2 &\coloneqq& \sum_{\ell = 1}^N \| \nabla_x f \|_{[L_2(\tau_\ell)]^d}^2 + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \frac{\sigma}{\bar{h}_{k \ell}} \left\| \ljump u \rjump_{\Gamma_{k \ell}, x} \right\|_{[L_2(\Gamma_{k \ell})]^d}^2, \\
-\| f \|_{A, *}^2 &\coloneqq& \| u \|_A^2 + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \bar{h}_{k \ell} \left\| \lavg \nabla_x u \ravg_{\Gamma_{k \ell}} \right\|_{[L_2(\Gamma_{k \ell})]^d}^2.
-\end{IEEEeqnarray*}
-In the same vein, we define for $b(\cdot, \cdot)$ two norms for functions $u \in H^s(\mathcal{T}_N)$, $s \geq 1$:
-\begin{IEEEeqnarray*}{rCl}
-\| f \|_B^2 &\coloneqq& \sum_{\ell = 1}^N h_\ell \| \partial_t u \|_{L^2(\tau_\ell)}^2 + \| u \|_{\Sigma_0}^2 + \alpha \| u \|_{\Sigma}^2 + \| u \|_{\Sigma_T}^2  + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \left\| \ljump u \rjump_{\Gamma_{k \ell}, t} \right\|_{L_2(\Gamma_{k \ell})}^2, \\
-\| f \|_{B, *}^2 &\coloneqq& \sum_{\ell = 1}^N h_\ell^{-1} \| u \|_{L^2(\tau_\ell)}^2 + \alpha \| u \|_{\Sigma}^2 + \| u \|_{\Sigma_T}^2  + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \left\| \lupw u \rupw_{\Gamma_{k \ell}} \right\|_{L_2(\Gamma_{k \ell})}^2.
-\end{IEEEeqnarray*}
 \end{document}

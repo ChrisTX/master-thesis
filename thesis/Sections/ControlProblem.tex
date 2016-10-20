@@ -195,8 +195,11 @@ where we assume that $\Omega$ is a bounded Lipschitz domain, $T > 0$ is a fixed 
 The motivation for using a more general formulation here is that we can use the results on both inner and boundary heat sources.
 A weak formulation of the problem is that for all $v \in W(0, T)$ the equation
 \begin{equation}
+\begin{IEEEeqnarraybox}[][c]{l}
 \label{eq:generalized-problem-weak}
-	\iint_Q \left( - y \frac{\partial v}{\partial t} + \nabla y \cdot \nabla v \right) \dd x \dd t + \iint_\Sigma \alpha y v \dd s \dd t = \iint_Q g_I v \dd x \dd t + \iint_{\Sigma} g_R v \dd s \dd t + \int_\Omega y_0 v(\cdot, 0) \dd x - \int_\Omega y(\cdot, T) v(\cdot, T)
+	\iint_Q \left( - y \frac{\partial v}{\partial t} + \nabla y \cdot \nabla v \right) \dd x \dd t + \iint_\Sigma \alpha y v \dd s \dd t \\
+	\IEEEeqnarraymulticol{1}{r}{ \qquad\qquad {} = \iint_Q g_I v \dd x \dd t + \iint_{\Sigma} g_R v \dd s \dd t + \int_\Omega y_0 v(\cdot, 0) \dd x - \int_\Omega y(\cdot, T) v(\cdot, T) }
+\end{IEEEeqnarraybox}
 \end{equation}
 should hold.
 Disregarding the choice of space, this is the same as \cref{eq:state-weak-form} with a general right hand side: In order to proof that this formulation makes sense, one indeed uses spaces with a stronger regularity requirement first, proves existence and uniqueness of a solution in them and then proves that the solution is in $W(0, T)$ and testing with $v \in W(0, T)$ makes sense. For more details, see \cite[3.3 Schwache Lösungen in $W^{1, 0}_2(Q)$]{Troeltzsch}.
@@ -226,9 +229,9 @@ If we introduce $E_T : y \mapsto y(T)$, we can use the embedding property of the
 \[
 	y(T) = E_T (G_\Sigma \beta u + G_0 y_0).
 \]
-By defining $S \coloneqq E_T G_Sigma$, we have
+By defining $S \coloneqq E_T G_\Sigma \beta \cdot$, we have
 \[
-	y(T) - y_\Omega = S_u + (G_0 y_0)(T) = S u - z
+	y(T) - y_\Omega = S u + (G_0 y_0)(T) - y_\Omega = S u - z
 \]
 with $z \coloneqq y_\Omega - (G_0 y_0)(T)$.
 
@@ -349,7 +352,7 @@ We test the first equation with $p_h$ and the second one with $y_h$:
 We notice that the left hand sides of both equations are the same and therefore have
 \begin{equation}
 \label{eq:aid-variational-ineq}
-\begin{IEEEeqnarraybox}{l}
+\begin{IEEEeqnarraybox}[][c]{l}
 	\iint_Q b_Q v p_h \dd x \dd t + \int_\Omega b_\Omega w p_h(\cdot, 0) \dd x + \iint_{\Sigma_R} b_\Sigma u p_h \dd s(x) \dd t \\
 	\IEEEeqnarraymulticol{1}{r}{ \qquad\qquad {} = \iint_Q a_Q y_h \dd x \dd t + \int_\Omega a_\Omega y_h(\cdot, T) \dd x + \iint_{\Sigma_R} a_\Sigma y_h \dd s(x) \dd t. }
 \end{IEEEeqnarraybox}
@@ -362,9 +365,10 @@ For the boundary control problem, we define the adjoined state $p_h$ as the solu
 \end{equation}
 Using this, we can prove:
 \begin{theorem}
+\label{eq:discrete-variational-ineq}
 A control $\bar{u}_h \in U_{ad}$ is optimal if and only if with the associated adjoined state $\bar{p}_h$ fulfills the following equality
 \[
-	\beta(x, t) p(x, t) + \lambda \bar{u}(x, t) = 0
+	\beta(x, t) \bar{p}_h (x, t) + \lambda \bar{u}_h(x, t) = 0
 \]
 almost everywhere.
 \end{theorem}
@@ -372,31 +376,61 @@ almost everywhere.
 This proof is very similar to \cite[Satz 3.19, p.\ 128f.]{Troeltzsch}.
 Using the previously derived minimization formulation \cref{eq:f-Sh} and employing \cref{thm:variational-ineq}, we know
 \begin{IEEEeqnarray*}{rCl}
-	0 &\leq& ( S \bar{u} - z, S(u - \bar{u}) )_{L^2(\Omega)} + \lambda(\bar{u}, u - \bar{u})_{L^2(\Sigma)} \\
-	&=& \int_\Omega (\bar{y}(T) - y_\Omega)(y(T) - \bar{y}(T)) \dd x + \lambda \iint_\Sigma \bar{u} ( u - \bar{u} ) \dd s(x) \dd  t.
+	0 &\leq& ( S_h \bar{u}_h - z_h, S_h(u_h - \bar{u}_h) )_{L^2(\Omega)} + \lambda(\bar{u}_h, u_h - \bar{u}_h)_{L^2(\Sigma)} \\
+	&=& \int_\Omega (\bar{y}_h(T) - y_\Omega)(y_h(T) - \bar{y}_h(T)) \dd x + \lambda \iint_\Sigma \bar{u}_h ( u_h - \bar{u}_h ) \dd s(x) \dd  t.
 \end{IEEEeqnarray*}
-for all $u \in U_{ad}$.
+for all $u_h \in U_{ad}$ and their associated states $y_h$.
 Note that
 \[
-	Su - S\bar{u} = Su + z - S\bar{u} - z = y(T) - \bar{y}(T).
+	S_h u_h - S_h \bar{u}_h = S_h u_h + z_h - S_h \bar{u}_h - z_h = y_h(T) - \bar{y}_h(T).
 \]
-Using \cref{eq:aid-variational-ineq} with $b_Q = 0$, $b_\Omega = 0$, $a_Q = 0$, $a_\Sigma = 0$, $a_\Omega = \bar{y} - y_\Omega$, $b_\Sigma = \beta$, we have
+Using \cref{eq:aid-variational-ineq} with $b_Q = 0$, $b_\Omega = 0$, $a_Q = 0$, $a_\Sigma = 0$, $a_\Omega = \bar{y}_h - y_\Omega$, $b_\Sigma = \beta$, we have
 \[
-	\iint_\Sigma \beta p \tilde{u} \dd s(x) \dd t = (\bar{y}(T) - \Omega, \tilde{y}(T))_{L^2(\Omega)},
+	\iint_\Sigma \beta p_h \tilde{u}_h \dd s(x) \dd t = (\bar{y}_h(T) - \Omega, \tilde{y}_h(T))_{L^2(\Omega)},
 \]
-where we set $\tilde{u} = u - \bar{u}$ and $\tilde{y} = y - \bar{y}$.
+where we set $\tilde{u}_h = u_h - \bar{u}_h$ and $\tilde{y}_h = y_h - \bar{y}_h$.
 Inserting this into the variational inequality we obtain
 \begin{IEEEeqnarray*}{rCl}
-	0 &\leq& \int_\Omega (\bar{y}(T) - y_\Omega)(y(T) - \bar{y}(T)) \dd x + \lambda \iint_\Sigma \bar{u} ( u - \bar{u} ) \dd s(x) \dd  t \\
-	&=& \iint_\Sigma \beta p ( u - \bar{u} ) \dd s(x) \dd t + \lambda \iint_\Sigma \bar{u} ( u - \bar{u} ) \dd s(x) \dd  t \\
-	&=& \iint_\Sigma ( \beta p + \lambda \bar{u} ) ( u - \bar{u} ) \dd s(x) \dd  t \\
+	0 &\leq& \int_\Omega (\bar{y}_h(T) - y_\Omega)(y_h(T) - \bar{y}_h(T)) \dd x + \lambda \iint_\Sigma \bar{u}_h ( u_h - \bar{u}_h ) \dd s(x) \dd  t \\
+	&=& \iint_\Sigma \beta p_h ( u_h - \bar{u}_h ) \dd s(x) \dd t + \lambda \iint_\Sigma \bar{u}_h ( u_h - \bar{u}_h ) \dd s(x) \dd  t \\
+	&=& \iint_\Sigma ( \beta p_h + \lambda \bar{u}_h ) ( u_h - \bar{u}_h ) \dd s(x) \dd  t \\
 \end{IEEEeqnarray*}
 Due to the choice $U_{ad} = L^2(\Omega)$, we know this holds in the stronger sense
 \[
-	\beta p + \lambda \bar{u} = 0
+	\beta p_h + \lambda \bar{u}_h = 0
 \]
 almost everywhere.
 \end{proof}
+The proof of \cref{eq:discrete-variational-ineq} shows that we can identify
+\[
+	p_h = S_h^*( S_h u_h - z_h ),
+\]
+alas $S_h^*$ is the solution operation analogous to $S_h$ stemming from the discontinuous Galerkin method applied to \cref{eq:dg-adjoint-prob}.
+Overall, we have the following optimality system for the continuous case:
+\begin{IEEEeqnarray*}{c}
+\begin{IEEEeqnarraybox}{r"l}
+\begin{IEEEeqnarraybox}{rCl}
+\frac{\partial y}{\partial t} - \lapl y &=& 0 \\
+\partial_\nu y + \alpha y &=& - \beta^2 \lambda^{-1} p \\
+y(0) &=& y_0
+\end{IEEEeqnarraybox} & 
+\begin{IEEEeqnarraybox}{rCl}
+-\frac{\partial p}{\partial t} - \lapl p &=& 0 \\
+\partial_\nu p + \alpha p &=& 0 \\
+p(T) &=& y(T) - y_\Omega
+\end{IEEEeqnarraybox}
+\end{IEEEeqnarraybox} \\
+u = - \lambda^{-1} \beta p
+\end{IEEEeqnarray*}
+and the analogous for the discrete case:
+\begin{IEEEeqnarray*}{c}
+\begin{IEEEeqnarraybox}{rCl"rCl}
+A(y_h, v_h) &=& \langle \beta u_h, v_h \rangle_{L^2(\Sigma_R)} & A(v_h, p_h) &=& \langle y_h(T) - y_\Omega, v_h \rangle_{L^2(\Sigma_T)}
+\end{IEEEeqnarraybox} \\
+u_h = - \lambda^{-1} \beta p_h
+\end{IEEEeqnarray*}
+We observe two things that may not come as a surprise: Firstly, our discrete optimality system is equivalent to applying the dG method to the state and adjoint equation of the continuous case individually, and secondly that the adjoint operator of the discrete state equation uses the transposed matrix.
+
 With this, we have shown that the method we're working with is well defined and yields a solution to an optimal control problem similar to the continuous one. In a further step, we would like to prove convergence of the discrete problem.
 \begin{theorem}
 Let $\bar{u}$ be the optimal control for the continuous problem and $\bar{u}_h$ be the discretized solution.
@@ -407,13 +441,27 @@ Then:
 \end{theorem}
 \begin{proof}
 The optimal solutions to both problems fulfill
-\begin{IEEEeqnarray*}{rCl}
-	\beta p + \lambda u &=& 0 \\
-	\beta p_h + \lambda u_h &=& 0
+\begin{IEEEeqnarray*}{rCl"l}
+	0 &=& ( S \bar{u} - z, S v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} & \text{for all } v \in L^2(\Sigma) \\
+	0 &=& ( S_h \bar{u}_h - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}_h, v)_{L^2(\Sigma)} & \text{for all } v \in L^2(\Sigma)
 \end{IEEEeqnarray*}
-Putting these together we have
-\[
-	\frac{\lambda}{\beta} u - u_h = p - p_h
-\]
+We perform a zero addition of the second term evaluated with $v = \bar{u}$:
+\begin{IEEEeqnarray*}{rCl}
+	0 &=& ( S \bar{u} - z, S v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \\
+	&& {} - \left[ ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \right] \\
+	&& {} + \left[ ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \right] \\
+	&& {} - ( S_h \bar{u}_h - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}_h, v)_{L^2(\Sigma)} 
+\end{IEEEeqnarray*}
+Moreover, we calculate
+\begin{IEEEeqnarray*}{rCl}
+	0 &=& ( S \bar{u} - z, S v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \\
+	&& {} - \left[ ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \right] \\
+	&=& ( S \bar{u} - z, S v )_{L^2(\Omega)} - ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} \\
+	&=& ( S \bar{u} - z - [ S_h \bar{u} - z_h ], S v )_{L^2(\Omega)} - ( S_h \bar{u} - z_h, S_h v -S v )_{L^2(\Omega)} \\
+	&=& ( S \bar{u} + G_0 y_0 - y_\Omega - S_h \bar{u} - G_0^h y_0 + y_\Omega, S v )_{L^2(\Omega)} - ( S_h \bar{u} + G_0^h y_0 - y_\Omega, S_h v -S v )_{L^2(\Omega)} \\
+	&=& ( \bar{y}(T) - \bar{y}^h(T) , S v )_{L^2(\Omega)} - ( \bar{y}^h(T) - y_\Omega, S_h v -S v )_{L^2(\Omega)} \\
+	&\leq& \left| ( \bar{y}(T) - \bar{y}^h(T) , S v )_{L^2(\Omega)} \right| + \left| ( \bar{y}^h(T) - y_\Omega, S_h v -S v )_{L^2(\Omega)} \right| \\
+	&\leq& \left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \| S v \|_{L^2(\Omega)} \right| + \left\| \bar{y}^h(T) - y_\Omega \right\|_{L^2(\Omega)} \left\| S_h v -S v \right\|_{L^2(\Omega)} \\
+\end{IEEEeqnarray*}
 \end{proof}
 \end{document}
