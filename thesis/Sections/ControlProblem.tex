@@ -432,11 +432,20 @@ u_h = - \lambda^{-1} \beta p_h
 We observe two things that may not come as a surprise: Firstly, our discrete optimality system is equivalent to applying the dG method to the state and adjoint equation of the continuous case individually, and secondly that the adjoint operator of the discrete state equation uses the transposed matrix.
 
 With this, we have shown that the method we're working with is well defined and yields a solution to an optimal control problem similar to the continuous one. In a further step, we would like to prove convergence of the discrete problem.
-\begin{theorem}
-Let $\bar{u}$ be the optimal control for the continuous problem and $\bar{u}_h$ be the discretized solution.
-Then:
+Given that \cref{thm:dg-convergence} requires at least $y \in H^2(\meshT_N) \subset H^2(Q)$, we have to make the following assumption:
+\begin{assumption}
+\label{as:continuous-Hs-regularity}
+The solution of the system \cref{eq:generalized-problem-weak} lies in $H^s(Q) \cap W(0,T)$ with $s \geq 2$, i.e.
 \[
-	\| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} \leq c h^2 ( \| \bar{u} \| + \| y_d \| ).
+	\| y \|_{H^s(Q)} \leq c_w' \left( \| g_I \|_{L^2(Q)} + \| g_R \|_{L^2(\Sigma)} + \| y_0 \|_{L^2(\Omega)} \right)
+\]
+with a constant $c_w' > 0$ independent of $g_I$, $g_R$ and $y_0$.
+\end{assumption}
+\begin{theorem}
+Let $\bar{u}$ be the optimal control for the continuous problem and let \cref{as:continuous-Hs-regularity} hold. Moreover, be $\bar{u}_h$ the discretized solution.
+Then there is a $C > 0$ independent of $h$, such that:
+\[
+	\| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} + \| \bar{y}(T) - \bar{y}_h(T) \|_{L^2(\Omega)} \leq C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right).
 \]
 \end{theorem}
 \begin{proof}
@@ -450,18 +459,66 @@ We perform a zero addition of the second term evaluated with $v = \bar{u}$:
 	0 &=& ( S \bar{u} - z, S v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \\
 	&& {} - \left[ ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \right] \\
 	&& {} + \left[ ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \right] \\
-	&& {} - ( S_h \bar{u}_h - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}_h, v)_{L^2(\Sigma)} 
+	&& {} - ( S_h \bar{u}_h - z_h, S_h v )_{L^2(\Omega)} - \lambda(\bar{u}_h, v)_{L^2(\Sigma)} 
 \end{IEEEeqnarray*}
 Moreover, we calculate
 \begin{IEEEeqnarray*}{rCl}
-	0 &=& ( S \bar{u} - z, S v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \\
-	&& {} - \left[ ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \right] \\
+	\IEEEeqnarraymulticol{3}{l}{ ( S \bar{u} - z, S v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} - \left[ ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \right] } \\
 	&=& ( S \bar{u} - z, S v )_{L^2(\Omega)} - ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} \\
 	&=& ( S \bar{u} - z - [ S_h \bar{u} - z_h ], S v )_{L^2(\Omega)} - ( S_h \bar{u} - z_h, S_h v -S v )_{L^2(\Omega)} \\
-	&=& ( S \bar{u} + G_0 y_0 - y_\Omega - S_h \bar{u} - G_0^h y_0 + y_\Omega, S v )_{L^2(\Omega)} - ( S_h \bar{u} + G_0^h y_0 - y_\Omega, S_h v -S v )_{L^2(\Omega)} \\
+	&=& ( S \bar{u} + G_0 y_0 - y_\Omega - S_h \bar{u} - G_0^h y_0 + y_\Omega, S v )_{L^2(\Omega)} \\
+	&& \quad {} - ( S_h \bar{u} + G_0^h y_0 - y_\Omega, S_h v -S v )_{L^2(\Omega)} \\
 	&=& ( \bar{y}(T) - \bar{y}^h(T) , S v )_{L^2(\Omega)} - ( \bar{y}^h(T) - y_\Omega, S_h v -S v )_{L^2(\Omega)} \\
-	&\leq& \left| ( \bar{y}(T) - \bar{y}^h(T) , S v )_{L^2(\Omega)} \right| + \left| ( \bar{y}^h(T) - y_\Omega, S_h v -S v )_{L^2(\Omega)} \right| \\
-	&\leq& \left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \| S v \|_{L^2(\Omega)} \right| + \left\| \bar{y}^h(T) - y_\Omega \right\|_{L^2(\Omega)} \left\| S_h v -S v \right\|_{L^2(\Omega)} \\
+	&\leq& \left| ( \bar{y}(T) - \bar{y}^h(T) , y^v(T) )_{L^2(\Omega)} \right| + \left| ( \bar{y}^h(T) - y_\Omega, S_h v -S v )_{L^2(\Omega)} \right| \\
+	&\leq& \left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \| y^v(T) \|_{L^2(\Omega)} \\
+	&& \quad {}+ \left\| \bar{y}^h(T) - y_\Omega \right\|_{L^2(\Omega)} \left\| y^v_h(T) - y_v(T) \right\|_{L^2(\Omega)} \\
+	&\leq& \left\| \bar{y} - \bar{y}^h \right\|_{L^2(\Sigma_T)} \| y^v \|_{L^2(\Sigma_T)} + \left( \left\| \bar{y}^h \right\|_{L^2(\Sigma_T)} + \| y_\Omega \|_{L^2(\Omega)} \right) \left\| y^v_h - y_v \right\|_{L^2(\Sigma_T)} \\
+	&\overset{\text{\cref{eq:dg-DG-norm}}}{\leq}& \left\lDG \bar{y} - \bar{y}^h \right\rDG \| y^v \|_{L^2(\Sigma_T)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
+	&\overset{\text{\cref{thm:S-continuous}}}{\leq}& c_w \left\lDG \bar{y} - \bar{y}^h \right\rDG \| v \|_{L^2(\Sigma)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
+	&\overset{\text{\cref{thm:Astab-est}}}{\leq}& c_w \left\lDG \bar{y} - \bar{y}^h \right\rDG \| v \|_{L^2(\Sigma)} + \left( \frac{1}{c_S^A} \beta \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
+	&\overset{\text{\cref{thm:dg-convergence}}}{\leq}& c_w c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |\bar{y}|_{H^s(\meshT_N)} \| v \|_{L^2(\Sigma)} \\
+	&& \quad {}+ \left( \frac{1}{c_S^A} \beta \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |y_v|_{H^s(\meshT_N)} \\
+	&\overset{\text{\cref{as:continuous-Hs-regularity}}}{\leq}& c_w c_w' c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \|\bar{u}\|_{L^2(\Sigma)} \| v \|_{L^2(\Sigma)} \\
+	&& \quad {}+ \left( \frac{1}{c_S^A} \beta \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) c c_w' \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \|v\|_{L^2(\Sigma)} \\
+	&\leq& C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \| v \|_{L^2(\Sigma)}
 \end{IEEEeqnarray*}
+For the remaining two terms, we have
+\begin{IEEEeqnarray*}{rCl}
+	\IEEEeqnarraymulticol{3}{l}{ \left[ ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \right] - ( S_h \bar{u}_h - z_h, S_h v )_{L^2(\Omega)} - \lambda(\bar{u}_h, v)_{L^2(\Sigma)} } \\
+	\qquad &=& (S_h (\bar{u} - \bar{u}_h), S_h v)_{L^2(\Omega)} + \lambda (\bar{u} - \bar{u}_h, v)_{L^2(\Sigma)}
+\end{IEEEeqnarray*}
+Choosing the test function $v = \bar{u} - \bar{u}_h$, we can estimate:
+\begin{IEEEeqnarray*}{rCl}
+	(S_h (\bar{u} - \bar{u}_h), S_h (\bar{u} - \bar{u}_h))_{L^2(\Omega)} + \lambda (\bar{u} - \bar{u}_h, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} &\geq& \lambda (\bar{u} - \bar{u}_h, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} \\
+	&=& \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}^2
+\end{IEEEeqnarray*}
+Bringing these together, we obtain:
+\begin{IEEEeqnarray*}{rCl}
+	0 &\geq& ( S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) )_{L^2(\Omega)} + \lambda(\bar{u}, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} \\
+	&& {} - \left[ ( S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) )_{L^2(\Omega)} + \lambda(\bar{u}, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} \right] \\
+	&& {} + \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}^2
+\end{IEEEeqnarray*}
+By bringing the terms to the other side of the equation and taking the absolute, we can apply the previously derived estimate:
+\begin{IEEEeqnarray*}{rCl}
+	\IEEEeqnarraymulticol{3}{l}{ C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} } \\
+	\qquad &\geq& ( S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) )_{L^2(\Omega)} + \lambda(\bar{u}, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} \\
+	&& \quad {} - \left[ ( S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) )_{L^2(\Omega)} + \lambda(\bar{u}, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} \right] \\
+	&\geq& \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}^2.
+\end{IEEEeqnarray*}
+Dividing by $\| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}$ leaves us with
+\[
+	C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \geq \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}.
+\]
+
+In a further step, we have to estimate $\| \bar{y}(T) - \bar{y}_h(T) \|_{L^2(\Omega)}$:
+\begin{IEEEeqnarray*}{rCl}
+\| \bar{y}(T) - \bar{y}_h(T) \|_{L^2(\Omega)} &=& \| S \bar{u} - S_h \bar{u}_h \|_{L^2(\Omega)} \\
+&\leq& \| S \bar{u} - S_h \bar{u} \|_{L^2(\Omega)} + \| S_h \bar{u} - S_h \bar{u}_h \|_{L^2(\Omega)} \\
+&\leq& \| y(T) - y^h(T) \|_{L^2(\Omega)} + \| y^h(T) - y_h(T) \|_{L^2(\Omega)} \\
+&\leq& c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |\bar{y}|_{H^s(\meshT_N)} + \frac{1}{c_S^A} \beta \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} \\
+&\leq& C h^{\min \{ s, p+1\} - 1} \| \bar{u} \|_{L^2(\Sigma)} \\
+&& \quad {} + C' h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right)
+\end{IEEEeqnarray*}
+Together, the estimates prove the claim made.
 \end{proof}
 \end{document}

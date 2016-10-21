@@ -112,23 +112,26 @@ for all $f \in H^s(\mathcal{T}_N)$ with $s \geq 1$ and for all $v_h \in S_h^p(\m
 \begin{proof}
 See \cite[Lemma 2.2.8]{Neumueller} for this statement.
 \end{proof}
-Motivated by \cref{thm:asip-bounded,thm:aR-bounded,thm:b-bounded}, we define
-\begin{IEEEeqnarray*}{rCl}
-	\lDG f \rDG^2 &\coloneqq& \| f \|_A^2 + \| f \|_{A, R}^2 + \| f \|_B^2 \\
-	\lDGs f \rDGs^2 &\coloneqq& \| f \|_{A, *}^2 + \| f \|_{A, R}^2 + \| f \|_{B, *}^2
-\end{IEEEeqnarray*}
+Motivated by \cref{thm:asip-bounded,thm:aR-bounded,thm:b-bounded}, we define for $f \in H^s(\meshT_N)$, $s > \frac{3}{2}$ the following energy norms:
+\begin{equation}
+\label{eq:dg-DG-norm}
+\begin{IEEEeqnarraybox}[][c]{rCl}
+\lDG f \rDG^2 &\coloneqq& \| f \|_A^2 + \| f \|_{A,R}^2 + \| f \|_B^2 \\
+\lDGs f \rDGs^2 &\coloneqq& \| f \|_{A,*}^2 + \| f \|_{A,R}^2 + \| f \|_{B,*}^2
+\end{IEEEeqnarraybox}
+\end{equation}
 \begin{theorem}
 \label{thm:A-bounded}
 The bilinear form $A(\cdot, \cdot)$ is bounded, i.e.
 \[
-	A(f, v_h) \leq c_2^A \lDGs f \rDGs \lDG v_h \rDG
+	|A(f, v_h)| \leq c_2^A \lDGs f \rDGs \lDG v_h \rDG
 \]
 for all $f \in H^s(\meshT_N)$ with $s > \frac{3}{2}$ and for all $v_h \in S_h^p(\meshT_N)$ with an $h$-independent constant $c_2^A > 0$. 
 \end{theorem}
 \begin{proof}
-Combining \cref{thm:asip-bounded,thm:aR-bounded,thm:b-bounded}
+Combining \cref{thm:asip-bounded,thm:aR-bounded,thm:b-bounded} yields:
 \begin{IEEEeqnarray*}{rCl}
-A(f, v_h) &=& a^\sip(f, v_h) + a^R(f, v_h) + b(f, v_h) \\
+|A(f, v_h)| &=& |a^\sip(f, v_h) + a^R(f, v_h) + b(f, v_h)| \\
 &\leq& c_2^a \| f \|_{A, *} \| v_h \|_A + \| f \|_{A, R} \| v_h \|_{A, R} + \| f \|_{B, *} \| v_h \|_B \\
 &\leq& \max \{ 1, c_2^a \} \lDGs f \rDGs \lDG v_h \rDG.
 \end{IEEEeqnarray*}
@@ -311,6 +314,7 @@ Therefore we have
 \]
 and as of such have proven the statement for a choice of $c_I^{a, R} = c_g c_I$.
 \end{proof}
+As a next step, we will combine all previous estimates to obtain stability and boundedness estimates for the bilinear form $A(\cdot, \cdot)$ itself.
 \begin{theorem}
 \label{thm:Astab-est}
 Let $\meshT_N$ be a quasi-uniform decomposition and let $\sigma \geq 4 c_K$ then the following stability estimate holds:
