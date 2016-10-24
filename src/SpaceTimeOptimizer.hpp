@@ -254,83 +254,6 @@ public:
 	}
 
 	template<class BasisFuncs, class BasisIndex>
-	auto EvaluateBh_prime_Element(const ElementId_t elemid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
-		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
-		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
-		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
-
-		const auto integrand = [&](const auto& sp) -> auto {
-			const auto p_space = ref_tran(sp);
-
-			const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
-			const auto dv = ref_tran.EvaluateTransformedBasisDerivative(bf, biv, p_space);
-
-			return uh * dv[2];
-		};
-
-		auto intval = tetra_quadfm(integrand) * ref_tran_det;
-
-		// At this point, first_intval is the part of the bilinear form that isspace integral.
-		// We need to add the three edge terms now
-		const auto surface_integral_part = [&](const auto& surfid) -> auto {
-			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
-			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
-
-			const auto integrand_fn = [&](auto sp) -> auto {
-				const auto p_space = ref_triang_tran(sp);
-
-				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
-				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
-
-				return uh * vh;
-			};
-
-			const auto ref_triang_tran_det = ref_triang_tran.GetDeterminantSqrt();
-			return triang_quadfm(integrand_fn) * ref_triang_tran_det;
-		};
-
-		const auto inner_integral_part = [&](const auto& surfid, const auto& surfdata) -> auto {
-			// Given our piecewise polynomial approach, {uh}^down = uh if the time normal is < 0 and 0 otherwise
-			if (surfdata.is_time_orthogonal || surfdata.get_upstream_element() == elemid)
-				return T{ 0 };
-
-			const auto surf_nm = surfdata.normal_vector_by_elemid(elemid);
-
-			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
-			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
-
-			const auto integrand_fn = [&](auto sp) -> auto {
-				const auto p_space = ref_triang_tran(sp);
-
-				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
-				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
-
-				return uh * vh * surf_nm[2];
-			};
-
-			const auto ref_triang_tran_det = ref_triang_tran.GetDeterminantSqrt();
-			return triang_quadfm(integrand_fn) * ref_triang_tran_det;
-		};
-
-		const auto& curelem = m_Mesh.m_ElementList[elemid];
-		const auto a = curelem.corners[0];
-		const auto b = curelem.corners[1];
-		const auto c = curelem.corners[2];
-		const auto d = curelem.corners[3];
-
-		for (const auto si : { SurfaceId_t{ a, b, c }, SurfaceId_t{ a, b, d }, SurfaceId_t{ b, c, d }, SurfaceId_t{ a, c, d } }) {
-			const auto& surfdata = m_Mesh.SurfaceDataById(si);
-			if (surfdata.type == TetrahedralMesh<T>::SurfaceType_t::StartTime)
-				intval += surface_integral_part(si);
-			else if (surfdata.type == TetrahedralMesh<T>::SurfaceType_t::Inner)
-				intval -= inner_integral_part(si, surfdata);
-			else if (surfdata.type == TetrahedralMesh<T>::SurfaceType_t::Undefined)
-				assert(false);
-		}
-		return intval;
-	}
-
-	template<class BasisFuncs, class BasisIndex>
 	auto EvaluateBh_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
 		// Note that this function can be used to sum both bh and bh' by interpreting its returns differently
 
@@ -502,9 +425,11 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					assert(std::isfinite(form_val_Bh));
 					matassembler(offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
 
-					const auto form_val_Bh_prime = this->EvaluateBh_prime_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
-					assert(std::isfinite(form_val_Bh_prime));
-					matassembler(block_size + offset_vi, block_size + offset_uj) = form_val_Ah + form_val_Bh_prime;
+					matassembler(block_size + offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
+
+					//const auto form_val_Bh_prime = this->EvaluateBh_prime_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					//assert(std::isfinite(form_val_Bh_prime));
+					//matassembler(block_size + offset_vi, block_size + offset_uj) = form_val_Ah + form_val_Bh_prime;
 				}
 			}
 		}
@@ -781,15 +706,16 @@ struct HeatAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					const auto form_val_Ah = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Ah));
 					form_val += form_val_Ah;
-#ifdef INVERTED_PROBLEM
-					const auto form_val_Bh = this->EvaluateBh_prime_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
-#else
+
 					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
-#endif
 					assert(std::isfinite(form_val_Bh));
 					form_val += form_val_Bh;
 
+#ifdef INVERTED_PROBLEM
+					matassembler(offset_uj, offset_vi) = form_val;
+#else
 					matassembler(offset_vi, offset_uj) = form_val;
+#endif
 				}
 			}
 		}

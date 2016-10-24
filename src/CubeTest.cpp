@@ -85,9 +85,9 @@ int main() {
 #endif
 
 	auto beta = 1.;
-	auto lambda = 1.;
+	auto lambda = 0.1;
 	auto alpha = 0.;
-	auto sigma = 10.;
+	auto sigma = 20.;
 
 #ifdef HEAT_SYSTEM
 	auto stmass = HeatAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda };
@@ -109,10 +109,6 @@ int main() {
 	matbut.close();
 #endif
 
-	const auto& csrmat = matandlv.first;
-	auto lsol = std::vector<double>(csrmat.GetNumberOfRows(), 1.);
-	auto lnew = csrmat * lsol;
-
 #ifdef HAVE_MKL
 	std::cout << "SOLVING" << std::endl;
 	
@@ -124,4 +120,8 @@ int main() {
 	stmsol.PrintToVTU("testfile-y.vtu", true);
 #endif
 	std::cout << "DONE" << std::endl;
+
+#if defined(WIN32) && !defined(NDEBUG)
+	system(pause);
+#endif
 }
