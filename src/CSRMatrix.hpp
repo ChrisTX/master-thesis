@@ -343,6 +343,7 @@ namespace Utility {
 			return DenseMatrix;
 		}
 
+	protected:
 		std::map<size_type, std::map<size_type, T>> m_EntriesBuildUpMap;
 		const size_type m_Rows;
 		const size_type m_Columns;

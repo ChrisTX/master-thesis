@@ -323,6 +323,53 @@ public:
 	}
 
 	template<class BasisFuncs, class BasisIndex>
+	auto EvaluateHh_Inner_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
+		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
+		assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::MidTime);
+
+		const auto adj_elem_id = cur_surface_data.adjacent_elements[0];
+		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(adj_elem_id);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
+
+		const auto surface_integral_part = [&]() -> auto {
+			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
+			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
+
+			const auto integrand_fn = [&](auto sp) -> auto {
+				const auto p_space = ref_triang_tran(sp);
+
+				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
+
+				return uh * vh;
+			};
+
+			const auto ref_triang_tran_det = ref_triang_tran.GetDeterminantSqrt();
+			return triang_quadfm(integrand_fn) * ref_triang_tran_det;
+		};
+
+		return T{ -1 } * surface_integral_part();
+	}
+
+	template<class BasisFuncs, class BasisIndex>
+	auto EvaluateGh_Inner_Element(const ElementId_t elemid, const BasisFuncs bf, const BasisIndex biv, const BasisIndex biu) const {
+		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
+		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
+
+		const auto integrand = [&](const auto& sp) -> auto {
+			const auto p_space = ref_tran(sp);
+
+			const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+			const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
+
+			return uh * vh;
+		};
+
+		return beta * beta * tetra_quadfm(integrand) * ref_tran_det / lambda;
+	}
+
+	template<class BasisFuncs, class BasisIndex>
 	auto EvaluateHh_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
 		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
 		assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::EndTime);
@@ -367,7 +414,7 @@ public:
 			const auto integrand_fn = [&](auto sp) -> auto {
 				const auto p_space = ref_triang_tran(sp);
 
-				const auto uh = rhs_func(p_space[0], p_space[1]);
+				const auto uh = rhs_func(p_space[0], p_space[1], p_space[2]);
 				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
 
 				return uh * vh;
@@ -449,8 +496,167 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		return std::move(loadvec);
 	}
 
+	template<class BasisFuncs, class FT>
+	auto AssembleLV_Inner(const FT& ySigma) const {
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		const auto block_size = num_basis * num_elems;
+		const auto matrix_dim = 2 * block_size;
+
+		auto loadvec = std::vector<T>(matrix_dim);
+
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+			case SurfaceType_t::EndTime:
+				break;
+
+			case SurfaceType_t::StartTime:
+				break;
+
+			case SurfaceType_t::Inner:
+				break;
+
+			case SurfaceType_t::MidTime:
+			{
+				const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+					const auto offset_vi = start_offset + bi;
+
+					const auto form_val_LV_up = this->EvaluateLV_Surface(ySigma, surf_id, basis_f, static_cast<basis_index_t>(bi));
+					assert(std::isfinite(form_val_LV_up));
+					loadvec[offset_vi] -= form_val_LV_up;
+				}
+			}
+			break;
+
+			case SurfaceType_t::Undefined:
+				assert(false);
+			}
+		}
+
+		return std::move(loadvec);
+	}
+
 	template<class BasisFuncs>
-	auto AssembleMatrix() const {
+	auto AssembleMatrix_Inner() const {
+		// In a dG approach, we have a given amount of functions ( BasisFuncs' size ) per element
+		// Hence, the number of *active* elements in the mesh times the BasisFuncs is what we're looking for.
+
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		const auto block_size = num_basis * num_elems;
+		const auto matrix_dim = 2 * block_size;
+
+		using csr_size_t = typename Utility::CSRMatrixAssembler<T>::size_type;
+		auto matassembler = Utility::CSRMatrixAssembler<T>{ static_cast<csr_size_t>(matrix_dim), static_cast<csr_size_t>(matrix_dim) };
+
+		// We first sum Ah + Bh on the inner-element interfaces up
+		for (auto i = ElementId_t{ 0 }; i < num_elems; ++i) {
+			const auto start_offset = i * num_basis;
+			for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+				for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+					const auto offset_vi = start_offset + bi;
+					const auto offset_uj = start_offset + bj;
+
+					const auto form_val_Ah = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					assert(std::isfinite(form_val_Ah));
+
+					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					assert(std::isfinite(form_val_Bh));
+
+					matassembler(block_size + offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
+					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
+
+					const auto form_val_Gh = this->EvaluateGh_Inner_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					assert(std::isfinite(form_val_Gh));
+					matassembler(block_size + offset_vi, block_size + offset_uj) += form_val_Gh;
+				}
+			}
+		}
+
+		// Aside from these per element integrals, we have some interface ones:
+		// Ah, Bh both have inner interface terms, Gh only applies on \partial \Omega x (0, T) and Hh applies on \partial \Omega x T.
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+			case SurfaceType_t::Inner:
+			{
+				const auto start_offset_u = surf_data.adjacent_elements[1] * num_basis;
+				const auto start_offset_v = surf_data.adjacent_elements[0] * num_basis;
+				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+					for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+						const auto offset_vi = start_offset_v + bi;
+						const auto offset_uj = start_offset_u + bj;
+
+						const auto form_val_Ah = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+						assert(std::isfinite(form_val_Ah));
+
+						matassembler(block_size + offset_vi, offset_uj) += form_val_Ah;
+						matassembler(block_size + offset_uj, offset_vi) += form_val_Ah;
+						matassembler(offset_vi, block_size + offset_uj) += form_val_Ah;
+						matassembler(offset_uj, block_size + offset_vi) += form_val_Ah;
+					}
+				}
+
+				if (!surf_data.is_time_orthogonal) {
+					const auto start_offset_up = surf_data.get_upstream_element() * num_basis;
+					const auto start_offset_down = surf_data.get_downstream_element() * num_basis;
+
+					for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+						for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+							const auto form_val_Bh = this->EvaluateBh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+							assert(std::isfinite(form_val_Bh));
+							const auto offset_upi = start_offset_up + bj;
+							const auto offset_downi = start_offset_down + bi;
+
+							matassembler(block_size + offset_downi, offset_upi) += form_val_Bh;
+							matassembler(offset_upi, block_size + offset_downi) += form_val_Bh;
+						}
+					}
+				}
+			}
+			break;
+
+			case SurfaceType_t::MidTime:
+			{
+				const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+					for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+						const auto offset_vi = start_offset + bi;
+						const auto offset_uj = start_offset + bj;
+
+						const auto form_val_Hh = this->EvaluateHh_Inner_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+						assert(std::isfinite(form_val_Hh));
+						matassembler(offset_vi, offset_uj) += form_val_Hh;
+					}
+				}
+			}
+			break;
+
+			case SurfaceType_t::EndTime:
+				break;
+
+			case SurfaceType_t::StartTime:
+				break;
+
+			case SurfaceType_t::Undefined:
+				assert(false);
+			}
+		}
+		return matassembler.AssembleMatrix();
+	}
+
+	template<class BasisFuncs>
+	auto AssembleMatrix_Boundary() const {
 		// In a dG approach, we have a given amount of functions ( BasisFuncs' size ) per element
 		// Hence, the number of *active* elements in the mesh times the BasisFuncs is what we're looking for.
 
