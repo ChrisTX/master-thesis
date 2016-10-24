@@ -29,7 +29,7 @@ int main() {
 #elif !defined(NDEBUG)
 	const auto reflim = 2;
 #else
-	const auto reflim = 5;
+	const auto reflim = 4;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -94,25 +94,26 @@ int main() {
 #else
 	auto stmass = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda };
 #endif
-	auto matandlv = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double) -> double { return 1.; }, [](double, double) -> double { return 5.; });
+	auto matA = stmass.AssembleMatrix<BasisFunctions::TetrahedralLinearBasis<double>>();
+	auto lvA = stmass.AssembleLV_Boundary<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double) -> double { return 1.; }, [](double, double) -> double { return 5.; });
 
 #ifdef PRINT_LV
 	std::ofstream lvbut("lvs.txt");
-	for(auto i = std::size_t{0}; i < matandlv.second.size(); ++i)
-		lvbut << matandlv.second[i] << std::endl;
+	for(auto i = std::size_t{0}; i < lvA.size(); ++i)
+		lvbut << lvA[i] << std::endl;
 	lvbut.close();
 #endif
 
 #ifdef PRINT_MATRIX
 	std::ofstream matbut("matvals.txt");
-	matbut << matandlv.first << std::endl;
+	matbut << matA << std::endl;
 	matbut.close();
 #endif
 
 #ifdef HAVE_MKL
 	std::cout << "SOLVING" << std::endl;
 	
-	auto stmsol = STMSolver<double, BasisFunctions::TetrahedralLinearBasis<double>>{ beta, lambda, mesh, matandlv.first, matandlv.second };
+	auto stmsol = STMSolver<double, BasisFunctions::TetrahedralLinearBasis<double>>{ beta, lambda, mesh, matA, lvA };
 
 #ifndef HEAT_SYSTEM
 	stmsol.PrintToVTU("testfile-u.vtu", false);

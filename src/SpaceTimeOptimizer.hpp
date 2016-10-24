@@ -394,7 +394,63 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 	}
 
 	template<class BasisFuncs, class F0, class FT>
-	auto AssembleMatrixAndLV(const F0& y0, const FT& yOmega) const {
+	auto AssembleLV_Boundary(const F0& y0, const FT& yOmega) const {
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		const auto block_size = num_basis * num_elems;
+		const auto matrix_dim = 2 * block_size;
+
+		auto loadvec = std::vector<T>(matrix_dim);
+
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+				case SurfaceType_t::EndTime:
+					{
+						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+						for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+							const auto offset_vi = start_offset + bi;
+
+							const auto form_val_LV_low = this->EvaluateLV_Surface(yOmega, surf_id, basis_f, static_cast<basis_index_t>(bi));
+							assert(std::isfinite(form_val_LV_low));
+							loadvec[offset_vi] -= form_val_LV_low;
+						}
+					}
+					break;
+
+				case SurfaceType_t::StartTime:
+					{
+						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+						for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+							const auto offset_vi = start_offset + bi;
+
+							const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, static_cast<basis_index_t>(bi));
+							assert(std::isfinite(form_val_LV_up));
+							loadvec[block_size + offset_vi] += form_val_LV_up;
+						}
+					}
+					break;
+
+				case SurfaceType_t::Inner:
+					break;
+
+				case SurfaceType_t::MidTime:
+					break;
+
+				case SurfaceType_t::Undefined:
+					assert(false);
+			}
+		}
+
+		return std::move(loadvec);
+	}
+
+	template<class BasisFuncs>
+	auto AssembleMatrix() const {
 		// In a dG approach, we have a given amount of functions ( BasisFuncs' size ) per element
 		// Hence, the number of *active* elements in the mesh times the BasisFuncs is what we're looking for.
 
@@ -408,7 +464,6 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 		using csr_size_t = typename Utility::CSRMatrixAssembler<T>::size_type;
 		auto matassembler = Utility::CSRMatrixAssembler<T>{ static_cast<csr_size_t>(matrix_dim), static_cast<csr_size_t>(matrix_dim) };
-		auto loadvec = std::vector<T>(matrix_dim);
 
 		// We first sum Ah + Bh on the inner-element interfaces up
 		for(auto i = ElementId_t{0}; i < num_elems; ++i) {
@@ -423,13 +478,9 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Bh));
-					matassembler(offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
 
-					matassembler(block_size + offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
-
-					//const auto form_val_Bh_prime = this->EvaluateBh_prime_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
-					//assert(std::isfinite(form_val_Bh_prime));
-					//matassembler(block_size + offset_vi, block_size + offset_uj) = form_val_Ah + form_val_Bh_prime;
+					matassembler(block_size + offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
+					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
 				}
 			}
 		}
@@ -452,10 +503,10 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 								const auto form_val_Ah = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								assert(std::isfinite(form_val_Ah));
 
-								matassembler(offset_vi, offset_uj) += form_val_Ah;
-								matassembler(offset_uj, offset_vi) += form_val_Ah;
-								matassembler(block_size + offset_vi, block_size + offset_uj) += form_val_Ah;
-								matassembler(block_size + offset_uj, block_size + offset_vi) += form_val_Ah;
+								matassembler(block_size + offset_vi, offset_uj) += form_val_Ah;
+								matassembler(block_size + offset_uj, offset_vi) += form_val_Ah;
+								matassembler(offset_vi, block_size + offset_uj) += form_val_Ah;
+								matassembler(offset_uj, block_size + offset_vi) += form_val_Ah;
 							}
 						}
 
@@ -470,8 +521,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 									const auto offset_upi = start_offset_up + bj;
 									const auto offset_downi = start_offset_down + bi;
 
-									matassembler(offset_downi, offset_upi) += form_val_Bh;
-									matassembler(block_size + offset_upi, block_size + offset_downi) += form_val_Bh;
+									matassembler(block_size + offset_downi, offset_upi) += form_val_Bh;
+									matassembler(offset_upi, block_size + offset_downi) += form_val_Bh;
 								}
 							}
 						}
@@ -488,7 +539,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 								const auto form_val_Gh = this->EvaluateGh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								assert(std::isfinite(form_val_Gh));
-								matassembler(offset_vi, block_size + offset_uj) += form_val_Gh;
+								matassembler(block_size + offset_vi, block_size + offset_uj) += form_val_Gh;
 							}
 						}
 					}
@@ -498,40 +549,26 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					{
 						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = basis_und_t{0}; bi < num_basis; ++bi) {
-							const auto offset_vi = start_offset + bi;
 							for(auto bj = basis_und_t{0}; bj < num_basis; ++bj) {
+								const auto offset_vi = start_offset + bi;
 								const auto offset_uj = start_offset + bj;
 
 								const auto form_val_Hh = this->EvaluateHh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								assert(std::isfinite(form_val_Hh));
-								matassembler(block_size + offset_vi, offset_uj) += form_val_Hh;
+								matassembler(offset_vi, offset_uj) += form_val_Hh;
 							}
-
-							const auto form_val_LV_low = this->EvaluateLV_Surface(yOmega, surf_id, basis_f, static_cast<basis_index_t>(bi));
-							assert(std::isfinite(form_val_LV_low));
-							loadvec[block_size + offset_vi] -= form_val_LV_low;
 						}
 					}
 					break;
 
 				case SurfaceType_t::StartTime:
-					{
-						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
-						for(auto bi = basis_und_t{0}; bi < num_basis; ++bi) {
-							const auto offset_vi = start_offset + bi;
-
-							const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, static_cast<basis_index_t>(bi));
-							assert(std::isfinite(form_val_LV_up));
-							loadvec[offset_vi] += form_val_LV_up;
-						}
-					}
 					break;
 
 				case SurfaceType_t::Undefined:
 					assert(false);
 			}
 		}
-		return std::make_pair( matassembler.AssembleMatrix(), loadvec );
+		return matassembler.AssembleMatrix();
 	}
 };
 
