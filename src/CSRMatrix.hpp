@@ -326,6 +326,7 @@ namespace Utility {
 				}
 				RowIndices[i + 1] = EntryPosition + 1;
 			}
+			assert(RowIndices[m_Rows] == EntryPosition + 1);
 
 			return CSRMatrix<T>{ m_Rows, m_Columns, std::move(Entries), std::move(ColumnIndices), std::move(RowIndices) };
 		}

@@ -1,7 +1,7 @@
 \documentclass[../thesis.tex]{subfiles}
 
 \begin{document}
-\section{Numerical analysis}
+\chapter{Numerical analysis of the dG method}
 In comparison to \cite{Neumueller}, we require a theory suitable for Robin boundary conditions.
 Overall, we want to use the following abstract existence result to prove existence of a solution.
 \begin{theorem}
@@ -45,7 +45,7 @@ By this assumption we have for $\bar{h}_{k\ell} = \frac{1}{2} (h_k + h_\ell)$ wi
 \end{assumption}
 \begin{lemma}
 \label{thm:inverse-ineq}
-For any discrete function $v_h \in S_h^p(\meshT_N)$ there holds for all interior facets $\Gamma_{k \ell} \in \intfI_N$ the inverse inequalities
+For any discrete function $v_h \in \Shp(\meshT_N)$ there holds for all interior facets $\Gamma_{k \ell} \in \intfI_N$ the inverse inequalities
 \begin{IEEEeqnarray*}{rCl}
 	\| v_h \|_{L^2(\Gamma_{k\ell})} &\leq& c_I |\Gamma_{k \ell}|^{\frac{1}{2}} |\tau_\ell|^{-\frac{1}{2}} \| v_h \|_{L^2(\tau_\ell)}, \\
 	\| \nabla_x v_h \|_{[L^2(\Gamma_{k\ell})]^d} &\leq& c_I |\Gamma_{k \ell}|^{\frac{1}{2}} |\tau_\ell|^{-\frac{1}{2}} \| \nabla_x v_h \|_{[L^2(\tau_\ell)]^d}, \\
@@ -80,7 +80,7 @@ The bilinear form $a^\sip(\cdot, \cdot)$ is bounded, i.e.
 \[
 	|a^\sip(f, v_h)| \leq c_2^a \| f \|_{A, *} \| v_h \|_A,
 \]
-for all $f \in H^s(\mathcal{T}_N)$ with $s > \frac{3}{2}$ and for all $v_h \in S_h^p(\mathcal{T}_N)$ with an $h$-independent constant $c_2^a > 0$.
+for all $f \in H^s(\mathcal{T}_N)$ with $s > \frac{3}{2}$ and for all $v_h \in \Shp(\mathcal{T}_N)$ with an $h$-independent constant $c_2^a > 0$.
 \end{lemma}
 \begin{proof}
 See \cite[Lemma 2.2.7]{Neumueller} and its prerequisite \cite[Lemma 2.2.6]{Neumueller}.
@@ -107,7 +107,7 @@ The bilinear form $b(\cdot, \cdot)$ is bounded, i.e.
 \[
 	|b(f, v_h)| \leq \| f \|_{B, *} \| v_h \|_B
 \]
-for all $f \in H^s(\mathcal{T}_N)$ with $s \geq 1$ and for all $v_h \in S_h^p(\mathcal{T}_N)$.
+for all $f \in H^s(\mathcal{T}_N)$ with $s \geq 1$ and for all $v_h \in \Shp(\mathcal{T}_N)$.
 \end{lemma}
 \begin{proof}
 See \cite[Lemma 2.2.8]{Neumueller} for this statement.
@@ -126,7 +126,7 @@ The bilinear form $A(\cdot, \cdot)$ is bounded, i.e.
 \[
 	|A(f, v_h)| \leq c_2^A \lDGs f \rDGs \lDG v_h \rDG
 \]
-for all $f \in H^s(\meshT_N)$ with $s > \frac{3}{2}$ and for all $v_h \in S_h^p(\meshT_N)$ with an $h$-independent constant $c_2^A > 0$. 
+for all $f \in H^s(\meshT_N)$ with $s > \frac{3}{2}$ and for all $v_h \in \Shp(\meshT_N)$ with an $h$-independent constant $c_2^A > 0$. 
 \end{theorem}
 \begin{proof}
 Combining \cref{thm:asip-bounded,thm:aR-bounded,thm:b-bounded} yields:
@@ -142,7 +142,7 @@ With the boundedness given, we aim to prove a stability condition for $A(\cdot, 
 \label{thm:asip-lower-bound}
 For $\sigma \geq 4 c_K$, with $c_K \coloneqq c_I^2 c_G c_{R_2}$, it holds that
 \[
-	a^\sip(f_h, f_h) \geq \frac{1}{2} \| f_h \|_A^2 \quad \forall f_h \in S_h^p(\meshT_N).
+	a^\sip(f_h, f_h) \geq \frac{1}{2} \| f_h \|_A^2 \quad \forall f_h \in \Shp(\meshT_N).
 \]
 \end{lemma}
 \begin{proof}
@@ -161,7 +161,7 @@ The bilinear form $b(\cdot, \cdot)$ is bounded from below with
 \[
 	b(f_h, f_h) \geq \frac{1}{2} \left[ \| f_h \|_{L^2(\Sigma_0)}^2 + \| f_h \|_{L^2(\Sigma_T)}^2 + \sum_{\Gamma_{k\ell} \in \intfI_N} \left\| \ljump f_h \rjump_{\Gamma_{k \ell}, t} \right\|^2 \right]
 \]
-for all $f_h \in S_h^p(\meshT_N)$.
+for all $f_h \in \Shp(\meshT_N)$.
 \end{lemma}
 \begin{proof}
 Refer to \cite[Lemma 2.2.11]{Neumueller}.
@@ -174,22 +174,22 @@ Bringing \cref{thm:asip-lower-bound,thm:aR-lower-bound,thm:b-lower-bound-weak} t
 	&\eqqcolon& \frac{1}{2} \lDGw f_h \rDGw^2.
 \end{IEEEeqnarraybox}
 \end{equation}
-Given that $S_h^p(\meshT_N)$ has a finite dimension, we know that any linear operator is continuous and that all norms are equivalent. Furthermore, $\lDGw \cdot \rDGw$ is defined as the sum of norms, so we immediately know that it fulfills the triangle inequality and possesses absolute homogeneity.
-Hence, we know that $\lDGw \cdot \rDGw$ is a seminorm, and if we can prove that it separates points, it would be a norm on $S_h^p(\meshT_N)$. One can easily see that it will separate points if $\Gamma_D$ has positive measure. In this case, \cref{thm:Necas-Babuska} will guarantee existence and uniqueness of a solution.
+Given that $\Shp(\meshT_N)$ has a finite dimension, we know that any linear operator is continuous and that all norms are equivalent. Furthermore, $\lDGw \cdot \rDGw$ is defined as the sum of norms, so we immediately know that it fulfills the triangle inequality and possesses absolute homogeneity.
+Hence, we know that $\lDGw \cdot \rDGw$ is a seminorm, and if we can prove that it separates points, it would be a norm on $\Shp(\meshT_N)$. One can easily see that it will separate points if $\Gamma_D$ has positive measure. In this case, \cref{thm:Necas-Babuska} will guarantee existence and uniqueness of a solution.
 
 On the other hand, it cannot be a norm if for example $\alpha = 0$ and $\Gamma_D$ has zero measure. Consider the function $r(x, t) = t^2 - t$, which could be accurately sampled on $S_h^2(\meshT_N)$ for any $\meshT_N$: Since it's constant for fixed $t$, $\| r \|_A = 0$. Moreover, it is zero on the boundaries and continuous, one can see $\lDGw r \rDGw = 0$, but $r \neq 0$.
 
 However, it turns out that it's not necessary to apply \cref{thm:Necas-Babuska} to prove that $A(\cdot, \cdot)$ is an isomorphism. Due to the finite dimension and linearity, proving that $A(\cdot, \cdot)$ is injective implies $A(\cdot, \cdot)$ will be an isomorphism.
-\begin{lemma}
+\begin{theorem}
 \label{thm:A-injective}
-Let $\sigma \geq 4 c_K$, then $A(\cdot, \cdot)$ injective, i.e.\ if for a given $f_h \in S_h^p(\meshT_N)$ it holds that
+Let $\sigma \geq 4 c_K$, then $A(\cdot, \cdot)$ injective, i.e.\ if for a given $f_h \in \Shp(\meshT_N)$ it holds that
 \[
-	A(f_h, v_h) = 0 \quad \text{for all } v_h \in S_h^p(\meshT_N),
+	A(f_h, v_h) = 0 \quad \text{for all } v_h \in \Shp(\meshT_N),
 \]
 then $f_h = 0$ holds.
-\end{lemma}
+\end{theorem}
 \begin{proof}
-Let $f_h \in S_h^p(\meshT_N)$ be arbitrary.
+Let $f_h \in \Shp(\meshT_N)$ be arbitrary.
 Due to \cref{eq:A-ellip-weak} and by choosing $v_h = f_h$ we have
 \[
 	0 = A(f_h, f_h) \geq \frac{1}{2} \lDGw f_h \rDGw^2,
@@ -209,7 +209,7 @@ Finally, the remaining terms of $\lDGw \cdot \rDGw$ give us
 	\item $f_h = 0$ on $\Sigma_T$,
 	\item $\ljump f_h \rjump_{\Gamma_{k\ell}, t} = 0$ for all $\Gamma_{k\ell} \in \intfI_N$.
 \end{itemize}
-Therefore, we know that $f_h$ is continuous. Choosing $v_h = \frac{\partial f_h}{\partial t} \in S_h^{p-1}(\meshT_N) \subset S_h^p(\meshT_N)$, and using \cref{eq:b-up-down-equal} for $b(\cdot, \cdot)$, we observe that
+Therefore, we know that $f_h$ is continuous. Choosing $v_h = \frac{\partial f_h}{\partial t} \in S_h^{p-1}(\meshT_N) \subset \Shp(\meshT_N)$, and using \cref{eq:b-up-down-equal} for $b(\cdot, \cdot)$, we observe that
 \[
 	0 = A \left(f_h, \frac{\partial f_h}{\partial t}\right) = b\left(f_h,  \frac{\partial f_h}{\partial t}\right) = \sum_{\ell=1}^N \left\| \frac{\partial f_h}{\partial t} \right\|_{L^2(\tau_\ell)}^2,
 \]
@@ -219,7 +219,7 @@ Hence we know that $f_h$ is a continuous function with zero derivatives on $\mes
 \end{proof}
 Summarizing \cref{thm:A-injective} and the previously made remarks, we obtain
 \begin{theorem}
-Let \cref{as:mesh-assumptions} hold. There exists a unique solution $f_h \in S_h^p(\meshT_N)$ of \cref{eq:dg-discrete-form}.
+Let \cref{as:mesh-assumptions} hold. There exists a unique solution $f_h \in \Shp(\meshT_N)$ of \cref{eq:dg-discrete-form}.
 \end{theorem}
 
 While \cref{thm:b-lower-bound-weak} was sufficient to prove existence and uniqueness of a solution, it will not suffice to prove a convergence result. With an $\inf$-$\sup$-condition (or an ellipticity estimate, which implies it) and boundedness, a convergence result could usually be shown, like \cite[3.7 Hilfssatz]{Braess}.
@@ -235,14 +235,14 @@ Let $\bar{h}$ be a piecewise linear function on $\meshT_N$, i.e.\ $\bar{h}|_{\ta
 \]
 and $c_g \geq 1$. Then $\bar{h}$ is called a mesh function.
 \end{definition}
-Given an $f_h \in S_h^p(\meshT_N)$ and a mesh function $\bar{h}$ we define the function $w_h \in S_h^p(\meshT_N)$ as
+Given an $f_h \in \Shp(\meshT_N)$ and a mesh function $\bar{h}$ we define the function $w_h \in \Shp(\meshT_N)$ as
 \begin{equation}
 \label{eq:wh}
 	w_h|_{\tau_\ell} \coloneqq \bar{h}|_{\tau_\ell} \partial_t f_h|_{\tau_\ell} \in \polyP^p(\tau_\ell)
 \end{equation}
-for all $\tau_\ell \in \meshT_N$. Obviously, $w_h \in S_h^p(\meshT_N)$ holds by definition.
+for all $\tau_\ell \in \meshT_N$. Obviously, $w_h \in \Shp(\meshT_N)$ holds by definition.
 
-Our approach will be to choose for a given mesh function and a given $f_h \in S_h^p(\meshT_N)$ the test function
+Our approach will be to choose for a given mesh function and a given $f_h \in \Shp(\meshT_N)$ the test function
 \[
 	v_h = f_h + \delta w_h,
 \]
@@ -265,7 +265,7 @@ Analogously, one obtains $c_q^{-2} h_\ell \leq \bar{h}$. Hence, $\bar{h}$ is a m
 Due to this, we assume in the following that $\meshT_N$ is always quasi-uniform.
 \begin{lemma}
 \label{thm:wh-b-bound}
-For $f_h \in S_h^p(\meshT_N)$ let $w_h \in S_h^p(\meshT_N)$ be defined by \cref{eq:mesh-func}.
+For $f_h \in \Shp(\meshT_N)$ let $w_h \in \Shp(\meshT_N)$ be defined by \cref{eq:mesh-func}.
 Then for $\delta > 0$ there exists a $c_1^b(\delta) \coloneqq \frac{1}{2} \min \left\{ 1, \delta c_g^{-1}, 1 - 2 c_I^2 c_{R_2} c_g^3 \delta \right\} > 0$ independent of $f_h$ such that
 \[
 	b(f_h, f_h + \delta w_h) \geq c_1^b \| f_h \|_B^2.
@@ -280,7 +280,7 @@ Moreover, there exist a $c_I^b > 0$ such that
 \end{proof}
 \begin{lemma}
 \label{thm:wh-A-bound}
-For $f_h \in S_h^p(\meshT_N)$ let $w_h \in S_h^p(\meshT_N)$ be defined by \cref{eq:mesh-func}. Then there exists a $c_I^a > 0$ such that
+For $f_h \in \Shp(\meshT_N)$ let $w_h \in \Shp(\meshT_N)$ be defined by \cref{eq:mesh-func}. Then there exists a $c_I^a > 0$ such that
 \[
 	\| w_h \|_A \leq c_I^a \| f_h \|_A.
 \]
@@ -290,7 +290,7 @@ See \cite[Lemma 2.2.19]{Neumueller}.
 \end{proof}
 \begin{lemma}
 \label{thm:wh-aR-bound}
-For $f_h \in S_h^p(\meshT_N)$ let $w_h \in S_h^p(\meshT_N)$ be defined by \cref{eq:mesh-func}. Then there exists a $c_I^{a, R} > 0$ such that
+For $f_h \in \Shp(\meshT_N)$ let $w_h \in \Shp(\meshT_N)$ be defined by \cref{eq:mesh-func}. Then there exists a $c_I^{a, R} > 0$ such that
 \[
 	\| w_h \|_{A, R} \leq c_I^{a, R} \| f_h \|_{A, R}.
 \]
@@ -319,16 +319,16 @@ As a next step, we will combine all previous estimates to obtain stability and b
 \label{thm:Astab-est}
 Let $\meshT_N$ be a quasi-uniform decomposition and let $\sigma \geq 4 c_K$ then the following stability estimate holds:
 \[
-	\sup_{0 \neq v_h \in S_h^p(\meshT_N)} \frac{A(f_h, v_h)}{\lDG v_h \rDG} \geq c_S^A \lDG f_h \rDG \quad \text{for all } f_h \in S_h^p(\meshT_N).
+	\sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(f_h, v_h)}{\lDG v_h \rDG} \geq c_S^A \lDG f_h \rDG \quad \text{for all } f_h \in \Shp(\meshT_N).
 \]
 \end{theorem}
 \begin{proof}
-Let a function $f_h \in S_h^p(\meshT_N)$ be given.
+Let a function $f_h \in \Shp(\meshT_N)$ be given.
 The case $f_h = 0$ is trivial, so we assume $f_h \neq 0$ in the following.
 We use the specific test function $v_h = u_h + \delta w_h$, where $\delta > 0$ and $w_h$ is stemming from the mesh function $\bar{h}$ defined in \cref{eq:mesh-func}.
-Because $f_h \neq 0$, we can assume that $\delta$ is small enough so that $v_h \neq 0$. Furthermore $v_h \in S_h^p(\meshT_N)$ holds and we have
+Because $f_h \neq 0$, we can assume that $\delta$ is small enough so that $v_h \neq 0$. Furthermore $v_h \in \Shp(\meshT_N)$ holds and we have
 \begin{IEEEeqnarray*}{rCl}
-	\sup_{0 \neq v_h \in S_h^p(\meshT_N)} \frac{A(f_h, v_h)}{\lDG v_h \rDG} &\geq& \frac{A(f_h, f_h + \delta w_h)}{\lDG u_h + \delta w_h \rDG} \\
+	\sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(f_h, v_h)}{\lDG v_h \rDG} &\geq& \frac{A(f_h, f_h + \delta w_h)}{\lDG u_h + \delta w_h \rDG} \\
 	&=& \frac{a^\sip(f_h, f_h + \delta w_h) + a^R(f_h, f_h + \delta w_h) + b(f_h, f_h + \delta w_h)}{\lDG f_h + \delta w_h \rDG}
 \end{IEEEeqnarray*}
 By applying estimates from the previous \cref{thm:asip-lower-bound,thm:asip-bounded}, we obtain
@@ -378,7 +378,7 @@ Additionally, we also have to estimate the denominator.
 \end{IEEEeqnarray*}
 Combining the two inequalities:
 \begin{IEEEeqnarray*}{rCl}
-	\sup_{0 \neq v_h \in S_h^p(\meshT_N)} \frac{A(f_h, v_h)}{\lDG v_h \rDG} &\geq& \frac{A(f_h, f_h + \delta w_h)}{\lDG u_h + \delta w_h \rDG} \\
+	\sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(f_h, v_h)}{\lDG v_h \rDG} &\geq& \frac{A(f_h, f_h + \delta w_h)}{\lDG u_h + \delta w_h \rDG} \\
 	&\geq& \frac{ \min\{ 1, \delta^* c_g^{-1} \} }{2 ( 1 + \delta^* \max\{c_I^a, c_I^{a, R}, c_I^b\} )} \lDG f_h \rDG \\
 	&=& c_S^A \lDG f_h \rDG.
 \end{IEEEeqnarray*}
@@ -387,22 +387,22 @@ With this, we have proven the stability estimate we were aiming for.
 \begin{theorem}
 \label{thm:A-convergence-abstract}
 Let $\meshT_N$ be a quasi-uniform decomposition and let $f \in H^s(\meshT_N)$, $s > \frac{3}{2}$, be the exact solution of \cref{eq:dg-model-prob}.
-For $\sigma \geq 4 c_K$ let $f_h \in S_h^p(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-prob}.
+For $\sigma \geq 4 c_K$ let $f_h \in \Shp(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-prob}.
 Then the following error estimate holds:
 \[
-	\lDG f - f_h \rDG \leq \inf_{z_h \in S_h^p(\meshT_N)} \left[ \lDG f - z_h \rDG + \frac{c_2^A}{c_S^A} \lDGs f - z_h \rDGs \right].
+	\lDG f - f_h \rDG \leq \inf_{z_h \in \Shp(\meshT_N)} \left[ \lDG f - z_h \rDG + \frac{c_2^A}{c_S^A} \lDGs f - z_h \rDGs \right].
 \]
 \end{theorem}
 \begin{proof}
-From \cref{thm:Astab-est}, we conclude for any discrete function $z_h \in S_h^p(\meshT_N)$:
+From \cref{thm:Astab-est}, we conclude for any discrete function $z_h \in \Shp(\meshT_N)$:
 \begin{IEEEeqnarray*}{rCl}
-	c_S^A \lDG z_h - f_h \rDG &\leq& \sup_{0 \neq v_h \in S_h^p(\meshT_N)} \frac{A(z_h - f_h, v_h)}{\lDG v_h \rDG} \\
+	c_S^A \lDG z_h - f_h \rDG &\leq& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(z_h - f_h, v_h)}{\lDG v_h \rDG} \\
 \noalign{\noindent Using \cref{eq:dg-Galerkin-orthogonality}, we can insert the exact solution: \vspace{\jot}}
-	&=& \sup_{0 \neq v_h \in S_h^p(\meshT_N)} \frac{A(f - f_h - (f - z_h), v_h)}{\lDG v_h \rDG} \\
-	&=& \sup_{0 \neq v_h \in S_h^p(\meshT_N)} \frac{A(z_h - f, v_h)}{\lDG v_h \rDG} \\
+	&=& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(f - f_h - (f - z_h), v_h)}{\lDG v_h \rDG} \\
+	&=& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(z_h - f, v_h)}{\lDG v_h \rDG} \\
 \noalign{\noindent Using the boundedness estimate \cref{thm:A-bounded}: \vspace{\jot}}
-	&\leq& \sup_{0 \neq v_h \in S_h^p(\meshT_N)} \frac{c_2^A \lDGs z_h - f \rDGs \lDG v_h \rDG}{\lDG v_h \rDG} \\
-	&=& \sup_{0 \neq v_h \in S_h^p(\meshT_N)} c_2^A \lDGs z_h - f \rDGs \\
+	&\leq& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{c_2^A \lDGs z_h - f \rDGs \lDG v_h \rDG}{\lDG v_h \rDG} \\
+	&=& \sup_{0 \neq v_h \in \Shp(\meshT_N)} c_2^A \lDGs z_h - f \rDGs \\
 	&=& c_2^A \lDGs f - z_h \rDGs.
 \end{IEEEeqnarray*}
 Using the triangle inequality we obtain:
@@ -438,7 +438,7 @@ For $s \in \N$ with $s \geq 2$ the $L^2$-error on the boundary $\partial \tau_\e
 \begin{proof}
 The Lemma has been proven in \cite{DiPietroErn}.
 \end{proof}
-We define the global $L^2$-projection $Q_{\meshT_N} f \in S_h^p(\meshT_N)$ such that
+We define the global $L^2$-projection $Q_{\meshT_N} f \in \Shp(\meshT_N)$ such that
 \[
 	Q_{\meshT_N} f|_{\tau_\ell} \coloneqq Q_\ell f \quad \text{for all } \tau_\ell \in \meshT_N.
 \]
@@ -493,16 +493,16 @@ See \cite[Lemma 2.2.27]{Neumueller}.
 \end{proof}
 \begin{theorem}
 \label{thm:dg-convergence}
-Let $\meshT_N$ be a quasi-uniform decomposition and let $f \in H^s(\meshT_N)$, $s \geq 2$, be the exact solution of \cref{eq:dg-model-prob} and for $\sigma \geq 4 c_K$ let $f_h \in S_h^p(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-form}.
+Let $\meshT_N$ be a quasi-uniform decomposition and let $f \in H^s(\meshT_N)$, $s \geq 2$, be the exact solution of \cref{eq:dg-model-prob} and for $\sigma \geq 4 c_K$ let $f_h \in \Shp(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-form}.
 Then the following error estimate holds
 \[
 	\lDG f - f_h \rDG \leq c \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |u|_{H^s(\meshT_N)}.
 \]
 \end{theorem}
 \begin{proof}
-We apply \cref{thm:A-convergence-abstract} and use the $L^2$-projection $Q_{\meshT_N} u \in S_h^p(\meshT_N)$ to obtain:
+We apply \cref{thm:A-convergence-abstract} and use the $L^2$-projection $Q_{\meshT_N} u \in \Shp(\meshT_N)$ to obtain:
 \begin{IEEEeqnarray*}{rCl}
-	\lDG f - f_h \rDG &\leq& \inf_{z_h \in S_h^p(\meshT_N)} \left[ \lDG f - z_h \rDG + \frac{c_2^A}{c_S^A} \lDGs f - z_h \rDGs \right] \\
+	\lDG f - f_h \rDG &\leq& \inf_{z_h \in \Shp(\meshT_N)} \left[ \lDG f - z_h \rDG + \frac{c_2^A}{c_S^A} \lDGs f - z_h \rDGs \right] \\
 	&\leq& \lDG f - Q_{\meshT_N} f \rDG + \frac{c_2^A}{c_S^A} \lDGs f - Q_{\meshT_N} f \rDGs \\
 	&=& \left[ \| f - Q_{\meshT_N} f \|_A^2 + \| f - Q_{\meshT_N} f \|_{A, R}^2 + \| f - Q_{\meshT_N} f \|_B^2 \right]^\frac{1}{2} \\
 	&& \quad {} + \frac{c_2^A}{c_S^A} \left[ \| f - Q_{\meshT_N} f \|_{A,*}^2 + \| f - Q_{\meshT_N} f \|_{A, R}^2 + \| f - Q_{\meshT_N} f \|_{B,*}^2 \right]^\frac{1}{2} \\
