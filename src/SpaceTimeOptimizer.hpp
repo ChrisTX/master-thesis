@@ -774,7 +774,11 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					assert(false);
 			}
 		}
-		return matassembler.AssembleMatrix();
+
+		for (auto i = csr_size_t{ 0 }; i < matrix_dim; ++i)
+			matassembler(i, i) += T{ 0 };
+
+		return matassembler.AssembleMatrix(1e-13);
 	}
 };
 

@@ -288,7 +288,7 @@ namespace Utility {
 			return m_EntriesBuildUpMap.at(Row).at(Column);
 		}
 
-		CSRMatrix<T> AssembleMatrix() const
+		CSRMatrix<T> AssembleMatrix(const T epsilon_filter = T{ 0 }) const
 		{
 			// Now we have our map loaded with pairs i,j mapped to their values
 			// Note that a std::pair is compared lexographically in its elements. This means that if we iterate through the map,
@@ -314,17 +314,18 @@ namespace Utility {
 			for (auto it = m_EntriesBuildUpMap.cbegin(); it != m_EntriesBuildUpMap.cend(); ++it) {
 				const auto i = it->first;
 
-				for (auto k = RowCounter + 1; k <= i; ++k)
-					RowIndices[k] = EntryPosition + 1;
+				assert(!i || i == RowCounter + 1);
 				RowCounter = i;
 				
 				for (auto colit = it->second.cbegin(); colit != it->second.cend(); ++colit) {
+					if (colit->first != RowCounter && std::abs(colit->second) < epsilon_filter)
+						continue;
 					Entries[EntryPosition] = colit->second;
 					assert(std::isfinite(colit->second));
 					ColumnIndices[EntryPosition++] = colit->first + 1;
 				}
+				RowIndices[i + 1] = EntryPosition + 1;
 			}
-			RowIndices[m_Rows] = EntryPosition + 1;
 
 			return CSRMatrix<T>{ m_Rows, m_Columns, std::move(Entries), std::move(ColumnIndices), std::move(RowIndices) };
 		}

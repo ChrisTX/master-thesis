@@ -29,7 +29,7 @@ int main() {
 #elif !defined(NDEBUG)
 	const auto reflim = 2;
 #else
-	const auto reflim = 4;
+	const auto reflim = 5;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();

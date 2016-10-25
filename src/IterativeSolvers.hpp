@@ -72,6 +72,31 @@ namespace IterativeSolvers {
 		N = A.GetNumberOfRows(); // Number of rows
 		assert(x.size() == static_cast<std::size_t>(N));
 		nrhs = 1;
+
+		for (auto i = 0; i < iparm.size(); ++i)
+			iparm[i] = 0;
+
+		iparm[0] = 1;         /* No solver default */
+		iparm[1] = 2;         /* Fill-in reordering from METIS */
+		iparm[3] = 0;         /* No iterative-direct algorithm */
+		iparm[4] = 0;         /* No user fill-in reducing permutation */
+		iparm[5] = 0;         /* Write solution into x */
+		iparm[6] = 0;         /* Not in use */
+		iparm[7] = 0;         /* Max numbers of iterative refinement steps */
+		iparm[8] = 0;         /* Not in use */
+		iparm[9] = 13;        /* Perturb the pivot elements with 1E-13 */
+		iparm[10] = 0;        /* Use nonsymmetric permutation and scaling MPS */
+		iparm[11] = 0;        /* Not in use */
+		iparm[12] = 0;        /* Maximum weighted matching algorithm is switched-off */
+							  /* (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy */
+		iparm[13] = 0;        /* Output: Number of perturbed pivots */
+		iparm[14] = 0;        /* Not in use */
+		iparm[15] = 0;        /* Not in use */
+		iparm[16] = 0;        /* Not in use */
+		iparm[17] = -1;       /* Output: Number of nonzeros in the factor LU */
+		iparm[18] = -1;       /* Output: Mflops for LU factorization */
+		iparm[19] = 0;        /* Output: Numbers of CG Iterations */
+
 	#ifndef NDEBUG
 		msglvl = 1;
 		iparm[26] = 1;
