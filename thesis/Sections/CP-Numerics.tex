@@ -168,8 +168,9 @@ By defining the so called state operator $S \coloneqq E_T G_\Sigma \beta \cdot$,
 	y(T) - y_\Omega = S u + (G_0 y_0)(T) - y_\Omega = S u - z.
 \]
 For the discontinuous Galerkin method introduced in \cref{sec:dG-method}, we can define an analogous operator. 
-To that end, we define operators that map $g_R$ and $y_0$ into their discrete right hand sides: 
+To that end, we define operators that map $g_I$, $g_R$ and $y_0$ into their discrete right hand sides, i.e.\ we define $\boldsymbol{g_I} : L^2(Q) \to \R^m$, $\boldsymbol{g_R} : L^2(\Sigma) \to \R^m$ and $\boldsymbol{y_0} : L^2(\Omega) \to \R^m$ component-wise by
 \begin{IEEEeqnarray*}{rCl}
+	\boldsymbol{g_I}[i] (g_I) &=& \iint_Q g_I \varphi_i \dd x \dd t, \\
 	\boldsymbol{g_R}[i] (g_R) &=& \iint_\Sigma g_R \varphi_i \dd x \dd t, \\
 	\boldsymbol{y_0}[i] (y_0) &=& \int_\Omega y_0 \varphi_i(\cdot, 0) \dd x \dd t.
 \end{IEEEeqnarray*}
@@ -297,7 +298,7 @@ characterizes the solution $\bar{u} \in U_{ad}$ equivalently to \cref{thm:variat
 Refer to \cite[Lemma 3.17, Satz 3.18, p.\ 126f.]{Troeltzsch} for this result.
 
 Nonetheless, we have to derive a similarly defined adjoint state for the discrete operator.
-For this, we pick special right hand sides for the  \cref{eq:generalized-problem} where each boundary value depends on a control, called $v$, $u$ and $w$, respectively. The motivation behind this is so that we can transfer the result on the adjoint to the interior heat source problem. 
+For this, we pick special right hand sides for the \cref{eq:generalized-problem} where each boundary value depends on a control, called $v$, $u$ and $w$, respectively. The motivation behind this is so that we can transfer the result on the adjoint to the interior heat source problem.
 \begin{equation}
 \label{eq:generalized-problem-state}
 \begin{IEEEeqnarraybox}[][c]{rCl"l}
@@ -306,50 +307,64 @@ n_x(x,t) \cdot \nabla_x y(x, t) + \alpha y(x, t) &=& b_\Sigma(x, t) u & \text{fo
 y(x, 0) &=& b_\Omega(x) w & \text{for } (x, t) \in \Omega.
 \end{IEEEeqnarraybox}
 \end{equation}
+By applying the discontinuous Galerkin formulation for \cref{eq:generalized-problem-state} we obtain
+\begin{equation}
+\label{eq:generalized-problem-state-dG}
+A_h \boldsymbol{y} = \boldsymbol{g_I}(b_Q v) + \boldsymbol{g_R}(b_\Sigma u) + \boldsymbol{y_0}(b_\Omega w).
+\end{equation}
+and by treating \cref{eq:generalized-problem-adj} accordingly, we obtain
+\begin{equation}
+\label{eq:generalized-problem-adj-dG}
+A_h^\tp \boldsymbol{p} = \boldsymbol{g_I}(a_Q) + \boldsymbol{g_R}(a_\Sigma) + \boldsymbol{y_T}(a_\Omega),
+\end{equation}
+where $\boldsymbol{y_T} : L^2(\Omega) \to \R^m$ is defined in an analogous fashion as before:
+\begin{IEEEeqnarray*}{rCl}
+	\boldsymbol{y_T}[i] (y_T) &=& \int_\Omega y_T \varphi_i(\cdot, T) \dd x \dd t.
+\end{IEEEeqnarray*}
+One would assert that \cref{eq:generalized-problem-adj-dG} is the adjoint in the given sense to \cref{eq:generalized-problem-state-dG}, because \cref{eq:generalized-problem-adj} is the adjoint in that sense to \cref{eq:generalized-problem-state} for the continuous case.
+In order to prove this, we need the following statement:
 \begin{lemma}
-The solution of \cref{eq:generalized-problem-state} and \cref{eq:generalized-problem-adj} 
+\label{thm:discrete-adj-state-helper}
+The solution $y_h$ of \cref{eq:generalized-problem-state-dG} and $p_h$ of\cref{eq:generalized-problem-adj-dG} adhere to the following equation:
+\[
+\begin{IEEEeqnarraybox}[][c]{l}
+	\iint_Q b_Q v p_h \dd x \dd t + \int_\Omega b_\Omega w p_h(\cdot, 0) \dd x + \iint_{\Sigma_R} b_\Sigma u p_h \dd s(x) \dd t \\
+	\IEEEeqnarraymulticol{1}{r}{ \qquad\qquad {} = \iint_Q a_Q y_h \dd x \dd t + \int_\Omega a_\Omega y_h(\cdot, T) \dd x + \iint_{\Sigma_R} a_\Sigma y_h \dd s(x) \dd t. }
+\end{IEEEeqnarraybox}
+\]
 \end{lemma}
-Previously we discussed the application of the discontinuous Galerkin method to the problem \cref{eq:dg-adjoint-prob}.  
+\begin{proof}
 Our formulation for the discretization of \cref{eq:generalized-problem-state} and \cref{eq:generalized-problem-adj} are respectively:
 \begin{IEEEeqnarray*}{rCl}
-	a(y_h, v_h) + b(y_h, v_h) &=& \iint_Q b_Q v v_h \dd x \dd t + \int_\Omega b_\Omega w v_h(\cdot, 0) \dd x + \iint_{\Sigma_R} b_\Sigma u v_h \dd s(x) \dd t \\
-	a(v_h, p_h) + b(v_h, p_h) &=& \iint_Q a_Q v_h \dd x \dd t + \int_\Omega a_\Omega v_h(\cdot, T) \dd x + \iint_{\Sigma_R} a_\Sigma v_h \dd s(x) \dd t.
+	a(y_h, v_h) + b(y_h, v_h) &=& \iint_Q b_Q v v_h \dd x \dd t + \int_\Omega b_\Omega w v_h(\cdot, 0) \dd x + \iint_{\Sigma_R} b_\Sigma u v_h \dd s(x) \dd t, \\
+	a(v_h, p_h) + b(v_h, p_h) &=& \iint_Q a_Q v_h \dd x \dd t + \int_\Omega a_\Omega v_h(\cdot, T) \dd x + \iint_{\Sigma_R} a_\Sigma v_h \dd s(x) \dd t,
 \end{IEEEeqnarray*}
+where each equation holds for all $v_h \in \Shp(\meshT_N)$.
 We test the first equation with $p_h$ and the second one with $y_h$:
 \begin{IEEEeqnarray*}{rCl}
 	a(y_h, p_h) + b(y_h, p_h) &=& \iint_Q b_Q v p_h \dd x \dd t + \int_\Omega b_\Omega w p_h(\cdot, 0) \dd x + \iint_{\Sigma_R} b_\Sigma u p_h \dd s(x) \dd t \\
 	a(y_h, p_h) + b(y_h, p_h) &=& \iint_Q a_Q y_h \dd x \dd t + \int_\Omega a_\Omega y_h(\cdot, T) \dd x + \iint_{\Sigma_R} a_\Sigma y_h \dd s(x) \dd t.
 \end{IEEEeqnarray*}
-We notice that the left hand sides of both equations are the same and therefore have
-\begin{equation}
-\label{eq:aid-variational-ineq}
+Noticing that the left hand sides of both equations are the same gives us the desired statement:
+\[
 \begin{IEEEeqnarraybox}[][c]{l}
 	\iint_Q b_Q v p_h \dd x \dd t + \int_\Omega b_\Omega w p_h(\cdot, 0) \dd x + \iint_{\Sigma_R} b_\Sigma u p_h \dd s(x) \dd t \\
 	\IEEEeqnarraymulticol{1}{r}{ \qquad\qquad {} = \iint_Q a_Q y_h \dd x \dd t + \int_\Omega a_\Omega y_h(\cdot, T) \dd x + \iint_{\Sigma_R} a_\Sigma y_h \dd s(x) \dd t. }
 \end{IEEEeqnarraybox}
-\end{equation}
+\]
+\end{proof}
 
 For the boundary control problem, we define the adjoined state $p_h$ as the solution of
 \begin{equation}
 \label{eq:adjoined-discrete}
 	a(v_h, p_h) + b(v_h, p_h) = \int_\Omega (y(T) - y_\Omega) y_h(\cdot, T) \dd x \quad \forall v_h \in \Shp(\meshT_N).
 \end{equation}
-
-In our situation, we have $U_{ad} = L^2(\Omega)$, so we can conclude even more, namely that
-\[
-	S^\adj(S \bar{u} - y_\Omega) + \lambda \bar{u} = 0
-\]
-and
-\[
-	S_h^\adj(S_h \bar{u}_h - y_\Omega) + \lambda \bar{u}_h = 0.
-\]
-
-Using this, we can prove:
+Using \cref{thm:discrete-adj-state-helper}, we can prove:
 \begin{theorem}
 \label{eq:discrete-variational-ineq}
-A control $\bar{u}_h \in U_{ad}$ is optimal if and only if with the associated adjoined state $\bar{p}_h$ fulfills the following equality
+A control $\bar{u}_h \in L^2(\Omega)$ is optimal for \cref{} if and only if with the associated adjoined state $\bar{p}_h$ defined as the solution of \cref{eq:generalized-problem-adj-dG} fulfills the following variational inequality
 \[
-	\beta(x, t) \bar{p}_h (x, t) + \lambda \bar{u}_h(x, t) = 0
+	( \beta(x, t) \bar{p}_h (x, t) + \lambda \bar{u}_h(x, t), u_h - \bar{u}_h )_= 0
 \]
 almost everywhere.
 \end{theorem}
