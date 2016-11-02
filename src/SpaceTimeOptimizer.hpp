@@ -294,7 +294,7 @@ public:
 	}
 
 	template<class BasisFuncs, class BasisIndex>
-	auto EvaluateGh_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
+	auto EvaluateJh_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
 		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
 		assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::MidTime);
 
@@ -323,7 +323,7 @@ public:
 	}
 
 	template<class BasisFuncs, class BasisIndex>
-	auto EvaluateHh_Inner_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
+	auto EvaluateKh_Inner_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
 		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
 		assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::MidTime);
 
@@ -352,7 +352,7 @@ public:
 	}
 
 	template<class BasisFuncs, class BasisIndex>
-	auto EvaluateGh_Inner_Element(const ElementId_t elemid, const BasisFuncs bf, const BasisIndex biv, const BasisIndex biu) const {
+	auto EvaluateJh_Inner_Element(const ElementId_t elemid, const BasisFuncs bf, const BasisIndex biv, const BasisIndex biu) const {
 		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
 		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
 		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
@@ -370,7 +370,7 @@ public:
 	}
 
 	template<class BasisFuncs, class BasisIndex>
-	auto EvaluateHh_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
+	auto EvaluateKh_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
 		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
 		assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::EndTime);
 
@@ -562,7 +562,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		for (auto i = ElementId_t{ 0 }; i < num_elems; ++i) {
 			const auto start_offset = i * num_basis;
 			for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
-				for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+				for (auto bj = bi; bj < num_basis; ++bj) {
 					const auto offset_vi = start_offset + bi;
 					const auto offset_uj = start_offset + bj;
 
@@ -572,18 +572,29 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Bh));
 
+#ifndef SYMMETRIC_ASSEMBLY
 					matassembler(block_size + offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
-					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
+					if (bi != bj)
+						matassembler(block_size + offset_uj, offset_vi) = form_val_Ah + form_val_Bh;
+#endif
 
-					const auto form_val_Gh = this->EvaluateGh_Inner_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
-					assert(std::isfinite(form_val_Gh));
-					matassembler(block_size + offset_vi, block_size + offset_uj) += form_val_Gh;
+					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
+					if (bi != bj)
+						matassembler(offset_vi, block_size + offset_uj) = form_val_Ah + form_val_Bh;
+
+					const auto form_val_Jh = this->EvaluateJh_Inner_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					assert(std::isfinite(form_val_Jh));
+					matassembler(block_size + offset_vi, block_size + offset_uj) += form_val_Jh;
+#ifndef SYMMETRIC_ASSEMBLY
+					if (bi != bj)
+						matassembler(block_size + offset_uj, block_size + offset_vi) += form_val_Jh;
+#endif
 				}
 			}
 		}
 
 		// Aside from these per element integrals, we have some interface ones:
-		// Ah, Bh both have inner interface terms, Gh only applies on \partial \Omega x (0, T) and Hh applies on \partial \Omega x T.
+		// Ah, Bh both have inner interface terms, Jh only applies on \partial \Omega x (0, T) and Kh applies on \partial \Omega x T.
 		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
 			const auto& surf_id = pval.first;
 			const auto& surf_data = pval.second;
@@ -600,8 +611,11 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto form_val_Ah = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 						assert(std::isfinite(form_val_Ah));
 
+#ifndef SYMMETRIC_ASSEMBLY
 						matassembler(block_size + offset_vi, offset_uj) += form_val_Ah;
 						matassembler(block_size + offset_uj, offset_vi) += form_val_Ah;
+#endif
+
 						matassembler(offset_vi, block_size + offset_uj) += form_val_Ah;
 						matassembler(offset_uj, block_size + offset_vi) += form_val_Ah;
 					}
@@ -618,7 +632,9 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 							const auto offset_upi = start_offset_up + bj;
 							const auto offset_downi = start_offset_down + bi;
 
+#ifndef SYMMETRIC_ASSEMBLY
 							matassembler(block_size + offset_downi, offset_upi) += form_val_Bh;
+#endif
 							matassembler(offset_upi, block_size + offset_downi) += form_val_Bh;
 						}
 					}
@@ -630,13 +646,17 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 			{
 				const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
-					for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+					for (auto bj = bi; bj < num_basis; ++bj) {
 						const auto offset_vi = start_offset + bi;
 						const auto offset_uj = start_offset + bj;
 
-						const auto form_val_Hh = this->EvaluateHh_Inner_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
-						assert(std::isfinite(form_val_Hh));
-						matassembler(offset_vi, offset_uj) += form_val_Hh;
+						const auto form_val_Kh = this->EvaluateKh_Inner_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+						assert(std::isfinite(form_val_Kh));
+						matassembler(offset_vi, offset_uj) += form_val_Kh;
+#ifndef SYMMETRIC_ASSEMBLY
+						if(bi != bj)
+							matassembler(offset_uj, offset_vi) += form_val_Kh;
+#endif
 					}
 				}
 			}
@@ -675,7 +695,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		for(auto i = ElementId_t{0}; i < num_elems; ++i) {
 			const auto start_offset = i * num_basis;
 			for(auto bi = basis_und_t{0}; bi < num_basis; ++bi) {
-				for(auto bj = basis_und_t{0}; bj < num_basis; ++bj) {
+				for(auto bj = bi; bj < num_basis; ++bj) {
 					const auto offset_vi = start_offset + bi;
 					const auto offset_uj = start_offset + bj;
 
@@ -685,14 +705,21 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Bh));
 
+#ifndef SYMMETRIC_ASSEMBLY
 					matassembler(block_size + offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
+					if (bi != bj)
+						matassembler(block_size + offset_uj, offset_vi) = form_val_Ah + form_val_Bh;
+#endif
+
 					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
+					if (bi != bj)
+						matassembler(offset_vi, block_size + offset_uj) = form_val_Ah + form_val_Bh;
 				}
 			}
 		}
 
 		// Aside from these per element integrals, we have some interface ones:
-		// Ah, Bh both have inner interface terms, Gh only applies on \partial \Omega x (0, T) and Hh applies on \partial \Omega x T.
+		// Ah, Bh both have inner interface terms, Jh only applies on \partial \Omega x (0, T) and Kh applies on \partial \Omega x T.
 		for(const auto& pval : this->m_Mesh.m_SurfaceList) {
 			const auto& surf_id = pval.first;
 			const auto& surf_data = pval.second;
@@ -709,8 +736,11 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 								const auto form_val_Ah = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								assert(std::isfinite(form_val_Ah));
 
+#ifndef SYMMETRIC_ASSEMBLY
 								matassembler(block_size + offset_vi, offset_uj) += form_val_Ah;
 								matassembler(block_size + offset_uj, offset_vi) += form_val_Ah;
+#endif
+
 								matassembler(offset_vi, block_size + offset_uj) += form_val_Ah;
 								matassembler(offset_uj, block_size + offset_vi) += form_val_Ah;
 							}
@@ -726,8 +756,9 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 									assert(std::isfinite(form_val_Bh));
 									const auto offset_upi = start_offset_up + bj;
 									const auto offset_downi = start_offset_down + bi;
-
+#ifndef SYMMETRIC_ASSEMBLY
 									matassembler(block_size + offset_downi, offset_upi) += form_val_Bh;
+#endif
 									matassembler(offset_upi, block_size + offset_downi) += form_val_Bh;
 								}
 							}
@@ -739,13 +770,17 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					{
 						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = basis_und_t{0}; bi < num_basis; ++bi) {
-							for(auto bj = basis_und_t{0}; bj < num_basis; ++bj) {
+							for(auto bj = bi; bj < num_basis; ++bj) {
 								const auto offset_vi = start_offset + bi;
 								const auto offset_uj = start_offset + bj;
 
-								const auto form_val_Gh = this->EvaluateGh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
-								assert(std::isfinite(form_val_Gh));
-								matassembler(block_size + offset_vi, block_size + offset_uj) += form_val_Gh;
+								const auto form_val_Jh = this->EvaluateJh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+								assert(std::isfinite(form_val_Jh));
+								matassembler(block_size + offset_vi, block_size + offset_uj) += form_val_Jh;
+#ifndef SYMMETRIC_ASSEMBLY
+								if (bi != bj)
+									matassembler(block_size + offset_uj, block_size + offset_vi) += form_val_Jh;
+#endif
 							}
 						}
 					}
@@ -759,9 +794,13 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 								const auto offset_vi = start_offset + bi;
 								const auto offset_uj = start_offset + bj;
 
-								const auto form_val_Hh = this->EvaluateHh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
-								assert(std::isfinite(form_val_Hh));
-								matassembler(offset_vi, offset_uj) += form_val_Hh;
+								const auto form_val_Kh = this->EvaluateKh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+								assert(std::isfinite(form_val_Kh));
+								matassembler(offset_vi, offset_uj) += form_val_Kh;
+#ifndef SYMMETRIC_ASSEMBLY
+								if (bi != bj)
+									matassembler(offset_uj, offset_vi) += form_val_Kh;
+#endif
 							}
 						}
 					}
@@ -968,7 +1007,7 @@ struct HeatAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		}
 
 		// Aside from these per element integrals, we have some interface ones:
-		// Ah, Bh both have inner interface terms, Gh only applies on \partial \Omega x (0, T) and Hh applies on \partial \Omega x T.
+		// Ah, Bh both have inner interface terms, Jh only applies on \partial \Omega x (0, T) and Kh applies on \partial \Omega x T.
 		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
 			const auto& surf_id = pval.first;
 			const auto& surf_data = pval.second;

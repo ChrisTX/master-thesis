@@ -2,6 +2,7 @@
 
 \begin{document}
 \chapter{Discretization of the control problem}
+\label{sec:Disc-Control-Problem}
 In this chapter, we're going back to the optimal control problem introduced in \cref{sec:OptimalControlProblem}.
 We are going to restrict ourselves to the boundary and inner heating problems with no restrictions made to the control itself, i.e.\ $u_a = -\infty$ and $u_b = \infty$.
 \section{Existence of solutions for a generalized problem}
@@ -357,7 +358,7 @@ Noticing that the left hand sides of both equations are the same gives us the de
 Using \cref{thm:discrete-adj-state-helper}, we can prove:
 \begin{theorem}
 \label{thm:discrete-variational-ineq}
-A control $\bar{u}_h \in L^2(\Omega)$ is optimal for \cref{eq:f-Sh} if and only if with the associated adjoined state $\bar{p}_h$ defined as the solution of \cref{eq:generalized-problem-adj-dG} fulfills the following variational inequality
+A control $\bar{u}_h \in L^2(\Omega)$ is optimal for \cref{eq:f-Sh} if and only if with the associated adjoined state $\bar{p}_h$ defined as the solution of \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = 0$ and $a_\Omega = \bar{y}_h(T) - y_\Omega$ fulfills the following variational inequality
 \[
 	\langle \beta(x, t) \bar{p}_h (x, t) + \lambda \bar{u}_h(x, t), u_h - \bar{u}_h \rangle_{L^2(\Sigma)} \geq 0 \quad \forall u_h \in L^2(\Sigma)
 \]
@@ -377,7 +378,7 @@ Note that
 \]
 Using \cref{thm:discrete-adj-state-helper} with $b_Q = 0$, $b_\Sigma = \beta$, $b_\Omega = 0$, $a_Q = 0$, $a_\Sigma = 0$, $a_\Omega = \bar{y}_h(T) - y_\Omega$, we have
 \[
-	\iint_\Sigma \beta p_h \tilde{u}_h \dd s(x) \dd t = (\bar{y}_h(T) - y_\Omega, \tilde{y}_h(T))_{L^2(\Omega)},
+	\iint_\Sigma \beta p_h \tilde{u}_h \dd s(x) \dd t = \langle \bar{y}_h(T) - y_\Omega, \tilde{y}_h(T) \rangle_{L^2(\Omega)},
 \]
 where we set $\tilde{u}_h = u_h - \bar{u}_h$ and $\tilde{y}_h = y_h - \bar{y}_h$.
 Inserting this into the variational inequality we obtain
@@ -415,7 +416,7 @@ u = - \lambda^{-1} \beta p.
 For the discrete case, one obtains a corresponding formulation due to \cref{thm:discrete-variational-ineq} the system
 \begin{IEEEeqnarray*}{c}
 \begin{IEEEeqnarraybox}{rCl"rCl}
-A(y_h, v_h) &=& \langle \beta u_h, v_h \rangle_{L^2(\Sigma_R)} & A(v_h, p_h) &=& \langle y_h(T) - y_\Omega, v_h \rangle_{L^2(\Sigma_T)}
+A(y_h, v_h) &=& \langle \beta u_h, v_h \rangle_{L^2(\Sigma_R)} + \langle y_0, v_h(0) \rangle_{L^2(\Omega)} & A(v_h, p_h) &=& \langle y_h(T) - y_\Omega, v_h(T) \rangle_{L^2(\Omega)}
 \end{IEEEeqnarraybox} \\
 u_h = - \lambda^{-1} \beta p_h
 \end{IEEEeqnarray*}
@@ -433,6 +434,7 @@ The solution of the system \cref{eq:generalized-weak-form} lies in $H^s(Q) \cap 
 with a constant $c_w' > 0$ independent of $g_I$, $g_R$ and $y_0$.
 \end{assumption}
 \begin{theorem}
+\label{thm:optimal-control-convergence}
 Let $\bar{u}$ be the optimal control for the continuous problem \cref{eq:BoundaryOptimalControl-restricted} and let \cref{as:continuous-Hs-regularity} hold. Moreover, be $\bar{u}_h$ the discretized solution to \cref{eq:f-Sh}.
 Then there is a $C > 0$ independent of $h$, such that:
 \[
@@ -464,12 +466,11 @@ We begin by picking the first two terms and estimating them:
 	&=& \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} - \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \\
 \noalign{\noindent Using the triangle inequality and the Cauchy-Schwarz inequality, we obtain with the definitions $y^v = G_\Sigma v$ and $y_h^v = G_\Sigma^h v$, so that we have $y^v(T) = Sv$ and $y_h^v(T) = S_h v$, giving us\vspace{\jot}}
 	&\leq& \left| \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} \right| + \left| \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \right| \\
-	&\leq& \left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \| y^v \|_{L^2(\Omega)} \\
+	&\leq& \left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \| y^v(T) \|_{L^2(\Omega)} \\
 	&& \quad {}+ \left\| \bar{y}^h(T) - y_\Omega \right\|_{L^2(\Omega)} \left\| y^v_h(T) - y^v(T) \right\|_{L^2(\Omega)} \\
-	&\leq& \left\| \bar{y} - \bar{y}^h \right\|_{L^2(\Sigma_T)} \| y^v \|_{L^2(\Sigma_T)} + \left( \left\| \bar{y}^h \right\|_{L^2(\Sigma_T)} + \| y_\Omega \|_{L^2(\Omega)} \right) \left\| y^v_h - y_v \right\|_{L^2(\Sigma_T)} \\
-\noalign{\noindent By the definition of the $\lDG \cdot \rDG$ norm, we have the term $\| \cdot \|_{L^2(\Sigma_T)}$ in it, so we can estimate \vspace{\jot}}
-	&\overset{\text{\cref{eq:dg-DG-norm}}}{\leq}& \left\lDG \bar{y} - \bar{y}^h \right\rDG \| y^v \|_{L^2(\Sigma_T)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
-\noalign{\noindent Due to the continuity estimate on exact solutions given by \cref{thm:generalized-problem-solution}, we estimate this further as\vspace{\jot}}
+\noalign{\noindent By the definition of the $\lDG \cdot \rDG$ norm, we have the term $\| f(T) \|_{L^2(\Omega)}$ in it, we can estimate \vspace{\jot}}
+	&\overset{\text{\cref{eq:dg-DG-norm}}}{\leq}& \left\lDG \bar{y} - \bar{y}^h \right\rDG \| y^v(T) \|_{L^2(\Omega)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
+\noalign{\noindent Due to the continuity estimate on exact solutions given by \cref{thm:generalized-problem-solution} and the fact that $W(0, T) \hookrightarrow C([0, T], L^2(\Omega))$, we estimate this further as\vspace{\jot}}
 	&\overset{\text{\cref{thm:generalized-problem-solution}}}{\leq}& c_w \left\lDG \bar{y} - \bar{y}^h \right\rDG \| v \|_{L^2(\Sigma)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
 \noalign{\noindent Using the stability estimate for $A(\cdot, \cdot)$ given by \cref{thm:Astab-est}, we can estimate the operator $G_\Sigma^h$ because it consists out of the inverse $A_h^{-1}$:}
 	&\overset{\text{\cref{thm:Astab-est}}}{\leq}& c_w \left\lDG \bar{y} - \bar{y}^h \right\rDG \| v \|_{L^2(\Sigma)} + \left( \frac{1}{c_S^A} \beta \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
@@ -484,25 +485,25 @@ We begin by picking the first two terms and estimating them:
 \end{IEEEeqnarray*}
 For the remaining two terms, we have
 \begin{IEEEeqnarray*}{rCl}
-	\IEEEeqnarraymulticol{3}{l}{ \left[ ( S_h \bar{u} - z_h, S_h v )_{L^2(\Omega)} + \lambda(\bar{u}, v)_{L^2(\Sigma)} \right] - ( S_h \bar{u}_h - z_h, S_h v )_{L^2(\Omega)} - \lambda(\bar{u}_h, v)_{L^2(\Sigma)} } \\
-	\qquad &=& (S_h (\bar{u} - \bar{u}_h), S_h v)_{L^2(\Omega)} + \lambda (\bar{u} - \bar{u}_h, v)_{L^2(\Sigma)}
+	\IEEEeqnarraymulticol{3}{l}{ \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] - \langle S_h \bar{u}_h - z_h, S_h v \rangle_{L^2(\Omega)} - \lambda \langle \bar{u}_h, v \rangle_{L^2(\Sigma)} } \\
+	\qquad &=& \langle S_h (\bar{u} - \bar{u}_h), S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u} - \bar{u}_h, v \rangle_{L^2(\Sigma)}
 \end{IEEEeqnarray*}
 Choosing the test function $v = \bar{u} - \bar{u}_h$, we can estimate:
 \begin{IEEEeqnarray*}{rCl}
-	(S_h (\bar{u} - \bar{u}_h), S_h (\bar{u} - \bar{u}_h))_{L^2(\Omega)} + \lambda (\bar{u} - \bar{u}_h, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} &\geq& \lambda (\bar{u} - \bar{u}_h, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} \\
+	\langle S_h (\bar{u} - \bar{u}_h), S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u} - \bar{u}_h, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} &\geq& \lambda \langle \bar{u} - \bar{u}_h, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \\
 	&=& \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}^2
 \end{IEEEeqnarray*}
 Bringing these together, we obtain:
 \begin{IEEEeqnarray*}{rCl}
-	0 &\geq& ( S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) )_{L^2(\Omega)} + \lambda(\bar{u}, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} \\
-	&& {} - \left[ ( S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) )_{L^2(\Omega)} + \lambda(\bar{u}, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} \right] \\
+	0 &\geq& \langle S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \\
+	&& {} - \left[ \langle S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \right] \\
 	&& {} + \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}^2
 \end{IEEEeqnarray*}
 By bringing the terms to the other side of the equation and taking the absolute, we can apply the previously derived estimate:
 \begin{IEEEeqnarray*}{rCl}
 	\IEEEeqnarraymulticol{3}{l}{ C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} } \\
-	\qquad &\geq& ( S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) )_{L^2(\Omega)} + \lambda(\bar{u}, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} \\
-	&& \quad {} - \left[ ( S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) )_{L^2(\Omega)} + \lambda(\bar{u}, \bar{u} - \bar{u}_h)_{L^2(\Sigma)} \right] \\
+	\qquad &\geq& \langle S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \\
+	&& \quad {} - \left[ \langle S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \right] \\
 	&\geq& \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}^2.
 \end{IEEEeqnarray*}
 Dividing by $\| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}$ leaves us with
@@ -520,5 +521,87 @@ In a further step, we have to estimate $\| \bar{y}(T) - \bar{y}_h(T) \|_{L^2(\Om
 && \quad {} + C' h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right)
 \end{IEEEeqnarray*}
 Together, the estimates prove the claim made.
+\end{proof}
+\section{Optimal control with interior heat sources}
+Analogously to the previous section, we can treat the interior heat source problem with the same restrictions made:
+\begin{equation}
+\label{eq:InnerOptimalControl-restricted}
+\begin{IEEEeqnarraybox}[][c]{c}
+\min J(y, u) = \frac{1}{2} \iint_\Sigma \left( y(x, T) - y_\Sigma(x) \right)^2 \dd s(x) \dd t + \frac{\lambda}{2} \iint_Q u(x, t)^2 \dd s(x) \dd t \\
+\noalign{\noindent subject to\vspace{\jot}}
+\begin{IEEEeqnarraybox}{rCl"l}
+\frac{\partial y}{\partial t} - \lapl y &=& \beta u & \text{in } Q\\
+\partial_\nu y &=& 0 & \text{in } \Sigma \\
+y(x, 0) &=& 0 & \text{in } \Omega
+\end{IEEEeqnarraybox}
+\end{IEEEeqnarraybox}
+\end{equation}
+The treatment of this equation is very similar to the one of \cref{eq:BoundaryOptimalControl-restricted}.
+In this case, the solution of the state equation can be expressed as
+\[
+	y = G_Q \beta u.
+\]
+Here, we need the analogous observation operator $E_\Sigma : y \mapsto y|_\Sigma$, so that we can define $S \coloneqq E_\Sigma G_Q \beta u$. The operator $E_\Sigma$ is continuous from $W(0, T)$ to $L^2(\Sigma)$, hence $S : u \mapsto y|_\Sigma$ is continuous from $L^2(Q)$ to $L^2(\Sigma)$.
+
+By applying \cref{thm:optimal-control-existence} one obtains the existence of a unique solution $\bar{u}$ again, and by using \cref{thm:variational-ineq}, one obtains the optimality condition
+\[
+	0 \leq \langle S \bar{u} - y_\Sigma, S u - S \bar{u} \rangle_{L^2(\Sigma)} + \lambda \langle \bar{u}, u - \bar{u} \rangle_{L^2(Q)} \quad \forall u \in U_{ad}.
+\]
+In this case, the adjoint is defined by \cref{eq:generalized-problem-adj} with $a_Q = 0$, $a_\Sigma = \bar{y} - y_\Sigma$ and $a_\Omega = 0$.
+One can show (see \cite[Satz 3.21, p.\ 131]{Troeltzsch}) that a control $\bar{u} \in U_{ad}$ is optimal if and only if the adjoint state fulfills the variational inequality
+\[
+	\iint_Q ( \beta p + \lambda \bar{u} ) ( u - \bar{u} ) \dd x \dd t \geq 0 \quad \forall u \in U_{ad}.
+\]
+
+For the discrete case, we define
+\[
+	G_I^h(g_I) \coloneqq E_V A_h^{-1} \boldsymbol{g_I}(g_I)
+\]
+and then
+\[
+	S_h \coloneqq E_\Sigma G_I^h \beta \cdot.
+\]
+Given that $S_h$ is linear and continuous in this case as well, \cref{eq:generalized-problem-adj} gives us the existence of a unique solution $\bar{u}_h$ in the discrete setting.
+
+As a next step we would like to apply \cref{thm:variational-ineq} again, too. Just as in the continuous case, we define it via \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = \bar{y}_h - y_\Sigma$ and $a_\Omega = 0$.
+\begin{theorem}
+There exists a unique optimal control $\bar{u}_h \in L^2(Q)$ for \cref{eq:InnerOptimalControl-restricted}.
+
+It can be characterized with a variational inequality: A control $\bar{u}_h \in L^2(Q)$ is optimal if and only if with the associated adjoined state $\bar{p}_h$ defined as the solution of \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = \bar{y}_h - y_\Sigma$ and $a_\Omega = 0$ fulfills the following variational inequality
+\[
+	\langle \beta(x, t) \bar{p}_h (x, t) + \lambda \bar{u}_h(x, t), u_h - \bar{u}_h \rangle_{L^2(Q)} \geq 0 \quad \forall u_h \in L^2(Q)
+\]
+almost everywhere.
+\end{theorem}
+\begin{proof}
+The proof is identical to the one of \cref{thm:discrete-variational-ineq} with the respective choices of $a_Q$, $a_\Sigma$ and $a_\Omega$ adjusted to the interior heating situation.
+\end{proof}
+The overall optimality system in this case turns out to be
+\begin{IEEEeqnarray*}{c}
+\begin{IEEEeqnarraybox}{rCl"rCl}
+A(y_h, v_h) &=& \langle \beta u_h, v_h \rangle_{L^2(Q)} & A(v_h, p_h) &=& \langle y_h - y_\Sigma, v_h \rangle_{L^2(\Sigma)}
+\end{IEEEeqnarraybox} \\
+u_h = - \lambda^{-1} \beta p_h.
+\end{IEEEeqnarray*}
+
+In order to replicate the convergence theorem \cref{thm:optimal-control-convergence}, we need to make assumption \cref{as:continuous-Hs-regularity} again.
+However, this alone is not enough: During the proof of \cref{thm:optimal-control-convergence} we used the estimate
+\[
+	\left\| \bar{y})(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \leq \left\lDG \bar{y} - \bar{y}^h \right\rDG.
+\]
+In contrast, we now use the observation operator $E_\Sigma$ instead of $E_T$, which means we have to estimate
+\[
+	\left\| \bar{y} - \bar{y}^h \right\|_{L^2(\Sigma)} \leq C \left\lDG \bar{y} - \bar{y}^h \right\rDG.
+\]
+If $\alpha > 0$, this trivially holds for $C = \frac{1}{\alpha}$, but it's not clear why it would hold for $\alpha = 0$. Therefore, we obtain the following convergence theorem:
+\begin{theorem}
+Let for $\alpha > 0$ be $\bar{u}$ be the optimal control for the continuous problem \cref{eq:InnerOptimalControl-restricted} and let \cref{as:continuous-Hs-regularity} hold. Moreover, be $\bar{u}_h$ the discretized solution to \cref{eq:f-Sh}.
+Then there is a $C > 0$ independent of $h$, such that:
+\[
+	\| \bar{u} - \bar{u}_h \|_{L^2(Q)} + \| \bar{y} - \bar{y}_h \|_{L^2(\Sigma)} \leq C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(Q)} + \| y_\Omega \|_{L^2(\Omega)} \right).
+\]
+\end{theorem}
+\begin{proof}
+Under the assumption $\alpha > 0$, the proof is analogous to the one of \cref{thm:optimal-control-convergence}. Instead of $z_h$ and $z$ one uses $y_\Omega$ directly though, as the state is now linearly dependent on the control and not affine-linear as in the boundary control case.
 \end{proof}
 \end{document}

@@ -27,7 +27,7 @@ int main() {
 #if defined(PRINT_MATRIX)
 	const auto reflim = 0;
 #elif !defined(NDEBUG)
-	const auto reflim = 4;
+	const auto reflim = 3;
 #else
 	const auto reflim = 5;
 #endif

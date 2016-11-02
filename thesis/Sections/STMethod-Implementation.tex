@@ -1,0 +1,123 @@
+\documentclass[../thesis.tex]{subfiles}
+
+\begin{document}
+\chapter{Numerical treatment of the control problem}
+In \cref{sec:Disc-Control-Problem} we derived optimality conditions and convergence for an approximation to the optimal control heating problem for both, boundary and interior heat sources.
+As a final step, one has to discuss the implementation of the method.
+\section{Establishing a linear optimality system}
+For the boundary heat system, we have an optimality system of
+\begin{IEEEeqnarray*}{c}
+\begin{IEEEeqnarraybox}{rCl"rCl}
+A(y_h, v_h) &=& \langle \beta u_h, v_h \rangle_{L^2(\Sigma_R)} + \langle y_0, v_h(0) \rangle_{L^2(\Omega)} & A(v_h, p_h) &=& \langle y_h(T) - y_\Omega, v_h(T) \rangle_{L^2(\Omega)}
+\end{IEEEeqnarraybox} \\
+u_h = - \lambda^{-1} \beta p_h.
+\end{IEEEeqnarray*}
+By substituting $u_h$ with the representation given by the variational equality, we obtain the following system:
+\begin{IEEEeqnarray*}{rCl"l}
+A(y_h, v_h) &=& - \langle \beta^2 \lambda^{-1} p_h, v_h \rangle_{L^2(\Sigma_R)} + \langle y_0, v_h(0) \rangle_{L^2(\Omega)}& \forall v_h \in \Shp(\meshT_N) \\
+A(v_h, p_h) &=& \langle y_h(T) - y_\Omega, v_h(T) \rangle_{L^2(\Omega)} & \forall v_h \in \Shp(\meshT_N)
+\end{IEEEeqnarray*}
+Note that we can restrict $v_h$ $\Shp(\meshT_N) \subset L^2(Q)$ due to the same projection argument made for the restriction of $u_h$ in the last chapter.
+If we bring the terms depending on $y_h$ and $p_h$ to the left hand side we obtain
+\begin{IEEEeqnarray*}{rCl"l}
+A(y_h, v_h) + \langle \beta^2 \lambda^{-1} p_h, v_h \rangle_{L^2(\Sigma_R)} &=& \langle y_0, v_h(0) \rangle_{L^2(\Omega)} & \forall v_h \in \Shp(\meshT_N) \\
+A(v_h, p_h) - \langle y_h(T), v_h(T) \rangle_{L^2(\Omega)}  &=& - \langle y_\Omega, v_h(T) \rangle_{L^2(\Omega)} & \forall v_h \in \Shp(\meshT_N)
+\end{IEEEeqnarray*}
+To this end, we define two new matrices for the basis $\varphi_j$, $j = 1, \ldots, m$ of $\Shp(\meshT_N)$ we've used previously to define $A_h$:
+\begin{IEEEeqnarray*}{rCl}
+	J_h[i, j] &\coloneqq& \beta^2 \lambda^{-1} \langle \varphi_j, \varphi_i \rangle_{L^2(\Sigma_R)}, \\
+	K_h[i, j] &\coloneqq& - \langle \varphi_j(T), \varphi_i(T) \rangle_{L^2(\Omega)}.
+\end{IEEEeqnarray*}
+By defining $\boldsymbol{x_h} = (\boldsymbol{y_h}, \boldsymbol{p_h})$ as a new coefficient vector corresponding to a function in $\Shp(\meshT_N) \times \Shp(\meshT_N)$, we can bring this together into a single large system:
+\begin{IEEEeqnarray*}{rCl}
+A_h \boldsymbol{y_h} + J_h \boldsymbol{p_h} &=& \boldsymbol{g^J_h} \\
+K_h \boldsymbol{y_h} + A_h^\tp \boldsymbol{p_h} &=& \boldsymbol{g^K_h}
+\end{IEEEeqnarray*}
+Hereby we have the definitions
+\begin{IEEEeqnarray*}{rCl}
+	\boldsymbol{g^J_h}[i] &\coloneqq& \langle y_0, \varphi_i(0) \rangle_{L^2(\Omega)} \\
+	\boldsymbol{g^K_h}[i] &\coloneqq& - \langle y_\Omega, \varphi_i(T) \rangle_{L^2(\Omega)}.
+\end{IEEEeqnarray*}
+Because $K_h$ and $J_h$ are symmetric by definition, we exchange the equations and define
+\[
+	Y_h \coloneqq \begin{bmatrix}
+		K_h & A_h^\tp \\
+		A_h & J_h
+	\end{bmatrix}
+\]
+and a combined vector $\boldsymbol{g_h} = (\boldsymbol{g^K_h}, \boldsymbol{g^J_h})$.
+Then $Y_h$ is a symmetric matrix and our problem can be expressed as
+\[
+	Y_h \boldsymbol{x_h} = \boldsymbol{g_h}.
+\]
+It can be easily seen to be indefinite, because $-K_h$ and $J_h$ are mass matrix of boundary integrals.
+Therefore, $K_h$ is negative and $J_h$ is positive semidefinite, rendering the system indefinite overall.
+
+We can also make the system a positive semidefinite, but unsymmetrical one by multiplying the first block row with $-1$:
+\[
+	\begin{bmatrix}
+		-K_h & -A_h^\tp \\
+		A_h & J_h
+	\end{bmatrix} \boldsymbol{x_h} = \begin{bmatrix}
+		- \boldsymbol{g^K_h} \\
+		\boldsymbol{g^J_h}
+	\end{bmatrix}.
+\]
+Being mass matrices, $-K_h$ and $J_h$ are positive semi-definite. For any $\boldsymbol{x_h}$ we have:
+\begin{IEEEeqnarray*}{rCl}
+	\boldsymbol{x_h}^\tp \begin{bmatrix}
+		-K_h & -A_h^\tp \\
+		A_h & J_h
+	\end{bmatrix} \boldsymbol{x_h} &=& \boldsymbol{y_h}^\tp (-K_h) \boldsymbol{y_h} + \boldsymbol{y_h}^\tp (-A_h^\tp) \boldsymbol{p_h} + \boldsymbol{p_h}^\tp A_h \boldsymbol{y_h} + \boldsymbol{p_h}^\tp J_h \boldsymbol{p_h} \\
+	&=& \boldsymbol{y_h}^\tp (-K_h) \boldsymbol{y_h} + \boldsymbol{p_h}^\tp J_h \boldsymbol{p_h} \\
+	&\geq& 0.
+\end{IEEEeqnarray*}
+
+We can proceed analogously for the interior heating situation.
+Starting from the optimality system
+\begin{IEEEeqnarray*}{c}
+\begin{IEEEeqnarraybox}{rCl"rCl}
+A(y_h, v_h) &=& \langle \beta u_h, v_h \rangle_{L^2(Q)} & A(v_h, p_h) &=& \langle y_h - y_\Sigma, v_h \rangle_{L^2(\Sigma)}
+\end{IEEEeqnarraybox} \\
+u_h = - \lambda^{-1} \beta p_h,
+\end{IEEEeqnarray*}
+we transform into a system of equations given as
+\begin{IEEEeqnarray*}{rCl"l}
+A(y_h, v_h) + \langle \beta^2 \lambda^{-1} p_h, v_h \rangle_{L^2(Q)} &=& 0 & \forall v_h \in \Shp(\meshT_N) \\
+A(v_h, p_h) - \langle y_h, v_h \rangle_{L^2(\Sigma)}  &=& - \langle y_\Sigma, v_h \rangle_{L^2(\Sigma)} & \forall v_h \in \Shp(\meshT_N).
+\end{IEEEeqnarray*}
+Similarly, we introduce the following matrices
+\begin{IEEEeqnarray*}{rCl}
+	J^I_h[i, j] &\coloneqq& \beta^2 \lambda^{-1} \langle \varphi_j, \varphi_i \rangle_{L^2(\Q)}, \\
+	K^I_h[i, j] &\coloneqq& - \langle \varphi_j, \varphi_i \rangle_{L^2(\Sigma)}, \\
+\noalign{\noindent and the vectors \vspace{\jot}}
+	\boldsymbol{g^{J,I}_h}[i] &\coloneqq& 0 \\
+	\boldsymbol{g^{K,I}_h}[i] &\coloneqq& - \langle y_\Sigma, \varphi_i \rangle_{L^2(\Sigma)}.
+\end{IEEEeqnarray*}
+By exchanging the equations as before, we define the analogous matrix
+\[
+	Y^I_h \coloneqq \begin{bmatrix}
+		K^I_h & A_h^\tp \\
+		A_h & J^I_h
+	\end{bmatrix}
+\]
+and the associated right hand side $\boldsymbol{g^I_h} = (\boldsymbol{g^{K,I}_h}, \boldsymbol{g^{J,I}_h})$.
+As before, $Y^I_h$ is symmetric, but indefinite, and it can be transformed into an unsymmetrical, positive semidefinite system.
+The overall equation to solve is then
+\[
+	Y^I_h \boldsymbol{x_h} = \boldsymbol{g^I_h}.
+\]
+
+For both, the interior and the boundary heating discretization, uniqueness and existence of solutions of these combined systems is immediately given by the uniqueness of an optimal control.
+This is due to the fact that we just transformed the optimality systems which we know to have a unique solution via equivalence transformations into one large matrix.
+
+Moreover, we can recover the optimal control from the solution $\boldsymbol{x_h}$ of the respective systems.
+Using the variational equality, we obtain for the interior heating formulation
+\[
+	u_h = \frac{1}{\lambda} \beta E_V \boldsymbol{p_h}.
+\]
+For the boundary optimal control, we have to keep in mind that $u_h$ only holds on $L^2(\Sigma)$:
+\[
+	u_h = E_\Sigma \frac{1}{\lambda} \beta E_V \boldsymbol{p_h}.
+\]
+\end{document}

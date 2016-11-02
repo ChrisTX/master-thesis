@@ -27,6 +27,7 @@ u_a(x, t) \leq u(x, t) \leq u_b(x, t) \quad \text{a.e.\ in $\Sigma$}.
 \end{equation}
 The partial differential equation system for the state $y$ is the instationary heat equation with mixed boundary conditions.
 Several parameters are available, namely $\lambda$ for weighting the impact of the energy required for $u(x, t)$, $\alpha$ and $\beta$ for balancing the heating effect.
+We assume here and in the following that $\lambda \geq 0$, $\alpha \geq 0$ and $\beta > 0$ are constants.
 From a physical point of view, the correct boundary conditions are to choose the same value for $\alpha$ and $\beta$, and thus obtaining
 \[
 	\partial_\nu y = \alpha( u - y )
@@ -35,7 +36,7 @@ on the boundary. Physics calls $\alpha$ the heat diffusivity, which depends on t
 \[
 	\frac{\partial y}{\partial t} - \alpha \lapl y = 0.
 \]
-For a mathematical treatment the form given above is sufficient, however. Upon implementing the method discussed here one should to keep these caveats in mind when it comes to working with a specific heating problem on a given material.
+For a mathematical treatment the form given above is more reasonable, however. Upon implementing the method discussed here one should to keep these caveats in mind when it comes to working with a specific heating problem on a given material.
 
 Analogously, one can establish the problem with an instationary, inner temperature source. This leads to the following formulation (cf.\ \cite[p.\ 124ff.]{Troeltzsch}):
 \begin{equation}
@@ -46,7 +47,7 @@ Analogously, one can establish the problem with an instationary, inner temperatu
 \begin{IEEEeqnarraybox}{rCl"l}
 \frac{\partial y}{\partial t} - \lapl y &=& \beta u & \text{in } Q\\
 \partial_\nu y &=& 0 & \text{in } \Sigma \\
-y(x, 0) &=& y_0(x) & \text{in } \Omega
+y(x, 0) &=& 0 & \text{in } \Omega
 \end{IEEEeqnarraybox} \\
 \noalign{\noindent and\vspace{\jot}}
 u_a(x, t) \leq u(x, t) \leq u_b(x, t) \quad \text{a.e.\ in $Q$}.
@@ -55,8 +56,7 @@ u_a(x, t) \leq u(x, t) \leq u_b(x, t) \quad \text{a.e.\ in $Q$}.
 Unlike previously, the desired temperature on the boundary $y_\Sigma$ is needed in this formulation. 
 
 For now, we'll consider the boundary heating problem with any pointwise restrictions to the control omitted.
-Without going into details here, % TODO: adjoined state chapter
-one introduces a so called adjoint state $p$ for a given state $y$ that adheres to the following system of equations
+Without going into details just yet one introduces a so called adjoint state $p$ for a given state $y$ that adheres to the following system of equations
 \begin{IEEEeqnarray*}{rCl"l}
 -\frac{\partial p}{\partial t} - \lapl y &=& 0 & \text{in } Q \\
 \partial_\nu p + \alpha p &=& 0 & \text{in } \Sigma \\

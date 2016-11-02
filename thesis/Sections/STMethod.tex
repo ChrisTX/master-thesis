@@ -1,9 +1,9 @@
 \documentclass[../thesis.tex]{subfiles}
 
 \begin{document}
-\chapter{A dG method for the instationary heat equation}
+\chapter{A discontinuous Galerkin method for the instationary heat equation}
 \label{sec:dG-method}
-As a next step, we will introduce a dG method for the heat equation based on the work \cite{Neumueller}. Some expansion of his theory is required given that his work does not consider mixed boundary conditions, but rather assumes separate boundary conditions that would be either pure Neumann or pure Dirichlet boundary conditions.
+As a next step, we will introduce a discontinuous Galerkin method for the heat equation based on the work \cite{Neumueller}. Some expansion of his theory is required given that his work does not consider mixed boundary conditions, but rather assumes separate boundary conditions that would be either Neumann or Dirichlet boundary conditions.
 
 We will keep the method as general as possible so that both, boundary and inner heat source formulations can be discretized. As seen during the derivation of the weak formulation of the state system, we require a certain smoothness of the domain, so in the following we assume that $\Omega \subset \R^d$, $d = 1, 2, 3$ is a bounded Lipschitz domain.
 For its boundary we assume that $\partial \Omega = \bar{\Gamma}_D \cup \bar{\Gamma}_R$, $\Gamma_D \cap \Gamma_R = \emptyset$ holds, where $\Gamma_D$ and $\Gamma_R$ denote the part of the boundary with Dirichlet and Robin boundary conditions in effect, respectively.
@@ -18,8 +18,12 @@ n_x(x,t) \cdot \nabla_x f(x, t) + \alpha f(x, t) &=& g_R(x, t) & \text{for } (x,
 f(x, 0) &=& f_0(x) & \text{for } (x, t) \in \Omega.
 \end{IEEEeqnarraybox}
 \end{equation}
-Note that by choosing $g_I$ and $g_R$ appropriately, we can cover both, inner and boundary heat sources. 
-Following the proceedings of \cite[Chapter 2]{Neumueller}, we can derive a space-time dG method for this problem.
+Note that by choosing $g_I$ and $g_R$ appropriately, we can cover both, inner and boundary heat sources.
+\begin{remark}
+One could extend this method to include a mixture of Neumann and Robin boundary conditions. However, that setting is not useful for optimal control problems and we already cover Neumann boundary conditions as discussed in \cite{Neumueller} if we chose $\alpha = 0$.
+\end{remark}
+
+Following the proceedings of \cite[Chapter 2]{Neumueller}, we can derive a space-time discontinuous Galerkin method for this problem.
 
 In order to arrive at a discretization, we make an approach of decomposing the space-time cylinder $Q$ into $N \in \mathbb{N}$ finite elements, whose collection we denote by $\meshT_N$. More precisely we work with simplexes of mesh size $h_\ell = \sqrt[d+1]{|\tau_\ell|}$ and assume the space-time domain $Q$ can be decomposed into simplexes without error, i.e.
 \[
@@ -31,7 +35,7 @@ For two neighboring elements $\tau_k, \tau_\ell \in \meshT_N$, we define the int
 \]
 if the set $\Gamma_{k \ell}$ is a $d$-dimensional manifold, that is of dimensional one smaller than the dimension of the space-time cylinder $Q$. The set of all interior facets of the decomposition $\meshT_N$ will be denoted by $\intfI_N$.
 
-The general idea for the dG formulation we're going to use is to use a symmetric interior penalty approach for the term $\lapl f$ and an upstream bilinear form for $\partial_t f$.
+The general idea for the discontinuous Galerkin formulation we're going to use is to use a symmetric interior penalty approach for the term $\lapl f$ and an upstream bilinear form for $\partial_t f$.
 For both approaches, local continuity on the elements of the mesh $\meshT_N$ is going to be assumed, while permitting discontinuities on the interfaces. In order to make up for this, jumps across the interfaces are going to be punished using penalty terms.
 Given that we're working with two very different terms, one operating only as space derivative, and the other only operating as time derivative, we have to punish jumps in time and space directions differently.
 Hence, we have to introduce some more notations before being able to proceed with the discretization itself.
@@ -43,7 +47,7 @@ For an element $\tau_k$ we denote the outer unit normal vector on an interface $
 Consequently, $\markvec{n_\ell} = - \markvec{n_k}$ on that interface.
 If we have more than one space dimension $\markvec{n_{k, x}}$ will be a vector, whereas $n_{k, t}$ will always be a scalar value.
 
-In order to introduce dG bilinear forms, we require notations for jumps and averages across interfaces.
+In order to introduce discontinuous Galerkin bilinear forms, we require notations for jumps and averages across interfaces.
 Therefore, we introduce the following notations for a scalar function $v$ on an interface $\Gamma_{k \ell}$:
 \begin{itemize}
 \item The jump in space direction will be denoted by
@@ -75,7 +79,7 @@ In precise terms, we obtain an ansatz space of
 	\Shp(\mathcal{T}_N) \coloneqq \left\{ v_h \in L_2(Q) \gmid v_h |_{\tau_\ell} \in \polyP_p(\tau_\ell) \text{ for all } \tau_\ell \in \mathcal{T}_N \text{ and } v_h = 0 \text{ on } \Sigma_D \right\}.
 \]
 As it is common practice, we demand zero values on the Dirichlet boundary.
-In order to obtain a dG formulation in this space, we multiply the differential equation with a test function $v$ of this space and integrate over the space-time cylinder:
+In order to obtain a discontinuous Galerkin formulation in this space, we multiply the differential equation with a test function $v$ of this space and integrate over the space-time cylinder:
 \[
 	\iint_Q \partial_t f(x, t) v(x, t) \dd x \dd t - \iint_Q \lapl f(x, t) v(x, t) \dd x \dd t = \iint_Q g_I(x, t) v(x, t) \dd x \dd t.
 \]
@@ -89,7 +93,7 @@ As before, we apply Green's first identity to deal with it and make use of the g
 Here, we used that $v$ is zero on the Dirichlet boundary, so that the term vanishes.
 
 Exploiting the simplex decomposition, we know that the boundary $\Sigma_R$ can be decomposed into triangles, each belonging to exactly one element of $\meshT_N$. On each of those triangles, functions of our ansatz space are polynomial and therefore in particular continuous. The remainder of the $\Sigma_R$ has zero measure and therefore no effect on integration.
-Alas, it's not necessary to treat these boundary terms separately. The last term would be added to the right hand side of a dG equation system.
+Alas, it's not necessary to treat these boundary terms separately. The last term would be added to the right hand side of a discontinuous Galerkin equation system.
 
 In order to obtain an approach for the remaining term,
 \[
@@ -211,7 +215,7 @@ Taking the exact solution $f$ of \cref{eq:dg-model-prob}, one can see
 \end{equation}
 This can be verified to hold by considering that $f$ is continuous and therefore all interface penalty terms vanish. Using partial integration for the remaining term of $a^\sip(f, v_h)$ (and for $b(f, v_h)$, which is equivalent to taking the steps we performed in reverse order), one can see right away that $A(f, v_h)$ and $A(f_h, v_h)$ yield the same right hand side.
 
-Using a basis $\varphi_j$, $j = 1, \ldots, M$ of $\Shp$, i.e.
+Using a basis $\varphi_j$, $j = 1, \ldots, m$ of $\Shp$, i.e.
 \[
 	\Shp(\mathcal{T}_N) = \spn \{ \varphi_j \}_{j=1}^m, \quad f_h(x, t) = \sum_{j=1}^M \boldsymbol{f}[j] \varphi_j(x, t) \quad \text{for } f_h \in \Shp(\mathcal{T}_N),
 \]

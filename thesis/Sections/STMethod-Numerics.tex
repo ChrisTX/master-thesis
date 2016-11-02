@@ -1,7 +1,7 @@
 \documentclass[../thesis.tex]{subfiles}
 
 \begin{document}
-\chapter{Numerical analysis of the dG method}
+\chapter{Numerical analysis of the discontinuous Galerkin method}
 In comparison to \cite{Neumueller}, we require a theory suitable for Robin boundary conditions.
 Overall, we want to use the following abstract existence result to prove existence of a solution.
 \begin{theorem}
@@ -62,7 +62,7 @@ Here, $c_I > 0$ is a generic constant depending on the mesh and the polynomial d
 For the statements see \cite[Lemma 2.2.3]{Neumueller}. For the last statement, see the proof of \cite[(4.28), (4.29)]{XuZou}.
 \end{proof}
 In the light of \cref{thm:Necas-Babuska}, we first define some energy norms with respect to the bilinear form $a(\cdot, \cdot)$.
-For a function $f \in H^2(\mathcal{T}_N)$ with $s > \frac{3}{2}$ we define
+For a function $f \in H^s(\mathcal{T}_N)$ with $s > \frac{3}{2}$ we define
 \begin{IEEEeqnarray*}{rCl}
 \| f \|_A^2 &\coloneqq& \sum_{\ell = 1}^N \| \nabla_x f \|_{[L^2(\tau_\ell)]^d}^2 + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \frac{\sigma}{\bar{h}_{k \ell}} \left\| \ljump f \rjump_{\Gamma_{k \ell}, x} \right\|_{[L^2(\Gamma_{k \ell})]^d}^2, \\
 \| f \|_{A, *}^2 &\coloneqq& \| f \|_A^2 + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \bar{h}_{k \ell} \left\| \lavg \nabla_x f \ravg_{\Gamma_{k \ell}} \right\|_{[L^2(\Gamma_{k \ell})]^d}^2, \\
@@ -70,8 +70,8 @@ For a function $f \in H^2(\mathcal{T}_N)$ with $s > \frac{3}{2}$ we define
 \end{IEEEeqnarray*}
 In the same vein, we define for $b(\cdot, \cdot)$ two norms for functions $f \in H^s(\mathcal{T}_N)$, $s \geq 1$:
 \begin{IEEEeqnarray*}{rCl}
-\| f \|_B^2 &\coloneqq& \sum_{\ell = 1}^N h_\ell \| \partial_t f \|_{L^2(\tau_\ell)}^2 + \| f \|_{L^2(\Sigma_0)}^2 + \| f \|_{L^2(\Sigma_T)}^2  + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \left\| \ljump f \rjump_{\Gamma_{k \ell}, t} \right\|_{L^2(\Gamma_{k \ell})}^2, \\
-\| f \|_{B, *}^2 &\coloneqq& \sum_{\ell = 1}^N h_\ell^{-1} \| f \|_{L^2(\tau_\ell)}^2 + \| f \|_{L^2(\Sigma_T)}^2  + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \left\| \lupw f \rupw_{\Gamma_{k \ell}} \right\|_{L^2(\Gamma_{k \ell})}^2.
+\| f \|_B^2 &\coloneqq& \sum_{\ell = 1}^N h_\ell \| \partial_t f \|_{L^2(\tau_\ell)}^2 + \| f(0) \|_{L^2(\Omega)}^2 + \| f(T) \|_{L^2(\Omega)}^2  + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \left\| \ljump f \rjump_{\Gamma_{k \ell}, t} \right\|_{L^2(\Gamma_{k \ell})}^2, \\
+\| f \|_{B, *}^2 &\coloneqq& \sum_{\ell = 1}^N h_\ell^{-1} \| f \|_{L^2(\tau_\ell)}^2 + \| f(T) \|_{L^2(\Omega)}^2  + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \left\| \lupw f \rupw_{\Gamma_{k \ell}} \right\|_{L^2(\Gamma_{k \ell})}^2.
 \end{IEEEeqnarray*}
 In the light of the first condition of \cref{thm:Necas-Babuska}, we aim to prove an upper bound for $|A(\cdot, \cdot)|$ in some suitable norm. As of such, we'll estimate the individual terms of the bilinear first.
 \begin{lemma}
@@ -159,7 +159,7 @@ The bilinear form $a^R(\cdot, \cdot)$ fulfills by definition
 \label{thm:b-lower-bound-weak}
 The bilinear form $b(\cdot, \cdot)$ is bounded from below with
 \[
-	b(f_h, f_h) \geq \frac{1}{2} \left[ \| f_h \|_{L^2(\Sigma_0)}^2 + \| f_h \|_{L^2(\Sigma_T)}^2 + \sum_{\Gamma_{k\ell} \in \intfI_N} \left\| \ljump f_h \rjump_{\Gamma_{k \ell}, t} \right\|^2 \right]
+	b(f_h, f_h) \geq \frac{1}{2} \left[ \| f_h(0) \|_{L^2(\Omega)}^2 + \| f_h(T) \|_{L^2(\Omega)}^2 + \sum_{\Gamma_{k\ell} \in \intfI_N} \left\| \ljump f_h \rjump_{\Gamma_{k \ell}, t} \right\|^2 \right]
 \]
 for all $f_h \in \Shp(\meshT_N)$.
 \end{lemma}
@@ -170,7 +170,7 @@ Bringing \cref{thm:asip-lower-bound,thm:aR-lower-bound,thm:b-lower-bound-weak} t
 \begin{equation}
 \label{eq:A-ellip-weak}
 \begin{IEEEeqnarraybox}[][c]{rCl}
-	A(f_h, f_h) &\geq& \frac{1}{2} \left[ \| f_h \|_A^2 + \| f_h \|_{A,R}^2 + \| f_h \|_{L^2(\Sigma_0)}^2 + \| f_h \|_{L^2(\Sigma_T)}^2 + \sum_{\Gamma_{k\ell} \in \intfI_N} \left\| \ljump f_h \rjump_{\Gamma_{k \ell}, t} \right\|^2 \right] \\
+	A(f_h, f_h) &\geq& \frac{1}{2} \left[ \| f_h \|_A^2 + \| f_h \|_{A,R}^2 + \| f_h(0) \|_{L^2(\Omega)}^2 + \| f_h(T) \|_{L^2(\Omega)}^2 + \sum_{\Gamma_{k\ell} \in \intfI_N} \left\| \ljump f_h \rjump_{\Gamma_{k \ell}, t} \right\|^2 \right] \\
 	&\eqqcolon& \frac{1}{2} \lDGw f_h \rDGw^2.
 \end{IEEEeqnarraybox}
 \end{equation}
@@ -205,8 +205,8 @@ From $\| f_h \|_{A, R} = 0$ we conclude
 \end{itemize}
 Finally, the remaining terms of $\lDGw \cdot \rDGw$ give us
 \begin{itemize}
-	\item $f_h = 0$ on $\Sigma_0$,
-	\item $f_h = 0$ on $\Sigma_T$,
+	\item $f_h = 0$ on $\Omega \times \{ 0 \}$,
+	\item $f_h = 0$ on $\Omega \times \{ T \}$,
 	\item $\ljump f_h \rjump_{\Gamma_{k\ell}, t} = 0$ for all $\Gamma_{k\ell} \in \intfI_N$.
 \end{itemize}
 Therefore, we know that $f_h$ is continuous. Choosing $v_h = \frac{\partial f_h}{\partial t} \in S_h^{p-1}(\meshT_N) \subset \Shp(\meshT_N)$, and using \cref{eq:b-up-down-equal} for $b(\cdot, \cdot)$, we observe that
