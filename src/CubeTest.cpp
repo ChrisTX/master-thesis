@@ -95,13 +95,18 @@ int main() {
 	auto stmass = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda };
 #endif
 
+#ifndef HEAT_SYSTEM
 #ifdef INNER_SYSTEM
 	auto matA = stmass.AssembleMatrix_Inner<BasisFunctions::TetrahedralLinearBasis<double>>();
 	auto lvA = stmass.AssembleLV_Inner<BasisFunctions::TetrahedralLinearBasis<double>>([](double x, double y, double t) -> double { return t * t; });
-
 #else
 	auto matA = stmass.AssembleMatrix_Boundary<BasisFunctions::TetrahedralLinearBasis<double>>();
 	auto lvA = stmass.AssembleLV_Boundary<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 5.; });
+#endif
+#else
+	auto matAandLV = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 5.; });
+	auto matA = matAandLV.first;
+	auto lvA = matAandLV.second;
 #endif
 
 #ifdef PRINT_LV

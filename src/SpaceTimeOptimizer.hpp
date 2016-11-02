@@ -574,13 +574,18 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 #ifndef SYMMETRIC_ASSEMBLY
 					matassembler(block_size + offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
-					if (bi != bj)
-						matassembler(block_size + offset_uj, offset_vi) = form_val_Ah + form_val_Bh;
 #endif
-
 					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
-					if (bi != bj)
-						matassembler(offset_vi, block_size + offset_uj) = form_val_Ah + form_val_Bh;
+
+					if (bi != bj) {
+						const auto form_val_BhT = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bj), static_cast<basis_index_t>(bi));
+						assert(std::isfinite(form_val_BhT));
+
+#ifndef SYMMETRIC_ASSEMBLY
+						matassembler(block_size + offset_uj, offset_vi) = form_val_Ah + form_val_BhT;
+#endif
+						matassembler(offset_vi, block_size + offset_uj) = form_val_Ah + form_val_BhT;
+					}
 
 					const auto form_val_Jh = this->EvaluateJh_Inner_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Jh));
@@ -707,13 +712,18 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 #ifndef SYMMETRIC_ASSEMBLY
 					matassembler(block_size + offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
-					if (bi != bj)
-						matassembler(block_size + offset_uj, offset_vi) = form_val_Ah + form_val_Bh;
 #endif
 
 					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
-					if (bi != bj)
-						matassembler(offset_vi, block_size + offset_uj) = form_val_Ah + form_val_Bh;
+					if (bi != bj) {
+						const auto form_val_BhT = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bj), static_cast<basis_index_t>(bi));
+						assert(std::isfinite(form_val_BhT));
+
+#ifndef SYMMETRIC_ASSEMBLY
+						matassembler(block_size + offset_uj, offset_vi) = form_val_Ah + form_val_BhT;
+#endif
+						matassembler(offset_vi, block_size + offset_uj) = form_val_Ah + form_val_BhT;
+					}
 				}
 			}
 		}
@@ -984,24 +994,24 @@ struct HeatAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		for (auto i = ElementId_t{ 0 }; i < num_elems; ++i) {
 			const auto start_offset = i * num_basis;
 			for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
-				for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+				for (auto bj = bi; bj < num_basis; ++bj) {
 					const auto offset_vi = start_offset + bi;
 					const auto offset_uj = start_offset + bj;
 
 					auto form_val = T{ 0 };
 					const auto form_val_Ah = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Ah));
-					form_val += form_val_Ah;
 
 					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Bh));
-					form_val += form_val_Bh;
 
-#ifdef INVERTED_PROBLEM
-					matassembler(offset_uj, offset_vi) = form_val;
-#else
-					matassembler(offset_vi, offset_uj) = form_val;
-#endif
+					matassembler(offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
+
+					if (bi != bj) {
+						const auto form_val_BhT = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bj), static_cast<basis_index_t>(bi));
+						assert(std::isfinite(form_val_BhT));
+						matassembler(offset_uj, offset_vi) = form_val_Ah + form_val_BhT;
+					}
 				}
 			}
 		}
