@@ -278,13 +278,19 @@ namespace Utility {
 
 		inline T& operator()(size_type Row, size_type Column)
 		{
-			assert(Row < m_Rows && Column < m_Columns);
+			assert(0 <= Row && 0 <= Column && Row < m_Rows && Column < m_Columns);
+#ifdef SYMMETRIC_ASSEMBLY
+			assert(Column >= Row);
+#endif
 			return m_EntriesBuildUpMap[Row][Column];
 		}
 
 		inline T operator()(size_type Row, size_type Column) const
 		{
-			assert(Row < m_Rows && Column < m_Columns);
+			assert(0 <= Row && 0 <= Column && Row < m_Rows && Column < m_Columns);
+#ifdef SYMMETRIC_ASSEMBLY
+			assert(Column >= Row);
+#endif
 			return m_EntriesBuildUpMap.at(Row).at(Column);
 		}
 
@@ -294,9 +300,9 @@ namespace Utility {
 			// Note that a std::pair is compared lexographically in its elements. This means that if we iterate through the map,
 			// we will pass the first entry in ascending order and then the second entry.
 
-			size_type  AmountOfNonZeroEntries = 0;
+			auto AmountOfNonZeroEntries = size_type{ 0 };
 			for (auto it = m_EntriesBuildUpMap.cbegin(); it != m_EntriesBuildUpMap.cend(); ++it)
-				AmountOfNonZeroEntries += it->second.size();
+				AmountOfNonZeroEntries += static_cast<size_type>( it->second.size() );
 
 			size_type RowCounter = 0;
 			size_type EntryPosition = 0;
@@ -318,11 +324,15 @@ namespace Utility {
 				RowCounter = i;
 				
 				for (auto colit = it->second.cbegin(); colit != it->second.cend(); ++colit) {
-					if (colit->first != RowCounter && std::abs(colit->second) < epsilon_filter)
-						continue;
+					//if (colit->first != RowCounter && std::abs(colit->second) < epsilon_filter)
+					//	continue;
 					Entries[EntryPosition] = colit->second;
 					assert(std::isfinite(colit->second));
 					ColumnIndices[EntryPosition++] = colit->first + 1;
+#ifndef NDEBUG
+					if (EntryPosition > RowIndices[RowCounter])
+						assert(ColumnIndices[EntryPosition - 1] > ColumnIndices[EntryPosition - 2]);
+#endif
 				}
 				RowIndices[i + 1] = EntryPosition + 1;
 			}

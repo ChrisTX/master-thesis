@@ -1,3 +1,6 @@
+#define SYMMETRIC_ASSEMBLY
+#define INNER_SYSTEM
+
 #include "TetrahedralMesh.hpp"
 #include "SpaceTimeOptimizer.hpp"
 
@@ -29,7 +32,7 @@ int main() {
 #elif !defined(NDEBUG)
 	const auto reflim = 3;
 #else
-	const auto reflim = 5;
+	const auto reflim = 3;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -86,7 +89,7 @@ int main() {
 
 	auto beta = 1.;
 	auto lambda = 0.1;
-	auto alpha = 0.;
+	auto alpha = 1.;
 	auto sigma = 20.;
 
 #ifdef HEAT_SYSTEM
@@ -101,10 +104,10 @@ int main() {
 	auto lvA = stmass.AssembleLV_Inner<BasisFunctions::TetrahedralLinearBasis<double>>([](double x, double y, double t) -> double { return t * t; });
 #else
 	auto matA = stmass.AssembleMatrix_Boundary<BasisFunctions::TetrahedralLinearBasis<double>>();
-	auto lvA = stmass.AssembleLV_Boundary<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 5.; });
+	auto lvA = stmass.AssembleLV_Boundary<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 0.; });
 #endif
 #else
-	auto matAandLV = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 5.; });
+	auto matAandLV = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 0.; });
 	auto matA = matAandLV.first;
 	auto lvA = matAandLV.second;
 #endif

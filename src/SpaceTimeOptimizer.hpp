@@ -464,7 +464,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 							const auto form_val_LV_low = this->EvaluateLV_Surface(yOmega, surf_id, basis_f, static_cast<basis_index_t>(bi));
 							assert(std::isfinite(form_val_LV_low));
-							loadvec[offset_vi] -= form_val_LV_low;
+							loadvec[offset_vi] = form_val_LV_low;
 						}
 					}
 					break;
@@ -477,7 +477,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 							const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, static_cast<basis_index_t>(bi));
 							assert(std::isfinite(form_val_LV_up));
-							loadvec[block_size + offset_vi] += form_val_LV_up;
+							loadvec[block_size + offset_vi] = form_val_LV_up;
 						}
 					}
 					break;
@@ -552,11 +552,16 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		using basis_und_t = std::underlying_type_t<basis_index_t>;
 		const auto num_elems = this->m_Mesh.m_ElementList.size();
 		const auto num_basis = basis_f.size();
-		const auto block_size = num_basis * num_elems;
-		const auto matrix_dim = 2 * block_size;
-
 		using csr_size_t = typename Utility::CSRMatrixAssembler<T>::size_type;
-		auto matassembler = Utility::CSRMatrixAssembler<T>{ static_cast<csr_size_t>(matrix_dim), static_cast<csr_size_t>(matrix_dim) };
+		const auto block_size = static_cast<csr_size_t>(num_basis * num_elems);
+		const auto matrix_dim = static_cast<csr_size_t>(2 * block_size);
+
+		auto matassembler = Utility::CSRMatrixAssembler<T>{ matrix_dim, matrix_dim };
+
+#ifdef SYMMETRIC_ASSEMBLY
+		for (auto i = csr_size_t{ 0 }; i < matrix_dim; ++i)
+			matassembler(i, i) = T{ 0 };
+#endif
 
 		// We first sum Ah + Bh on the inner-element interfaces up
 		for (auto i = ElementId_t{ 0 }; i < num_elems; ++i) {
@@ -569,22 +574,16 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					const auto form_val_Ah = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Ah));
 
-					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
-					assert(std::isfinite(form_val_Bh));
-
 #ifndef SYMMETRIC_ASSEMBLY
-					matassembler(block_size + offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
+					matassembler(block_size + offset_vi, offset_uj) = form_val_Ah;
 #endif
-					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
+					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah;
 
 					if (bi != bj) {
-						const auto form_val_BhT = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bj), static_cast<basis_index_t>(bi));
-						assert(std::isfinite(form_val_BhT));
-
 #ifndef SYMMETRIC_ASSEMBLY
-						matassembler(block_size + offset_uj, offset_vi) = form_val_Ah + form_val_BhT;
+						matassembler(block_size + offset_uj, offset_vi) = form_val_Ah;
 #endif
-						matassembler(offset_vi, block_size + offset_uj) = form_val_Ah + form_val_BhT;
+						matassembler(offset_vi, block_size + offset_uj) = form_val_Ah;
 					}
 
 					const auto form_val_Jh = this->EvaluateJh_Inner_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
@@ -594,6 +593,19 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					if (bi != bj)
 						matassembler(block_size + offset_uj, block_size + offset_vi) += form_val_Jh;
 #endif
+				}
+
+				for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+					const auto offset_vi = start_offset + bi;
+					const auto offset_uj = start_offset + bj;
+
+					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					assert(std::isfinite(form_val_Bh));
+
+#ifndef SYMMETRIC_ASSEMBLY
+					matassembler(block_size + offset_vi, offset_uj) += form_val_Bh;
+#endif
+					matassembler(offset_uj, block_size + offset_vi) += form_val_Bh;
 				}
 			}
 		}
@@ -636,7 +648,6 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 							assert(std::isfinite(form_val_Bh));
 							const auto offset_upi = start_offset_up + bj;
 							const auto offset_downi = start_offset_down + bi;
-
 #ifndef SYMMETRIC_ASSEMBLY
 							matassembler(block_size + offset_downi, offset_upi) += form_val_Bh;
 #endif
@@ -690,40 +701,52 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		using basis_und_t = std::underlying_type_t<basis_index_t>;
 		const auto num_elems = this->m_Mesh.m_ElementList.size();
 		const auto num_basis = basis_f.size();
-		const auto block_size = num_basis * num_elems;
-		const auto matrix_dim = 2 * block_size;
-
 		using csr_size_t = typename Utility::CSRMatrixAssembler<T>::size_type;
-		auto matassembler = Utility::CSRMatrixAssembler<T>{ static_cast<csr_size_t>(matrix_dim), static_cast<csr_size_t>(matrix_dim) };
+		const auto block_size = static_cast<csr_size_t>(num_basis * num_elems);
+		const auto matrix_dim = static_cast<csr_size_t>(2 * block_size);
+
+		auto matassembler = Utility::CSRMatrixAssembler<T>{ matrix_dim, matrix_dim };
+
+#ifdef SYMMETRIC_ASSEMBLY
+		for (auto i = csr_size_t{ 0 }; i < matrix_dim; ++i)
+			matassembler(i, i) = T{ 0 };
+#endif
 
 		// We first sum Ah + Bh on the inner-element interfaces up
 		for(auto i = ElementId_t{0}; i < num_elems; ++i) {
 			const auto start_offset = i * num_basis;
 			for(auto bi = basis_und_t{0}; bi < num_basis; ++bi) {
-				for(auto bj = bi; bj < num_basis; ++bj) {
+				for (auto bj = bi; bj < num_basis; ++bj) {
 					const auto offset_vi = start_offset + bi;
 					const auto offset_uj = start_offset + bj;
 
 					const auto form_val_Ah = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Ah));
 
+#ifndef SYMMETRIC_ASSEMBLY
+					matassembler(block_size + offset_vi, offset_uj) = form_val_Ah;
+#endif
+					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah;
+
+					if (bi != bj) {
+#ifndef SYMMETRIC_ASSEMBLY
+						matassembler(block_size + offset_uj, offset_vi) = form_val_Ah;
+#endif
+						matassembler(offset_vi, block_size + offset_uj) = form_val_Ah;
+					}
+				}
+
+				for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+					const auto offset_vi = start_offset + bi;
+					const auto offset_uj = start_offset + bj;
+
 					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Bh));
 
 #ifndef SYMMETRIC_ASSEMBLY
-					matassembler(block_size + offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
+					matassembler(block_size + offset_vi, offset_uj) += form_val_Bh;
 #endif
-
-					matassembler(offset_uj, block_size + offset_vi) = form_val_Ah + form_val_Bh;
-					if (bi != bj) {
-						const auto form_val_BhT = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bj), static_cast<basis_index_t>(bi));
-						assert(std::isfinite(form_val_BhT));
-
-#ifndef SYMMETRIC_ASSEMBLY
-						matassembler(block_size + offset_uj, offset_vi) = form_val_Ah + form_val_BhT;
-#endif
-						matassembler(offset_vi, block_size + offset_uj) = form_val_Ah + form_val_BhT;
-					}
+					matassembler(offset_uj, block_size + offset_vi) += form_val_Bh;
 				}
 			}
 		}
@@ -800,16 +823,17 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					{
 						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = basis_und_t{0}; bi < num_basis; ++bi) {
-							for(auto bj = basis_und_t{0}; bj < num_basis; ++bj) {
+							for(auto bj = bi; bj < num_basis; ++bj) {
 								const auto offset_vi = start_offset + bi;
 								const auto offset_uj = start_offset + bj;
 
 								const auto form_val_Kh = this->EvaluateKh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								assert(std::isfinite(form_val_Kh));
 								matassembler(offset_vi, offset_uj) += form_val_Kh;
+								
 #ifndef SYMMETRIC_ASSEMBLY
 								if (bi != bj)
-									matassembler(offset_uj, offset_vi) += form_val_Kh;
+									matassembler(offset_uj, offset_vi) += form_val_Kh; 
 #endif
 							}
 						}
@@ -824,10 +848,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 			}
 		}
 
-		for (auto i = csr_size_t{ 0 }; i < matrix_dim; ++i)
-			matassembler(i, i) += T{ 0 };
-
-		return matassembler.AssembleMatrix(1e-13);
+		return matassembler.AssembleMatrix(0);
 	}
 };
 
@@ -857,7 +878,15 @@ public:
 		for (const auto Ai : m_A.m_Entries)
 			assert(std::isfinite(Ai));
 #endif
+#ifdef USE_GMRES
+		IterativeSolvers::MKL_FGMRES(m_A, m_x, m_b, 500000, 20, 1e-5);
+#else
+#ifdef SYMMETRIC_ASSEMBLY
+		IterativeSolvers::MKL_PARDISO_SYM(m_A, m_x, m_b);
+#else
 		IterativeSolvers::MKL_PARDISO(m_A, m_x, m_b);
+#endif
+#endif
 #ifndef NDEBUG
 		for (const auto xi : m_x)
 			assert(std::isfinite(xi));
@@ -1002,16 +1031,24 @@ struct HeatAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					const auto form_val_Ah = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Ah));
 
+					matassembler(offset_vi, offset_uj) = form_val_Ah;
+
+					if (bi != bj)
+						matassembler(offset_uj, offset_vi) = form_val_Ah;
+				}
+
+				for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+					const auto offset_vi = start_offset + bi;
+					const auto offset_uj = start_offset + bj;
+
 					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Bh));
 
-					matassembler(offset_vi, offset_uj) = form_val_Ah + form_val_Bh;
-
-					if (bi != bj) {
-						const auto form_val_BhT = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bj), static_cast<basis_index_t>(bi));
-						assert(std::isfinite(form_val_BhT));
-						matassembler(offset_uj, offset_vi) = form_val_Ah + form_val_BhT;
-					}
+#ifndef INVERTED_PROBLEM
+					matassembler(offset_vi, offset_uj) += form_val_Bh;
+#else
+					matassembler(offset_uj, offset_vi) += form_val_Bh;
+#endif
 				}
 			}
 		}

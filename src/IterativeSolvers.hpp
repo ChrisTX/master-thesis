@@ -27,6 +27,9 @@ namespace IterativeSolvers {
 		dfgmres_init(&N, &x[0], const_cast<double*>(&b[0]), &RCI_request, ipar, dpar, tmp.data());
 		if (RCI_request != 0)
 			throw std::runtime_error("dfmgres_init failed!");
+		ipar[1] = 6;
+		ipar[5] = 1;
+		ipar[6] = 1;
 		ipar[4] = Iterations;
 		ipar[8] = 1; // do residual stopping test
 		ipar[9] = 0; // No user-defined stopping test
@@ -85,9 +88,9 @@ namespace IterativeSolvers {
 		iparm[7] = 0;         /* Max numbers of iterative refinement steps */
 		iparm[8] = 0;         /* Not in use */
 		iparm[9] = 13;        /* Perturb the pivot elements with 1E-13 */
-		iparm[10] = 0;        /* Use nonsymmetric permutation and scaling MPS */
+		iparm[10] = 1;        /* Use nonsymmetric permutation and scaling MPS */
 		iparm[11] = 0;        /* Not in use */
-		iparm[12] = 0;        /* Maximum weighted matching algorithm is switched-off */
+		iparm[12] = 1;        /* Maximum weighted matching algorithm is switched-off */
 							  /* (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy */
 		iparm[13] = 0;        /* Output: Number of perturbed pivots */
 		iparm[14] = 0;        /* Not in use */
@@ -106,6 +109,60 @@ namespace IterativeSolvers {
 		PARDISO(pt.data(), &maxfct, &mnum, &mtype, &phase, &N, A.m_Entries.data(), A.m_RowIndices.data(), A.m_ColumnIndices.data(), &perm_dum, &nrhs, iparm.data(), &msglvl, const_cast<double*>( b.data() ), x.data(), &error);
 
 		if(error != 0)
+			throw std::runtime_error("PARDISO failed!");
+
+		double dub_dummy;
+		phase = -1;
+		PARDISO(pt.data(), &maxfct, &mnum, &mtype, &phase, &N, &dub_dummy, A.m_RowIndices.data(), A.m_ColumnIndices.data(), &perm_dum, &nrhs, iparm.data(), &msglvl, &dub_dummy, &dub_dummy, &error);
+	}
+
+	void MKL_PARDISO_SYM(const Utility::CSRMatrix<double>& A, std::vector<double>& x, const std::vector<double>& b)
+	{
+		std::array<void *, 64> pt{};
+		std::array<MKL_INT, 64> iparm{};
+		MKL_INT maxfct, mnum, phase, error, msglvl, nrhs, mtype, N, perm_dum;
+		iparm[1] = 2; // Nested dissection from METIS
+		maxfct = 1; // Maximally one factorization.
+		mnum = 1; // Use first (and only) factorization.
+		mtype = -2; // real and symmetric
+		phase = 13; // Analysis, numerical factorization, solve, iterative refinement
+		N = A.GetNumberOfRows(); // Number of rows
+		assert(x.size() == static_cast<std::size_t>(N));
+		nrhs = 1;
+
+		for (auto i = 0; i < iparm.size(); ++i)
+			iparm[i] = 0;
+
+		iparm[0] = 1;         /* No solver default */
+		iparm[1] = 2;         /* Fill-in reordering from METIS */
+		iparm[3] = 0;         /* No iterative-direct algorithm */
+		iparm[4] = 0;         /* No user fill-in reducing permutation */
+		iparm[5] = 0;         /* Write solution into x */
+		iparm[6] = 0;         /* Not in use */
+		iparm[7] = 0;         /* Max numbers of iterative refinement steps */
+		iparm[8] = 0;         /* Not in use */
+		iparm[9] = 13;        /* Perturb the pivot elements with 1E-13 */
+		iparm[10] = 1;        /* Use nonsymmetric permutation and scaling MPS */
+		iparm[11] = 0;        /* Not in use */
+		iparm[12] = 1;        /* Maximum weighted matching algorithm is switched-off */
+							  /* (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy */
+		iparm[13] = 0;        /* Output: Number of perturbed pivots */
+		iparm[14] = 0;        /* Not in use */
+		iparm[15] = 0;        /* Not in use */
+		iparm[16] = 0;        /* Not in use */
+		iparm[17] = -1;       /* Output: Number of nonzeros in the factor LU */
+		iparm[18] = -1;       /* Output: Mflops for LU factorization */
+		iparm[19] = 0;        /* Output: Numbers of CG Iterations */
+
+#ifndef NDEBUG
+		msglvl = 1;
+		iparm[26] = 1;
+#else
+		msglvl = 0;
+#endif
+		PARDISO(pt.data(), &maxfct, &mnum, &mtype, &phase, &N, A.m_Entries.data(), A.m_RowIndices.data(), A.m_ColumnIndices.data(), &perm_dum, &nrhs, iparm.data(), &msglvl, const_cast<double*>(b.data()), x.data(), &error);
+
+		if (error != 0)
 			throw std::runtime_error("PARDISO failed!");
 
 		double dub_dummy;
