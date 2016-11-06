@@ -464,7 +464,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 							const auto form_val_LV_low = this->EvaluateLV_Surface(yOmega, surf_id, basis_f, static_cast<basis_index_t>(bi));
 							assert(std::isfinite(form_val_LV_low));
-							loadvec[offset_vi] = form_val_LV_low;
+							loadvec[offset_vi] -= form_val_LV_low;
 						}
 					}
 					break;
@@ -477,7 +477,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 							const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, static_cast<basis_index_t>(bi));
 							assert(std::isfinite(form_val_LV_up));
-							loadvec[block_size + offset_vi] = form_val_LV_up;
+							loadvec[block_size + offset_vi] += form_val_LV_up;
 						}
 					}
 					break;
@@ -848,7 +848,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 			}
 		}
 
-		return matassembler.AssembleMatrix(0);
+		return matassembler.AssembleMatrix(1e-13);
 	}
 };
 

@@ -324,8 +324,8 @@ namespace Utility {
 				RowCounter = i;
 				
 				for (auto colit = it->second.cbegin(); colit != it->second.cend(); ++colit) {
-					//if (colit->first != RowCounter && std::abs(colit->second) < epsilon_filter)
-					//	continue;
+					if (colit->first != RowCounter && std::abs(colit->second) < epsilon_filter)
+						continue;
 					Entries[EntryPosition] = colit->second;
 					assert(std::isfinite(colit->second));
 					ColumnIndices[EntryPosition++] = colit->first + 1;
