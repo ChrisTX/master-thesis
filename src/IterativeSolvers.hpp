@@ -2,6 +2,7 @@
 #define GUARD_ITERATIVE_SOLVERS_HPP
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <stdexcept>
@@ -18,46 +19,56 @@ namespace IterativeSolvers {
 		MKL_INT N = A.GetNumberOfRows();
 		assert(x.size() == static_cast<std::size_t>(N));
 		MKL_INT RCI_request;
-		MKL_INT ipar[128];
-		double dpar[128];
+		std::array<MKL_INT, 128> ipar;
+		std::array<double, 128> dpar;
+
+		if (!Iterations)
+			Iterations = std::min(static_cast<MKL_INT>(150), N);
 		if (!IterationsUntilRestart)
 			IterationsUntilRestart = std::min(static_cast<MKL_INT>(150), N);
 
 		std::vector<double> tmp( N * (2 * IterationsUntilRestart + 1) + (IterationsUntilRestart * (IterationsUntilRestart + 9)) / 2 + 1 );
-		dfgmres_init(&N, &x[0], const_cast<double*>(&b[0]), &RCI_request, ipar, dpar, tmp.data());
+		dfgmres_init(&N, &x[0], const_cast<double*>(&b[0]), &RCI_request, ipar.data(), dpar.data(), tmp.data());
 		if (RCI_request != 0)
 			throw std::runtime_error("dfmgres_init failed!");
 		ipar[1] = 6;
 		ipar[5] = 1;
 		ipar[6] = 1;
 		ipar[4] = Iterations;
-		ipar[8] = 1; // do residual stopping test
 		ipar[9] = 0; // No user-defined stopping test
 		ipar[11] = 1; // Check next-gen vector norm automatically;
 		ipar[14] = IterationsUntilRestart;
-		dpar[1] = ErrorTolerance;
+		if (ErrorTolerance > 0) {
+			ipar[8] = 1; // do residual stopping test
+			dpar[1] = ErrorTolerance;
+		}
 
-		dfgmres_check(&N, &x[0], const_cast<double*>(&b[0]), &RCI_request, ipar, dpar, tmp.data());
+		dfgmres_check(&N, &x[0], const_cast<double*>(&b[0]), &RCI_request, ipar.data(), dpar.data(), tmp.data());
 		if (RCI_request != 0)
 			throw std::runtime_error("dfgmres_check failed!");
 
 		while(true) {
-			dfgmres(&N, &x[0], const_cast<double*>(&b[0]), &RCI_request, ipar, dpar, tmp.data());
+			dfgmres(&N, &x[0], const_cast<double*>(&b[0]), &RCI_request, ipar.data(), dpar.data(), tmp.data());
 
 			if (RCI_request)
 			{
 				if (RCI_request != 1)
 					throw std::runtime_error("dfgmres failed!");
 
+#ifdef SYMMETRIC_ASSEMBLY
+				char uplo = 'U';
+				Utility::MKL_csrsymv(&uplo, &N, const_cast<double*>(A.m_Entries.data()), const_cast<MKL_INT*>(A.m_RowIndices.data()), const_cast<MKL_INT*>(A.m_ColumnIndices.data()), &tmp[ipar[21] - 1], &tmp[ipar[22] - 1]);
+#else
 				char transa = 'N';
 				Utility::MKL_csrgemv(&transa, &N, const_cast<double*>(A.m_Entries.data()), const_cast<MKL_INT*>(A.m_RowIndices.data()), const_cast<MKL_INT*>(A.m_ColumnIndices.data()), &tmp[ipar[21] - 1], &tmp[ipar[22] - 1]);
+#endif
 			}
 			else
 				break;
 		}
 		MKL_INT itercount;
 		ipar[12] = 0; // Write output in x.
-		dfgmres_get(&N, &x[0], const_cast<double*>(&b[0]), &RCI_request, ipar, dpar, tmp.data(), &itercount);
+		dfgmres_get(&N, &x[0], const_cast<double*>(&b[0]), &RCI_request, ipar.data(), dpar.data(), tmp.data(), &itercount);
 
 		MKL_Free_Buffers();
 	}

@@ -24,22 +24,24 @@ namespace Utility {
 	}
 
 #ifdef HAVE_MKL
-	template<typename T>
-	inline void MKL_csrgemv(char *transa, MKL_INT *m, T *a, MKL_INT *ia, MKL_INT *ja, T *x, T *y)
-	{
-		throw std::logic_error("Unknown data type!");
-	}
-
-	template<>
 	inline void MKL_csrgemv(char *transa, MKL_INT *m, float *a, MKL_INT *ia, MKL_INT *ja, float *x, float *y)
 	{
 		mkl_scsrgemv(transa, m, a, ia, ja, x, y);
 	}
 
-	template<>
 	inline void MKL_csrgemv(char *transa, MKL_INT *m, double *a, MKL_INT *ia, MKL_INT *ja, double *x, double *y)
 	{
 		mkl_dcsrgemv(transa, m, a, ia, ja, x, y);
+	}
+
+	inline void MKL_csrsymv(char *uplo, MKL_INT *m, float *a, MKL_INT *ia, MKL_INT *ja, float *x, float *y)
+	{
+		mkl_scsrsymv(uplo, m, a, ia, ja, x, y);
+	}
+
+	inline void MKL_csrsymv(char *uplo, MKL_INT *m, double *a, MKL_INT *ia, MKL_INT *ja, double *x, double *y)
+	{
+		mkl_dcsrsymv(uplo, m, a, ia, ja, x, y);
 	}
 #endif
 }

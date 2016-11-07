@@ -568,8 +568,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 			const auto start_offset = i * num_basis;
 			for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
 				for (auto bj = bi; bj < num_basis; ++bj) {
-					const auto offset_vi = start_offset + bi;
-					const auto offset_uj = start_offset + bj;
+					const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
+					const auto offset_uj = static_cast<csr_size_t>(start_offset + bj);
 
 					const auto form_val_Ah = this->EvaluateAh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Ah));
@@ -596,8 +596,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				}
 
 				for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
-					const auto offset_vi = start_offset + bi;
-					const auto offset_uj = start_offset + bj;
+					const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
+					const auto offset_uj = static_cast<csr_size_t>(start_offset + bj);
 
 					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Bh));
@@ -622,8 +622,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				const auto start_offset_v = surf_data.adjacent_elements[0] * num_basis;
 				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
 					for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
-						const auto offset_vi = start_offset_v + bi;
-						const auto offset_uj = start_offset_u + bj;
+						const auto offset_vi = static_cast<csr_size_t>(start_offset_v + bi);
+						const auto offset_uj = static_cast<csr_size_t>(start_offset_u + bj);
 
 						const auto form_val_Ah = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 						assert(std::isfinite(form_val_Ah));
@@ -646,8 +646,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
 							const auto form_val_Bh = this->EvaluateBh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 							assert(std::isfinite(form_val_Bh));
-							const auto offset_upi = start_offset_up + bj;
-							const auto offset_downi = start_offset_down + bi;
+							const auto offset_upi = static_cast<csr_size_t>(start_offset_up + bj);
+							const auto offset_downi = static_cast<csr_size_t>(start_offset_down + bi);
 #ifndef SYMMETRIC_ASSEMBLY
 							matassembler(block_size + offset_downi, offset_upi) += form_val_Bh;
 #endif
@@ -663,8 +663,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
 					for (auto bj = bi; bj < num_basis; ++bj) {
-						const auto offset_vi = start_offset + bi;
-						const auto offset_uj = start_offset + bj;
+						const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
+						const auto offset_uj = static_cast<csr_size_t>(start_offset + bj);
 
 						const auto form_val_Kh = this->EvaluateKh_Inner_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 						assert(std::isfinite(form_val_Kh));
@@ -737,8 +737,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				}
 
 				for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
-					const auto offset_vi = start_offset + bi;
-					const auto offset_uj = start_offset + bj;
+					const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
+					const auto offset_uj = static_cast<csr_size_t>(start_offset + bj);
 
 					const auto form_val_Bh = this->EvaluateBh_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 					assert(std::isfinite(form_val_Bh));
@@ -763,8 +763,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto start_offset_v = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = basis_und_t{0}; bi < num_basis; ++bi) {
 							for(auto bj = basis_und_t{0}; bj < num_basis; ++bj) {
-								const auto offset_vi = start_offset_v + bi;
-								const auto offset_uj = start_offset_u + bj;
+								const auto offset_vi = static_cast<csr_size_t>(start_offset_v + bi);
+								const auto offset_uj = static_cast<csr_size_t>(start_offset_u + bj);
 
 								const auto form_val_Ah = this->EvaluateAh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								assert(std::isfinite(form_val_Ah));
@@ -787,8 +787,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 								for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
 									const auto form_val_Bh = this->EvaluateBh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 									assert(std::isfinite(form_val_Bh));
-									const auto offset_upi = start_offset_up + bj;
-									const auto offset_downi = start_offset_down + bi;
+									const auto offset_upi = static_cast<csr_size_t>(start_offset_up + bj);
+									const auto offset_downi = static_cast<csr_size_t>(start_offset_down + bi);
 #ifndef SYMMETRIC_ASSEMBLY
 									matassembler(block_size + offset_downi, offset_upi) += form_val_Bh;
 #endif
@@ -804,8 +804,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = basis_und_t{0}; bi < num_basis; ++bi) {
 							for(auto bj = bi; bj < num_basis; ++bj) {
-								const auto offset_vi = start_offset + bi;
-								const auto offset_uj = start_offset + bj;
+								const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
+								const auto offset_uj = static_cast<csr_size_t>(start_offset + bj);
 
 								const auto form_val_Jh = this->EvaluateJh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								assert(std::isfinite(form_val_Jh));
@@ -824,8 +824,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 						for(auto bi = basis_und_t{0}; bi < num_basis; ++bi) {
 							for(auto bj = bi; bj < num_basis; ++bj) {
-								const auto offset_vi = start_offset + bi;
-								const auto offset_uj = start_offset + bj;
+								const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
+								const auto offset_uj = static_cast<csr_size_t>(start_offset + bj);
 
 								const auto form_val_Kh = this->EvaluateKh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 								assert(std::isfinite(form_val_Kh));
@@ -879,7 +879,7 @@ public:
 			assert(std::isfinite(Ai));
 #endif
 #ifdef USE_GMRES
-		IterativeSolvers::MKL_FGMRES(m_A, m_x, m_b, 500000, 20, 1e-5);
+		IterativeSolvers::MKL_FGMRES(m_A, m_x, m_b, 5000, 0, T{ 0 });
 #else
 #ifdef SYMMETRIC_ASSEMBLY
 		IterativeSolvers::MKL_PARDISO_SYM(m_A, m_x, m_b);

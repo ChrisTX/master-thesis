@@ -1,5 +1,6 @@
 #define SYMMETRIC_ASSEMBLY
 #define INNER_SYSTEM
+#define USE_GMRES
 
 #include "TetrahedralMesh.hpp"
 #include "SpaceTimeOptimizer.hpp"
