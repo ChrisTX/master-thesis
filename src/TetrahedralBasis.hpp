@@ -72,6 +72,8 @@ namespace BasisFunctions {
 	class TetrahedralQuadraticBasis {
 		using linear_basis_t = TetrahedralLinearBasis<T>;
 		using linear_index_t = typename linear_basis_t::index_t;
+
+		linear_basis_t m_ltb;
 	public:
 		using point_t = std::array<T, 3>;
 
@@ -93,82 +95,88 @@ namespace BasisFunctions {
 			return 10;
 		}
 
-		ECONSTEXPR auto operator()(const index_t i, const point_t&) const
+		ECONSTEXPR auto operator()(const index_t i, const point_t& p) const
 		{
 			switch(i) {
 				case index_t::phi_1:
-					return linear_basis_t(linear_index_t::phi_1) * ( T{2} * linear_basis_t(linear_index_t::phi_1) - 1);
+					return this->m_ltb(linear_index_t::phi_1, p) * ( T{2} * this->m_ltb(linear_index_t::phi_1, p) - 1);
 				case index_t::phi_2:
-					return linear_basis_t(linear_index_t::phi_2) * ( T{2} * linear_basis_t(linear_index_t::phi_2) - 1);
+					return this->m_ltb(linear_index_t::phi_2, p) * ( T{2} * this->m_ltb(linear_index_t::phi_2, p) - 1);
 				case index_t::phi_3:
-					return linear_basis_t(linear_index_t::phi_3) * ( T{2} * linear_basis_t(linear_index_t::phi_3) - 1);
+					return this->m_ltb(linear_index_t::phi_3, p) * ( T{2} * this->m_ltb(linear_index_t::phi_3, p) - 1);
 				case index_t::phi_4:
-					return linear_basis_t(linear_index_t::phi_4) * ( T{2} * linear_basis_t(linear_index_t::phi_4) - 1);
+					return this->m_ltb(linear_index_t::phi_4, p) * ( T{2} * this->m_ltb(linear_index_t::phi_4, p) - 1);
 				case index_t::phi_5:
-					return T{4} * linear_basis_t(linear_index_t::phi_1) * linear_basis_t(linear_index_t::phi_2);
+					return T{4} * this->m_ltb(linear_index_t::phi_1, p) * this->m_ltb(linear_index_t::phi_2, p);
 				case index_t::phi_6:
-					return T{4} * linear_basis_t(linear_index_t::phi_2) * linear_basis_t(linear_index_t::phi_3);
+					return T{4} * this->m_ltb(linear_index_t::phi_2, p) * this->m_ltb(linear_index_t::phi_3, p);
 				case index_t::phi_7:
-					return T{4} * linear_basis_t(linear_index_t::phi_1) * linear_basis_t(linear_index_t::phi_3);
+					return T{4} * this->m_ltb(linear_index_t::phi_1, p) * this->m_ltb(linear_index_t::phi_3, p);
 				case index_t::phi_8:
-					return T{4} * linear_basis_t(linear_index_t::phi_1) * linear_basis_t(linear_index_t::phi_4);
+					return T{4} * this->m_ltb(linear_index_t::phi_1, p) * this->m_ltb(linear_index_t::phi_4, p);
 				case index_t::phi_9:
-					return T{4} * linear_basis_t(linear_index_t::phi_2) * linear_basis_t(linear_index_t::phi_4);
+					return T{4} * this->m_ltb(linear_index_t::phi_2, p) * this->m_ltb(linear_index_t::phi_4, p);
 				case index_t::phi_10:
-					return T{4} * linear_basis_t(linear_index_t::phi_3) * linear_basis_t(linear_index_t::phi_4);
+					return T{4} * this->m_ltb(linear_index_t::phi_3, p) * this->m_ltb(linear_index_t::phi_4, p);
 			}
+
+			assert(false);
+			return std::move(std::numeric_limits<T>::signaling_NaN());
 		}
 
 		ECONSTEXPR auto EvaluateDerivative(const index_t i, const point_t& p) const
 		{
 			switch(i) {
 				case index_t::phi_1:
-					return std::array<T, 3>{ T{-1} * (T{2} * linear_basis_t(linear_index_t::phi_1, p) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_1, p) * (T{2} * T{-1}),
-											 T{-1} * (T{2} * linear_basis_t(linear_index_t::phi_1, p) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_1, p) * (T{2} * T{-1}),
-											 T{-1} * (T{2} * linear_basis_t(linear_index_t::phi_1, p) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_1, p) * (T{2} * T{-1}) };
+					return std::array<T, 3>{ T{-1} * (T{2} * this->m_ltb(linear_index_t::phi_1, p) - T{1})
+											  + this->m_ltb(linear_index_t::phi_1, p) * (T{2} * T{-1}),
+											 T{-1} * (T{2} * this->m_ltb(linear_index_t::phi_1, p) - T{1})
+											  + this->m_ltb(linear_index_t::phi_1, p) * (T{2} * T{-1}),
+											 T{-1} * (T{2} * this->m_ltb(linear_index_t::phi_1, p) - T{1})
+											  + this->m_ltb(linear_index_t::phi_1, p) * (T{2} * T{-1}) };
 				case index_t::phi_2:
-					return std::array<T, 3>{ T{1} * (T{2} * linear_basis_t(linear_index_t::phi_2, p) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_2, p) * (T{2} * T{1}),
+					return std::array<T, 3>{ T{1} * (T{2} * this->m_ltb(linear_index_t::phi_2, p) - T{1})
+											  + this->m_ltb(linear_index_t::phi_2, p) * (T{2} * T{1}),
 											 T{0},
 											 T{0} };
 				case index_t::phi_3:
 					return std::array<T, 3>{ T{0},
-											 T{1} * (T{2} * linear_basis_t(linear_index_t::phi_3, p) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_3, p) * (T{2} * T{1}),
+											 T{1} * (T{2} * this->m_ltb(linear_index_t::phi_3, p) - T{1})
+											  + this->m_ltb(linear_index_t::phi_3, p) * (T{2} * T{1}),
 											 T{0} };
 				case index_t::phi_4:
 					return std::array<T, 3>{ T{0},
 											 T{0},
-											 T{1} * (T{2} * linear_basis_t(linear_index_t::phi_4, p) - T{1})
-											  + linear_basis_t(linear_basis_t::phi_4, p) * (T{2} * T{1}) };
+											 T{1} * (T{2} * this->m_ltb(linear_index_t::phi_4, p) - T{1})
+											  + this->m_ltb(linear_index_t::phi_4, p) * (T{2} * T{1}) };
 				case index_t::phi_5:
-					return std::array<T, 3>{ T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_2, p) + linear_basis_t(linear_index_t::phi_1, p) * T{1} ),
-											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_2, p) ),
-											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_2, p) ) };
+					return std::array<T, 3>{ T{4} * ( T{-1} * this->m_ltb(linear_index_t::phi_2, p) + this->m_ltb(linear_index_t::phi_1, p) * T{1} ),
+											 T{4} * ( T{-1} * this->m_ltb(linear_index_t::phi_2, p) ),
+											 T{4} * ( T{-1} * this->m_ltb(linear_index_t::phi_2, p) ) };
 				case index_t::phi_6:
-					return std::array<T, 3>{ T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_3, p) ),
-											 T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_2, p) ),
+					return std::array<T, 3>{ T{4} * ( T{1} * this->m_ltb(linear_index_t::phi_3, p) ),
+											 T{4} * ( T{1} * this->m_ltb(linear_index_t::phi_2, p) ),
 											 T{0} };
 				case index_t::phi_7:
-					return std::array<T, 3>{ T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_3, p) ),
-											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_3, p) + linear_basis_t(linear_index_t::phi_1, p) * T{1} ),
-											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_3, p) ) };
+					return std::array<T, 3>{ T{4} * ( T{-1} * this->m_ltb(linear_index_t::phi_3, p) ),
+											 T{4} * ( T{-1} * this->m_ltb(linear_index_t::phi_3, p) + this->m_ltb(linear_index_t::phi_1, p) * T{1} ),
+											 T{4} * ( T{-1} * this->m_ltb(linear_index_t::phi_3, p) ) };
 				case index_t::phi_8:
-					return std::array<T, 3>{ T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_4, p) ),
-											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_4, p) ),
-											 T{4} * ( T{-1} * linear_basis_t(linear_index_t::phi_4, p) + linear_basis_t(linear_index_t::phi_1, p) * T{1} ) };
+					return std::array<T, 3>{ T{4} * ( T{-1} * this->m_ltb(linear_index_t::phi_4, p) ),
+											 T{4} * ( T{-1} * this->m_ltb(linear_index_t::phi_4, p) ),
+											 T{4} * ( T{-1} * this->m_ltb(linear_index_t::phi_4, p) + this->m_ltb(linear_index_t::phi_1, p) * T{1} ) };
 				case index_t::phi_9:
-					return std::array<T, 3>{ T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_4, p) ),
+					return std::array<T, 3>{ T{4} * ( T{1} * this->m_ltb(linear_index_t::phi_4, p) ),
 											 T{0},
-											 T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_2, p) ) };
+											 T{4} * ( T{1} * this->m_ltb(linear_index_t::phi_2, p) ) };
 				case index_t::phi_10:
 					return std::array<T, 3>{ T{0},
-											 T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_4, p) ),
-											 T{4} * ( T{1} * linear_basis_t(linear_index_t::phi_3, p) ) };							 
+											 T{4} * ( T{1} * this->m_ltb(linear_index_t::phi_4, p) ),
+											 T{4} * ( T{1} * this->m_ltb(linear_index_t::phi_3, p) ) };							 
 			}
+
+			assert(false);
+			return std::move(std::array<T, 3>{std::numeric_limits<T>::signaling_NaN(), std::numeric_limits<T>::signaling_NaN(), std::numeric_limits<T>::signaling_NaN()});
 		}
 	};
 }

@@ -1,6 +1,4 @@
 #define SYMMETRIC_ASSEMBLY
-#define INNER_SYSTEM
-#define USE_GMRES
 
 #include "TetrahedralMesh.hpp"
 #include "SpaceTimeOptimizer.hpp"
@@ -31,9 +29,9 @@ int main() {
 #if defined(PRINT_MATRIX)
 	const auto reflim = 0;
 #elif !defined(NDEBUG)
-	const auto reflim = 3;
+	const auto reflim = 0;
 #else
-	const auto reflim = 3;
+	const auto reflim = 4;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -99,16 +97,22 @@ int main() {
 	auto stmass = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda };
 #endif
 
+#ifdef QUADRATIC_BASIS
+	using basis_t = BasisFunctions::TetrahedralQuadraticBasis<double>;
+#else
+	using basis_t = BasisFunctions::TetrahedralLinearBasis<double>;
+#endif
+
 #ifndef HEAT_SYSTEM
 #ifdef INNER_SYSTEM
-	auto matA = stmass.AssembleMatrix_Inner<BasisFunctions::TetrahedralLinearBasis<double>>();
-	auto lvA = stmass.AssembleLV_Inner<BasisFunctions::TetrahedralLinearBasis<double>>([](double x, double y, double t) -> double { return t * t; });
+	auto matA = stmass.AssembleMatrix_Inner<basis_t>();
+	auto lvA = stmass.AssembleLV_Inner<basis_t>([](double x, double y, double t) -> double { return t * t; });
 #else
-	auto matA = stmass.AssembleMatrix_Boundary<BasisFunctions::TetrahedralLinearBasis<double>>();
-	auto lvA = stmass.AssembleLV_Boundary<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 0.; });
+	auto matA = stmass.AssembleMatrix_Boundary<basis_t>();
+	auto lvA = stmass.AssembleLV_Boundary<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 0.; });
 #endif
 #else
-	auto matAandLV = stmass.AssembleMatrixAndLV<BasisFunctions::TetrahedralLinearBasis<double>>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 0.; });
+	auto matAandLV = stmass.AssembleMatrixAndLV<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 0.; });
 	auto matA = matAandLV.first;
 	auto lvA = matAandLV.second;
 #endif
@@ -129,7 +133,7 @@ int main() {
 #ifdef HAVE_MKL
 	std::cout << "SOLVING" << std::endl;
 	
-	auto stmsol = STMSolver<double, BasisFunctions::TetrahedralLinearBasis<double>>{ beta, lambda, mesh, matA, lvA };
+	auto stmsol = STMSolver<double, basis_t>{ beta, lambda, mesh, matA, lvA };
 
 #ifndef HEAT_SYSTEM
 	stmsol.PrintToVTU("testfile-u.vtu", false);
