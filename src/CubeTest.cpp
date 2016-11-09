@@ -1,4 +1,5 @@
 #define SYMMETRIC_ASSEMBLY
+#define INNER_SYSTEM
 
 #include "TetrahedralMesh.hpp"
 #include "SpaceTimeOptimizer.hpp"
@@ -29,7 +30,7 @@ int main() {
 #if defined(PRINT_MATRIX)
 	const auto reflim = 0;
 #elif !defined(NDEBUG)
-	const auto reflim = 0;
+	const auto reflim = 2;
 #else
 	const auto reflim = 4;
 #endif
