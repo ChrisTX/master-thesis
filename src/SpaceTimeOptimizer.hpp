@@ -323,6 +323,35 @@ public:
 	}
 
 	template<class BasisFuncs, class BasisIndex>
+	auto EvaluateKh_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
+		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
+		assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::EndTime);
+
+		const auto adj_elem_id = cur_surface_data.adjacent_elements[0];
+		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(adj_elem_id);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
+
+		const auto surface_integral_part = [&]() -> auto {
+			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
+			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
+
+			const auto integrand_fn = [&](auto sp) -> auto {
+				const auto p_space = ref_triang_tran(sp);
+
+				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
+
+				return uh * vh;
+			};
+
+			const auto ref_triang_tran_det = ref_triang_tran.GetDeterminantSqrt();
+			return triang_quadfm(integrand_fn) * ref_triang_tran_det;
+		};
+
+		return T{ -1 } *surface_integral_part();
+	}
+
+	template<class BasisFuncs, class BasisIndex>
 	auto EvaluateKh_Inner_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
 		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
 		assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::MidTime);
@@ -370,32 +399,21 @@ public:
 	}
 
 	template<class BasisFuncs, class BasisIndex>
-	auto EvaluateKh_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv, const BasisIndex biu) const {
-		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
-		assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::EndTime);
-
-		const auto adj_elem_id = cur_surface_data.adjacent_elements[0];
-		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(adj_elem_id);
+	auto EvaluateKh_Symmetric_Element(const ElementId_t elemid, const BasisFuncs bf, const BasisIndex biv, const BasisIndex biu) const {
+		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
 		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
+		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
 
-		const auto surface_integral_part = [&]() -> auto {
-			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
-			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
+		const auto integrand = [&](const auto& sp) -> auto {
+			const auto p_space = ref_tran(sp);
 
-			const auto integrand_fn = [&](auto sp) -> auto {
-				const auto p_space = ref_triang_tran(sp);
+			const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
+			const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
 
-				const auto uh = ref_tran.EvaluateTransformedBasis(bf, biu, p_space);
-				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
-
-				return uh * vh;
-			};
-
-			const auto ref_triang_tran_det = ref_triang_tran.GetDeterminantSqrt();
-			return triang_quadfm(integrand_fn) * ref_triang_tran_det;
+			return uh * vh;
 		};
 
-		return T{-1} *surface_integral_part();
+		return T{ -1 } * tetra_quadfm(integrand) * ref_tran_det;
 	}
 
 	template<class F, class BasisFuncs, class BasisIndex>
@@ -533,6 +551,84 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				}
 			}
 			break;
+
+			case SurfaceType_t::Undefined:
+				assert(false);
+			}
+		}
+
+		return std::move(loadvec);
+	}
+
+	template<class BasisFuncs, class FT, class FT2, class FT3>
+	auto AssembleLV_Symmetric(const FT& innerF, const FT2& yQ, const FT3& y0) const {
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		const auto block_size = num_basis * num_elems;
+		const auto matrix_dim = 2 * block_size;
+
+		auto loadvec = std::vector<T>(matrix_dim);
+
+		const auto inner_element_f = [&](const auto& rhs_func, const auto elemid, const auto biv) -> auto {
+			const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
+			const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
+			const auto ref_tran_det = ref_tran.GetDeterminantAbs();
+
+			const auto integrand = [&](const auto& sp) -> auto {
+				const auto p_space = ref_tran(sp);
+
+				const auto uh = rhs_func(p_space[0], p_space[1], p_space[2]);
+				const auto vh = ref_tran.EvaluateTransformedBasis(basis_f, biv, p_space);
+
+				return uh * vh;
+			};
+
+			return tetra_quadfm(integrand) * ref_tran_det;
+		};
+
+		for (auto i = ElementId_t{ 0 }; i < num_elems; ++i) {
+			const auto start_offset = i * num_basis;
+			for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+				const auto offset_vi = start_offset + bi;
+
+				const auto form_val_rhs = inner_element_f(innerF, i, static_cast<basis_index_t>(bi));
+				assert(std::isfinite(form_val_rhs));
+				loadvec[offset_vi] += form_val_rhs;
+
+				const auto form_val_rhsQ = inner_element_f(yQ, i, static_cast<basis_index_t>(bi));
+				assert(std::isfinite(form_val_rhsQ));
+				loadvec[block_size + offset_vi] -= form_val_rhsQ;
+			}
+		}
+
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+			case SurfaceType_t::EndTime:
+				break;
+
+			case SurfaceType_t::StartTime:
+			{
+				const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+					const auto offset_vi = start_offset + bi;
+
+					const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, static_cast<basis_index_t>(bi));
+					assert(std::isfinite(form_val_LV_up));
+					loadvec[offset_vi] += form_val_LV_up;
+				}
+			}
+				break;
+
+			case SurfaceType_t::Inner:
+				break;
+
+			case SurfaceType_t::MidTime:
+				break;
 
 			case SurfaceType_t::Undefined:
 				assert(false);
@@ -810,6 +906,52 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 				case SurfaceType_t::Undefined:
 					assert(false);
+			}
+		}
+
+		return matassembler.AssembleMatrix(1e-13);
+	}
+
+	template<class BasisFuncs>
+	auto AssembleMatrix_Symmetric() const {
+		// In a dG approach, we have a given amount of functions ( BasisFuncs' size ) per element
+		// Hence, the number of *active* elements in the mesh times the BasisFuncs is what we're looking for.
+
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		using csr_size_t = typename Utility::CSRMatrixAssembler<T>::size_type;
+		const auto block_size = static_cast<csr_size_t>(num_basis * num_elems);
+		const auto matrix_dim = static_cast<csr_size_t>(2 * block_size);
+
+		auto matassembler = AssembleMatrix_Base<BasisFuncs>();
+
+		// We first sum Ah + Bh on the inner-element interfaces up
+		for (auto i = ElementId_t{ 0 }; i < num_elems; ++i) {
+			const auto start_offset = i * num_basis;
+			for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+				for (auto bj = bi; bj < num_basis; ++bj) {
+					const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
+					const auto offset_uj = static_cast<csr_size_t>(start_offset + bj);
+
+					const auto form_val_Jh = this->EvaluateJh_Inner_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					assert(std::isfinite(form_val_Jh));
+					matassembler(block_size + offset_vi, block_size + offset_uj) += form_val_Jh;
+#ifndef SYMMETRIC_ASSEMBLY
+					if (bi != bj)
+						matassembler(block_size + offset_uj, block_size + offset_vi) += form_val_Jh;
+#endif
+
+					const auto form_val_Kh = this->EvaluateKh_Symmetric_Element(i, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+					assert(std::isfinite(form_val_Kh));
+					matassembler(offset_vi, offset_uj) += form_val_Kh;
+#ifndef SYMMETRIC_ASSEMBLY
+					if (bi != bj)
+						matassembler(offset_uj, offset_vi) += form_val_Kh;
+#endif
+				}
 			}
 		}
 

@@ -142,6 +142,14 @@ public:
 	}
 
 	auto InsertNode(Point_t point_to_insert) {
+#ifndef NDEBUG
+		for (const auto p : m_NodeList) {
+			auto dist = T{ 0 };
+			for (auto i = std::size_t{ 0 }; i < p.size(); ++i)
+				dist += std::pow(p[i] - point_to_insert[i], T{ 2 });
+			assert(dist > std::numeric_limits<T>::epsilon() * 5);
+		}
+#endif
 		m_NodeList.push_back(std::move(point_to_insert));
 		return m_NodeList.size() - 1;
 	}
@@ -169,12 +177,15 @@ public:
 	}
 
 	auto FindOrInsertNode(Point_t NodeTarget) {
-		for(auto i = std::size_t{0}; i < m_NodeList.size(); ++i)
-			if( m_NodeList[i] == NodeTarget )
+		for (auto i = std::size_t{ 0 }; i < m_NodeList.size(); ++i) {
+			auto dist = T{ 0 };
+			for (auto j = std::size_t{ 0 }; j < m_NodeList[i].size(); ++j)
+				dist += std::pow(m_NodeList[i][j] - NodeTarget[j], T{ 2 });
+			if(dist < std::numeric_limits<T>::epsilon() * 5)
 				return i;
+		}
 		
-		m_NodeList.push_back( std::move( NodeTarget ) );
-		return m_NodeList.size() - 1;	
+		return InsertNode(std::move(NodeTarget));
 	}
 
 	void RedRefine(ElementId_t elemid_to_refine) {
@@ -339,9 +350,6 @@ public:
 	void BuildSurfaceList() {
 		m_SurfaceList.clear();
 
-		/* 	If all elements were inner ones, we'd attain a size of (4N)/2.
-			Hence, 2N is a reasonable reserve for a low effective load factor */
-			//m_SurfaceList.reserve( 2 * m_ElementList.size() );
 		for (auto i = ElementId_t{ 0 }; i < m_ElementList.size(); ++i) {
 			const auto& curelem = m_ElementList[i];
 			const auto a = curelem.corners[0];

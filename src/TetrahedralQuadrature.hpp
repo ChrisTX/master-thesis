@@ -141,7 +141,7 @@ namespace QuadratureFormulas {
 				}
 #ifndef NDEBUG
 				for (auto i = size_type_t{ 0 }; i < retval.size(); ++i) {
-					assert(retval[i] < T{ 1 } + std::numeric_limits<T>::epsilon());
+					assert(retval[i] < T{ 1 } + 5 * std::numeric_limits<T>::epsilon());
 				}
 #endif
 				return std::move(retval);
