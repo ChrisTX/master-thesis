@@ -95,7 +95,7 @@ int main() {
 #elif !defined(NDEBUG)
 	const auto reflim = 0;
 #else
-	const auto reflim = 5;
+	const auto reflim = 2;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -172,13 +172,13 @@ int main() {
 	auto matA = stmass.AssembleMatrix_Inner<basis_t>();
 	auto lvA = stmass.AssembleLV_Inner<basis_t>([](double x, double y, double t) -> double { return t * t; });
 #elif defined(SYMMETRIC_SYSTEM)
-	const auto a = 0.2;
+	const auto a = 1.;
 	const auto T = 0.1;
 	const auto pi = 3.14159265359;
 	lambda = std::pow(pi, -4);
 	auto wa = [&](double x, double y, double t) -> double { return std::exp(a * pi * pi * t) * std::sin(pi * x) * std::sin(pi * y); };
 	auto f = [&](double x, double y, double) -> double { return -1. * std::pow(pi, 4.) * wa(x, y, T); };
-	auto yQ = [&](double x, double y, double t) -> double { return ( (a * a - 5.) / (2 + a) ) * pi * pi * wa(x, y, t) + 2 * pi * pi * wa(x, y, T); };
+	auto yQ = [&](double x, double y, double t) -> double { return ( (a * a - 5.) / (2. + a) ) * pi * pi * wa(x, y, t) + 2. * pi * pi * wa(x, y, T); };
 	auto y0 = [&](double x, double y, double) -> double { return ((-1.) / (2. + a)) * pi * pi * wa(x, y, 0.); };
 
 	auto matA = stmass.AssembleMatrix_Symmetric<basis_t>();

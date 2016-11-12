@@ -175,13 +175,19 @@ public:
 		return m_ElementList.size() - 1;
 	}
 
-	auto FindOrInsertNode(Point_t NodeTarget) {
+	auto FindOrInsertNode(Point_t NodeTarget, bool StableValidation = true) {
 		for (auto i = std::size_t{ 0 }; i < m_NodeList.size(); ++i) {
-			auto dist = T{ 0 };
-			for (auto j = std::size_t{ 0 }; j < m_NodeList[i].size(); ++j)
-				dist += std::pow(m_NodeList[i][j] - NodeTarget[j], T{ 2 });
-			if(dist < std::numeric_limits<T>::epsilon() * 5)
-				return i;
+			if (StableValidation) {
+				auto dist = T{ 0 };
+				for (auto j = std::size_t{ 0 }; j < m_NodeList[i].size(); ++j)
+					dist += std::pow(m_NodeList[i][j] - NodeTarget[j], T{ 2 });
+				if (dist < std::numeric_limits<T>::epsilon() * 5)
+					return i;
+			}
+			else {
+				if (m_NodeList[i] == NodeTarget)
+					return i;
+			}
 		}
 		
 		return InsertNode(std::move(NodeTarget));
@@ -206,7 +212,7 @@ public:
 			auto z = Point_t{};
 			for(auto i = 0; i < 3; ++i)
 				z[i] = ( x[i] + y[i] ) / T{2};
-			return FindOrInsertNode(z);
+			return FindOrInsertNode(z, false);
 		};
 
 		const auto x01 = FIMidNode(x0_l, x1_l);

@@ -598,11 +598,11 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 				const auto form_val_rhs = inner_element_f(innerF, i, static_cast<basis_index_t>(bi));
 				assert(std::isfinite(form_val_rhs));
-				loadvec[offset_vi] += form_val_rhs;
+				loadvec[block_size + offset_vi] += form_val_rhs;
 
 				const auto form_val_rhsQ = inner_element_f(yQ, i, static_cast<basis_index_t>(bi));
 				assert(std::isfinite(form_val_rhsQ));
-				loadvec[block_size + offset_vi] -= form_val_rhsQ;
+				loadvec[offset_vi] -= form_val_rhsQ;
 			}
 		}
 
@@ -621,7 +621,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 					const auto form_val_LV_up = this->EvaluateLV_Surface(y0, surf_id, basis_f, static_cast<basis_index_t>(bi));
 					assert(std::isfinite(form_val_LV_up));
-					loadvec[offset_vi] += form_val_LV_up;
+					loadvec[block_size + offset_vi] += form_val_LV_up;
 				}
 			}
 				break;
@@ -630,6 +630,40 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				break;
 
 			case SurfaceType_t::MidTime:
+				break;
+
+			case SurfaceType_t::Undefined:
+				assert(false);
+			}
+		}
+
+		// We need to ensure homogenous Dirichlet boundary conditions
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+			case SurfaceType_t::Inner:
+				break;
+
+			case SurfaceType_t::MidTime:
+			{
+				const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+					const auto offset_vi = start_offset + bi;
+
+					const auto form_val_L2surf = this->EvaluateJh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bi));
+					assert(std::isfinite(form_val_L2surf));
+					if (form_val_L2surf > 5 * std::numeric_limits<T>::epsilon() ) {
+						loadvec[offset_vi] = T{ 0 };
+					}
+				}
+			}
+			break;
+
+			case SurfaceType_t::EndTime:
+				break;
+
+			case SurfaceType_t::StartTime:
 				break;
 
 			case SurfaceType_t::Undefined:
@@ -954,6 +988,43 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						matassembler(offset_uj, offset_vi) += form_val_Kh;
 #endif
 				}
+			}
+		}
+
+		// We need to ensure homogenous Dirichlet boundary conditions
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+			case SurfaceType_t::Inner:
+				break;
+
+			case SurfaceType_t::MidTime:
+			{
+				const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+					const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
+
+					const auto form_val_L2surf = this->EvaluateJh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bi));
+					assert(std::isfinite(form_val_L2surf));
+					if (form_val_L2surf > 5 * std::numeric_limits<T>::epsilon()) {
+						matassembler.ResetRow(offset_vi);
+						matassembler(offset_vi, offset_vi) = T{ 1 };
+						matassembler.ResetRow(block_size + offset_vi);
+						matassembler(block_size + offset_vi, block_size + offset_vi) = T{ 1 };
+					}
+				}
+			}
+			break;
+
+			case SurfaceType_t::EndTime:
+				break;
+
+			case SurfaceType_t::StartTime:
+				break;
+
+			case SurfaceType_t::Undefined:
+				assert(false);
 			}
 		}
 

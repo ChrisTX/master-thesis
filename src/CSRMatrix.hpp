@@ -355,6 +355,12 @@ namespace Utility {
 			return DenseMatrix;
 		}
 
+		void ResetRow(const size_type row)
+		{
+			assert(0 < row && row < m_Rows);
+			m_EntriesBuildUpMap[row].clear();
+		}
+
 	protected:
 		std::map<size_type, std::map<size_type, T>> m_EntriesBuildUpMap;
 		const size_type m_Rows;
