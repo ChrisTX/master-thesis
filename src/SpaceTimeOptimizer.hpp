@@ -419,7 +419,9 @@ public:
 	template<class F, class BasisFuncs, class BasisIndex>
 	auto EvaluateLV_Surface(const F& rhs_func, const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv) const {
 		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
-		//assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::StartTime || cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::EndTime);
+		assert(cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::StartTime 
+			|| cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::EndTime
+			|| cur_surface_data.type == TetrahedralMesh<T>::SurfaceType_t::MidTime);
 
 		const auto adj_elem_id = cur_surface_data.adjacent_elements[0];
 		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(adj_elem_id);
@@ -1059,6 +1061,30 @@ public:
 			assert(std::isfinite(pointval));
 		}
 		return pointval;
+	}
+
+	template<class TetraQuadFm, class F>
+	auto L2NormSq_Element(const TetraQuadFm& tetra_quadfm, const ElementId_t elemid, const F& rhs_func) const {
+		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
+		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
+
+		const auto integrand = [&](const auto& sp) -> auto {
+			const auto p_space = ref_tran(sp);
+			const auto rhsval = rhs_func(p_space[0], p_space[1], p_space[2]);
+			return rhsval * rhsval;
+		};
+
+		return tetra_quadfm(integrand) * ref_tran_det;
+	}
+
+	template<class TetraQuadFm, class F>
+	auto L2Norm_Element(const F& rhs_func) const {
+		const auto tetra_quadfm = TetraQuadFm{};
+		auto normval = T{ 0 };
+		for (auto i = ElementId_t{ 0 }; i < m_Mesh.m_ElementList.size(); ++i)
+			normval += L2NormSq_Element(tetra_quadfm, i, rhs_func);
+		return std::sqrt(normval);
 	}
 
 	void PrintToVTU(const std::string& file_name, bool EvaluateY) const

@@ -1,7 +1,11 @@
-#define SYMMETRIC_ASSEMBLY
 //#define HEAT_SYSTEM
-//#define SYMMETRIC_SYSTEM
-//#define NO_CHECK_GEOMETRY
+#define SYMMETRIC_SYSTEM
+
+#ifdef HEAT_SYSTEM
+#undef SYMMETRIC_ASSEMBLY
+#else
+#define SYMMETRIC_ASSEMBLY
+#endif
 
 #include "TetrahedralMesh.hpp"
 #include "SpaceTimeOptimizer.hpp"
@@ -14,17 +18,59 @@
 #include <iostream>
 #include <fstream>
 
+template<class F, class T>
+void print_cont_function_to_VTU(const std::string& file_name, TetrahedralMesh<T> mesh, const F& f) {
+	using ElementId_t = typename TetrahedralMesh<T>::ElementId_t;
+	using NodeId_t = typename TetrahedralMesh<T>::NodeId_t;
+	auto points = vtkSmartPointer<vtkPoints>::New();
+	auto cells = vtkSmartPointer<vtkCellArray>::New();
+	auto dataarr = vtkSmartPointer<vtkDoubleArray>::New();
+	for (auto i = ElementId_t{ 0 }; i < mesh.m_ElementList.size(); ++i) {
+		const auto& curelem = mesh.m_ElementList[i];
+
+		const auto tetrahedr = mesh.ElementIdToTetrahedron(i);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
+
+		auto tetra = vtkSmartPointer<vtkTetra>::New();
+		for (auto j = NodeId_t{ 0 }; j < curelem.corners.size(); ++j) {
+			const auto p = mesh.m_NodeList[curelem.corners[j]];
+			const auto p_VtkId = points->InsertNextPoint(p[0], p[1], p[2]);
+			tetra->GetPointIds()->SetId(j, p_VtkId);
+
+			auto p_Ref = ref_tran.InverseMap(p);
+			dataarr->InsertNextValue(f(p[0], p[1], p[2]));
+		}
+
+		cells->InsertNextCell(tetra);
+	}
+
+	auto usgrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+	usgrid->SetPoints(points);
+	usgrid->SetCells(VTK_TETRA, cells);
+	usgrid->GetPointData()->SetScalars(dataarr);
+	auto usgridwriter = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+	usgridwriter->SetFileName(file_name.c_str());
+	usgridwriter->SetInputData(usgrid);
+	usgridwriter->Write();
+}
+
+
 int main() {
 
 #ifdef SYMMETRIC_SYSTEM
 	auto mesh = TetrahedralMesh<double>{ 0., 0.1 };
-#else
-	auto mesh = TetrahedralMesh<double>{ 0., 0.1 };
-#endif
 
 	const auto xdelta = 0.1;
 	const auto xmax = 10;
 	const auto ymax = 10;
+#else
+	auto mesh = TetrahedralMesh<double>{ 0., 1 };
+
+	const auto xdelta = 1.;
+	const auto xmax = 1;
+	const auto ymax = 1;
+#endif
+
 	for (auto lx = 0; lx < xmax; ++lx) {
 		for (auto ly = 0; ly < ymax; ++ly) {
 			const auto ax = lx * xdelta;
@@ -49,7 +95,7 @@ int main() {
 #elif !defined(NDEBUG)
 	const auto reflim = 0;
 #else
-	const auto reflim = 0;
+	const auto reflim = 5;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -103,11 +149,11 @@ int main() {
 		}
 	}
 #endif
-
+	
 	auto beta = 1.;
 	auto lambda = 0.1;
 	auto alpha = 0.;
-	auto sigma = 50.;
+	auto sigma = 20.;
 
 #ifdef HEAT_SYSTEM
 	auto stmass = HeatAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda };
@@ -131,7 +177,7 @@ int main() {
 	const auto pi = 3.14159265359;
 	lambda = std::pow(pi, -4);
 	auto wa = [&](double x, double y, double t) -> double { return std::exp(a * pi * pi * t) * std::sin(pi * x) * std::sin(pi * y); };
-	auto f = [&](double x, double y, double) -> double { return -1. * std::pow(pi, 4) * wa(x, y, T); };
+	auto f = [&](double x, double y, double) -> double { return -1. * std::pow(pi, 4.) * wa(x, y, T); };
 	auto yQ = [&](double x, double y, double t) -> double { return ( (a * a - 5.) / (2 + a) ) * pi * pi * wa(x, y, t) + 2 * pi * pi * wa(x, y, T); };
 	auto y0 = [&](double x, double y, double) -> double { return ((-1.) / (2. + a)) * pi * pi * wa(x, y, 0.); };
 
@@ -170,9 +216,18 @@ int main() {
 #endif
 	stmsol.PrintToVTU("testfile-y.vtu", true);
 #endif
+	
+#ifdef SYMMETRIC_SYSTEM
+	auto u_opt = [&](double x, double y, double t) -> double { return -1. * std::pow(pi, 4.) * ( wa(x, y, t) - wa(x, y, T) ); };
+	auto y_opt = [&](double x, double y, double t) -> double { return ( (-1.)/(2+a) ) * std::pow(pi, 2.) * wa(x, y, t); };
+
+	print_cont_function_to_VTU("optimum-y.vtu", mesh, y_opt);
+	print_cont_function_to_VTU("optimum-u.vtu", mesh, u_opt);
+#endif
 	std::cout << "DONE" << std::endl;
 
 #if defined(WIN32) && !defined(NDEBUG)
 	system(pause);
 #endif
 }
+
