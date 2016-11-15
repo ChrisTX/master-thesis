@@ -33,6 +33,7 @@ protected:
 	const T alpha;
 	const T beta;
 	const T lambda;
+	const T theta;
 
 	template<typename TK>
 	static auto x_scal_eval(const TK& u, const TK& v) {
@@ -47,8 +48,8 @@ public:
 	using SurfaceId_t = typename TetrahedralMesh<T>::SurfaceId_t;
 	using Point_t = typename TetrahedralMesh<T>::Point_t;
 
-	STMFormEvaluator(const TetrahedralMesh<T>& mesh, const T par_sigma, const T par_alpha, const T par_beta, const T par_lambda) :
-		m_Mesh{ mesh }, sigma{ par_sigma }, alpha{ par_alpha }, beta{ par_beta }, lambda{ par_lambda }
+	STMFormEvaluator(const TetrahedralMesh<T>& mesh, const T par_sigma, const T par_alpha, const T par_beta, const T par_lambda, const T par_theta) :
+		m_Mesh{ mesh }, sigma{ par_sigma }, alpha{ par_alpha }, beta{ par_beta }, lambda{ par_lambda }, theta{ par_theta }
 	{
 		if (!std::isfinite(lambda) || !std::isfinite(beta) || lambda < std::numeric_limits<T>::epsilon())
 			throw std::invalid_argument("Invalid parameters");
@@ -131,7 +132,7 @@ public:
 			else if (surfdata.type == TetrahedralMesh<T>::SurfaceType_t::MidTime)
 				intval += alpha * surface_integral_part(si);
 		}
-		return intval;
+		return theta * intval;
 	}
 
 	template<class BasisFuncs, class BasisIndex>
@@ -173,7 +174,7 @@ public:
 			return f1 + f2;
 		};
 
-		return triang_quadfm(integrand_fn) * ref_triang_tran_det;
+		return theta * triang_quadfm(integrand_fn) * ref_triang_tran_det;
 	}
 
 	template<class BasisFuncs, class BasisIndex>
@@ -455,8 +456,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 	using SurfaceType_t = typename TetrahedralMesh<T>::SurfaceType_t;
 	using Point_t = typename TetrahedralMesh<T>::Point_t;
 
-	STMAssembler(const TetrahedralMesh<T>& mesh, const T par_sigma, const T par_alpha, const T par_beta, const T par_lambda) :
-		STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>( mesh, par_sigma, par_alpha, par_beta, par_lambda )
+	STMAssembler(const TetrahedralMesh<T>& mesh, const T par_sigma, const T par_alpha, const T par_beta, const T par_lambda, const T par_theta) :
+		STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>( mesh, par_sigma, par_alpha, par_beta, par_lambda, par_theta )
 	{
 	}
 
@@ -655,6 +656,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					assert(std::isfinite(form_val_L2surf));
 					if (form_val_L2surf > 5 * std::numeric_limits<T>::epsilon() ) {
 						loadvec[offset_vi] = T{ 0 };
+						loadvec[block_size + offset_vi] = T{ 0 };
 					}
 				}
 			}
@@ -1009,9 +1011,20 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 					assert(std::isfinite(form_val_L2surf));
 					if (form_val_L2surf > 5 * std::numeric_limits<T>::epsilon()) {
 						matassembler.ResetRow(offset_vi);
-						matassembler(offset_vi, offset_vi) = T{ 1 };
 						matassembler.ResetRow(block_size + offset_vi);
+
+						// If the assembly is symmetric, we have to null the entire column, too
+						// Otherwise there would be non-zero entries in the row
+#ifdef EXACT_PRECISION_DIRICHLET
+						matassembler.ResetColumn(offset_vi, true);
+						matassembler.ResetColumn(block_size + offset_vi, true);
+
+						matassembler(offset_vi, offset_vi) = T{ 1 };
 						matassembler(block_size + offset_vi, block_size + offset_vi) = T{ 1 };
+#else
+						matassembler(offset_vi, offset_vi) = T{ 1e+20 };
+						matassembler(block_size + offset_vi, block_size + offset_vi) = T{ 1e+20 };
+#endif
 					}
 				}
 			}
@@ -1150,11 +1163,37 @@ public:
 	}
 
 	template<class TetraQuadFm, class F>
-	auto L2Norm_Element(const F& rhs_func) const {
+	auto L2Norm_SpaceTime(const F& rhs_func) const {
 		const auto tetra_quadfm = TetraQuadFm{};
 		auto normval = T{ 0 };
 		for (auto i = ElementId_t{ 0 }; i < m_Mesh.m_ElementList.size(); ++i)
 			normval += L2NormSq_Element(tetra_quadfm, i, rhs_func);
+		return std::sqrt(normval);
+	}
+
+	template<class TetraQuadFm, class F>
+	auto L2NormErrorSq_Element(const TetraQuadFm& tetra_quadfm, const ElementId_t elemid, const bool yError, const F& rhs_func) const {
+		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
+		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
+
+		const auto integrand = [&](const auto& sp) -> auto {
+			const auto p_space = ref_tran(sp);
+			const auto rhsval = rhs_func(p_space[0], p_space[1], p_space[2]);
+			const auto exval = (yError ? yEvaluateElement_Ref(elemid, sp) : uEvaluateElement_Ref(elemid, sp));
+			const auto errorval = rhsval - exval;
+			return errorval * errorval;
+		};
+
+		return tetra_quadfm(integrand) * ref_tran_det;
+	}
+
+	template<class TetraQuadFm, class F>
+	auto L2NormError_SpaceTime(const F& rhs_func, const bool yError) const {
+		const auto tetra_quadfm = TetraQuadFm{};
+		auto normval = T{ 0 };
+		for (auto i = ElementId_t{ 0 }; i < m_Mesh.m_ElementList.size(); ++i)
+			normval += L2NormErrorSq_Element(tetra_quadfm, i, yError, rhs_func);
 		return std::sqrt(normval);
 	}
 
@@ -1203,8 +1242,8 @@ struct HeatAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 	using SurfaceType_t = typename TetrahedralMesh<T>::SurfaceType_t;
 	using Point_t = typename TetrahedralMesh<T>::Point_t;
 
-	HeatAssembler(const TetrahedralMesh<T>& mesh, const T par_sigma, const T par_alpha, const T par_beta, const T par_lambda) :
-		STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>(mesh, par_sigma, par_alpha, par_beta, par_lambda)
+	HeatAssembler(const TetrahedralMesh<T>& mesh, const T par_sigma, const T par_alpha, const T par_beta, const T par_lambda, const T par_theta) :
+		STMFormEvaluator<T, TriangQuadFm, TetraQuadFm>(mesh, par_sigma, par_alpha, par_beta, par_lambda, par_theta)
 	{
 	}
 

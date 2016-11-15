@@ -361,6 +361,17 @@ namespace Utility {
 			m_EntriesBuildUpMap[row].clear();
 		}
 
+		void ResetColumn(const size_type col, const bool symmetric_matrix)
+		{
+			auto i_end = m_Columns;
+			if (symmetric_matrix)
+				i_end = col;
+			for (auto i = size_type{ 0 }; i < i_end; ++i) {
+				m_EntriesBuildUpMap[i].erase(col);
+			}
+
+		}
+
 	protected:
 		std::map<size_type, std::map<size_type, T>> m_EntriesBuildUpMap;
 		const size_type m_Rows;

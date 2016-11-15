@@ -1,5 +1,5 @@
 //#define HEAT_SYSTEM
-#define SYMMETRIC_SYSTEM
+//#define SYMMETRIC_SYSTEM
 
 #ifdef HEAT_SYSTEM
 #undef SYMMETRIC_ASSEMBLY
@@ -78,10 +78,10 @@ int main() {
 			const auto dx = ax + xdelta;
 			const auto dy = ay + xdelta;
 
-			const auto al = mesh.FindOrInsertNode({ ax, ay, 0. });
-			const auto bl = mesh.FindOrInsertNode({ ax, dy, 0. });
-			const auto cl = mesh.FindOrInsertNode({ dx, ay, 0. });
-			const auto dl = mesh.FindOrInsertNode({ dx, dy, 0. });
+			const auto al = mesh.FindOrInsertApproximateNode({ ax, ay, 0. });
+			const auto bl = mesh.FindOrInsertApproximateNode({ ax, dy, 0. });
+			const auto cl = mesh.FindOrInsertApproximateNode({ dx, ay, 0. });
+			const auto dl = mesh.FindOrInsertApproximateNode({ dx, dy, 0. });
 
 			mesh.InsertFullTimePrism(al, bl, cl);
 			mesh.InsertFullTimePrism(cl, dl, bl);
@@ -93,9 +93,9 @@ int main() {
 #if defined(PRINT_MATRIX)
 	const auto reflim = 0;
 #elif !defined(NDEBUG)
-	const auto reflim = 0;
-#else
 	const auto reflim = 2;
+#else
+	const auto reflim = 4;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -152,13 +152,16 @@ int main() {
 	
 	auto beta = 1.;
 	auto lambda = 0.1;
-	auto alpha = 0.;
+	auto alpha = 0.1;
 	auto sigma = 20.;
+	auto theta = 1.;
+
+	const auto pi = 3.14159265359;
 
 #ifdef HEAT_SYSTEM
-	auto stmass = HeatAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda };
+	auto stmass = HeatAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda, theta };
 #else
-	auto stmass = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda };
+	auto stmass = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda, theta };
 #endif
 
 #ifdef QUADRATIC_BASIS
@@ -174,8 +177,8 @@ int main() {
 #elif defined(SYMMETRIC_SYSTEM)
 	const auto a = 1.;
 	const auto T = 0.1;
-	const auto pi = 3.14159265359;
 	lambda = std::pow(pi, -4);
+	beta = 1.;
 	auto wa = [&](double x, double y, double t) -> double { return std::exp(a * pi * pi * t) * std::sin(pi * x) * std::sin(pi * y); };
 	auto f = [&](double x, double y, double) -> double { return -1. * std::pow(pi, 4.) * wa(x, y, T); };
 	auto yQ = [&](double x, double y, double t) -> double { return ( (a * a - 5.) / (2. + a) ) * pi * pi * wa(x, y, t) + 2. * pi * pi * wa(x, y, T); };
@@ -185,7 +188,7 @@ int main() {
 	auto lvA = stmass.AssembleLV_Symmetric<basis_t>(f, yQ, y0);
 #else
 	auto matA = stmass.AssembleMatrix_Boundary<basis_t>();
-	auto lvA = stmass.AssembleLV_Boundary<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 0.; });
+	auto lvA = stmass.AssembleLV_Boundary<basis_t>([pi](double x, double y, double) -> double { return std::sin(pi * x) * std::sin(pi * y); }, [pi](double x, double y, double) -> double { return 5 * (std::pow(std::sin(pi * x), 3) * std::sin(pi * y)); });
 #endif
 #else
 	auto matAandLV = stmass.AssembleMatrixAndLV<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 1.; });
@@ -216,18 +219,33 @@ int main() {
 #endif
 	stmsol.PrintToVTU("testfile-y.vtu", true);
 #endif
+
+	std::cout << "PRINTING" << std::endl;
 	
 #ifdef SYMMETRIC_SYSTEM
+#define STOP_PROGRAM
 	auto u_opt = [&](double x, double y, double t) -> double { return -1. * std::pow(pi, 4.) * ( wa(x, y, t) - wa(x, y, T) ); };
 	auto y_opt = [&](double x, double y, double t) -> double { return ( (-1.)/(2+a) ) * std::pow(pi, 2.) * wa(x, y, t); };
 
 	print_cont_function_to_VTU("optimum-y.vtu", mesh, y_opt);
 	print_cont_function_to_VTU("optimum-u.vtu", mesh, u_opt);
+
+	auto wa_deriv = [&](double x, double y, double t) -> auto {
+		return std::array<double, 3>{
+			std::exp(a * pi * pi * t) * std::cos(pi * x) * std::sin(pi * y),
+			std::exp(a * pi * pi * t) * std::sin(pi * x) * std::cos(pi * y),
+			a * pi * pi * std::exp(a * pi * pi * t) * std::sin(pi * x) * std::sin(pi * y)
+		};
+	};
+
+	std::cout << "y error\t" << stmsol.L2NormError_SpaceTime<QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>(y_opt, true) << std::endl;
+	std::cout << "u error\t" << stmsol.L2NormError_SpaceTime<QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>(u_opt, true) << std::endl;
 #endif
 	std::cout << "DONE" << std::endl;
 
-#if defined(WIN32) && !defined(NDEBUG)
-	system(pause);
+#if !defined(NDEBUG) || defined(STOP_PROGRAM)
+	std::cout << "Please press enter to continue..." << std::endl;
+	std::cin.get();
 #endif
 }
 

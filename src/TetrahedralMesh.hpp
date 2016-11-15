@@ -175,21 +175,24 @@ public:
 		return m_ElementList.size() - 1;
 	}
 
-	auto FindOrInsertNode(Point_t NodeTarget, bool StableValidation = true) {
+	auto FindOrInsertNode(Point_t NodeTarget) {
 		for (auto i = std::size_t{ 0 }; i < m_NodeList.size(); ++i) {
-			if (StableValidation) {
-				auto dist = T{ 0 };
-				for (auto j = std::size_t{ 0 }; j < m_NodeList[i].size(); ++j)
-					dist += std::pow(m_NodeList[i][j] - NodeTarget[j], T{ 2 });
-				if (dist < std::numeric_limits<T>::epsilon() * 5)
-					return i;
-			}
-			else {
-				if (m_NodeList[i] == NodeTarget)
-					return i;
-			}
+			if (m_NodeList[i] == NodeTarget)
+				return i;
 		}
 		
+		return InsertNode(std::move(NodeTarget));
+	}
+
+	auto FindOrInsertApproximateNode(Point_t NodeTarget) {
+		for (auto i = std::size_t{ 0 }; i < m_NodeList.size(); ++i) {
+			auto dist = T{ 0 };
+			for (auto j = std::size_t{ 0 }; j < m_NodeList[i].size(); ++j)
+				dist += std::pow(m_NodeList[i][j] - NodeTarget[j], T{ 2 });
+			if (dist < std::numeric_limits<T>::epsilon() * 5)
+				return i;
+		}
+
 		return InsertNode(std::move(NodeTarget));
 	}
 
@@ -212,7 +215,7 @@ public:
 			auto z = Point_t{};
 			for(auto i = 0; i < 3; ++i)
 				z[i] = ( x[i] + y[i] ) / T{2};
-			return FindOrInsertNode(z, false);
+			return FindOrInsertNode(z);
 		};
 
 		const auto x01 = FIMidNode(x0_l, x1_l);
@@ -386,9 +389,9 @@ public:
 		const auto al_node = m_NodeList[al];
 		const auto bl_node = m_NodeList[bl];
 		const auto cl_node = m_NodeList[cl];
-		const auto au = FindOrInsertNode({al_node[0], al_node[1], m_EndTime});
-		const auto bu = FindOrInsertNode({bl_node[0], bl_node[1], m_EndTime});
-		const auto cu = FindOrInsertNode({cl_node[0], cl_node[1], m_EndTime});
+		const auto au = FindOrInsertApproximateNode({al_node[0], al_node[1], m_EndTime});
+		const auto bu = FindOrInsertApproximateNode({bl_node[0], bl_node[1], m_EndTime});
+		const auto cu = FindOrInsertApproximateNode({cl_node[0], cl_node[1], m_EndTime});
 		assert(au != bu && au != cu && bu != cu);
 
 		SplitPrism(al, bl, cl, au, bu, cu);
