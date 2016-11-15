@@ -442,6 +442,8 @@ Then there is a $C > 0$ independent of $h$, such that:
 \]
 \end{theorem}
 \begin{proof}
+This proof follows ideas presented in \cite{Hinze}.
+
 The optimal solutions to both problems fulfill
 \begin{IEEEeqnarray*}{rCl"l}
 	0 &=& \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \lambda \langle\bar{u}, v \rangle_{L^2(\Sigma)} & \text{for all } v \in L^2(\Sigma) \\
@@ -454,16 +456,22 @@ We perform a zero addition of the second term evaluated with $v = \bar{u}$:
 	&& {} + \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] \\
 	&& {} - \langle S_h \bar{u}_h - z_h, S_h v \rangle_{L^2(\Omega)} - \lambda \langle \bar{u}_h, v \rangle_{L^2(\Sigma)} 
 \end{IEEEeqnarray*}
-We begin by picking the first two terms and estimating them:
+By bringing the first two terms on the other side, we obtain
 \begin{IEEEeqnarray*}{rCl}
-	\IEEEeqnarraymulticol{3}{l}{ \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} - \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] } \\
-	&=& \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} - \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} \\
+	\IEEEeqnarraymulticol{3}{l}{ - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \lambda \langle\bar{u}, v \rangle_{L^2(\Sigma)} + \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] } \\
+	\qquad &=&  \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] - \langle S_h \bar{u}_h - z_h, S_h v \rangle_{L^2(\Omega)} - \lambda \langle \bar{u}_h, v \rangle_{L^2(\Sigma)} 
+\end{IEEEeqnarray*}
+We want to estimate the left hand side by an upper bound and the right hand side by a lower bound.
+Therefore, we start with the left hand side:
+\begin{IEEEeqnarray*}{rCl}
+	\IEEEeqnarraymulticol{3}{l}{ - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} + \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] } \\
+	&=& - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} \\
 \noalign{\noindent Performing a zero addition of $\langle S_h \bar{u} - z_h, S v \rangle$ gives \vspace{\jot}}
-	&=& \langle S \bar{u} - z - [ S_h \bar{u} - z_h ], S v \rangle_{L^2(\Omega)} - \langle S_h \bar{u} - z_h, S_h v -S v \rangle_{L^2(\Omega)} \\
-	&=& \langle S \bar{u} + (G_0 y_0)(T) - y_\Omega - S_h \bar{u} - (G_0^h y_0)(T) + y_\Omega, S v \rangle_{L^2(\Omega)} \\
-	&& \quad {} - \langle S_h \bar{u} + (G_0^h y_0)(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \\
+	&=& - \langle S \bar{u} - z - [ S_h \bar{u} - z_h ], S v \rangle_{L^2(\Omega)} + \langle S_h \bar{u} - z_h, S_h v -S v \rangle_{L^2(\Omega)} \\
+	&=& - \langle S \bar{u} + (G_0 y_0)(T) - y_\Omega - S_h \bar{u} - (G_0^h y_0)(T) + y_\Omega, S v \rangle_{L^2(\Omega)} \\
+	&& \quad {} + \langle S_h \bar{u} + (G_0^h y_0)(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \\
 \noalign{\noindent Due to the definition of $\bar{y}(T) = S \bar{u} + (G_0 y_0)(T)$, we can replace that term. By defining $\bar{y}^h$ as the state deriving from the discrete state equation with the control $\bar{u}$, we can also replace $\bar{y}^h(T) = S_h \bar{u} + (G_0^h y_0)(T)$: \vspace{\jot}}
-	&=& \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} - \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \\
+	&=& - \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} + \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \\
 \noalign{\noindent Using the triangle inequality and the Cauchy-Schwarz inequality, we obtain with the definitions $y^v = G_\Sigma v$ and $y_h^v = G_\Sigma^h v$, so that we have $y^v(T) = Sv$ and $y_h^v(T) = S_h v$, giving us\vspace{\jot}}
 	&\leq& \left| \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} \right| + \left| \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \right| \\
 	&\leq& \left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \| y^v(T) \|_{L^2(\Omega)} \\
@@ -483,6 +491,7 @@ We begin by picking the first two terms and estimating them:
 \noalign{\noindent Finally, by combining the constants into a single one called $C > 0$, we obtain}
 	&\leq& C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \| v \|_{L^2(\Sigma)}
 \end{IEEEeqnarray*}
+
 For the remaining two terms, we have
 \begin{IEEEeqnarray*}{rCl}
 	\IEEEeqnarraymulticol{3}{l}{ \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] - \langle S_h \bar{u}_h - z_h, S_h v \rangle_{L^2(\Omega)} - \lambda \langle \bar{u}_h, v \rangle_{L^2(\Sigma)} } \\
@@ -493,17 +502,14 @@ Choosing the test function $v = \bar{u} - \bar{u}_h$, we can estimate:
 	\langle S_h (\bar{u} - \bar{u}_h), S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u} - \bar{u}_h, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} &\geq& \lambda \langle \bar{u} - \bar{u}_h, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \\
 	&=& \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}^2
 \end{IEEEeqnarray*}
-Bringing these together, we obtain:
-\begin{IEEEeqnarray*}{rCl}
-	0 &\geq& \langle S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \\
-	&& {} - \left[ \langle S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \right] \\
-	&& {} + \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}^2
-\end{IEEEeqnarray*}
-By bringing the terms to the other side of the equation and taking the absolute, we can apply the previously derived estimate:
+
+By applying these estimates to the equation we started from yields:
 \begin{IEEEeqnarray*}{rCl}
 	\IEEEeqnarraymulticol{3}{l}{ C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} } \\
-	\qquad &\geq& \langle S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \\
-	&& \quad {} - \left[ \langle S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \right] \\
+	\qquad &\geq& -\langle S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \\
+	&& \quad {} + \left[ \langle S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \right] \\
+	&=& \left[ \langle S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, (\bar{u} - \bar{u}_h) \rangle_{L^2(\Sigma)} \right] \\
+	&& \quad {} - \langle S_h \bar{u}_h - z_h, S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} - \lambda \langle \bar{u}_h, (\bar{u} - \bar{u}_h) \rangle_{L^2(\Sigma)}  \\
 	&\geq& \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}^2.
 \end{IEEEeqnarray*}
 Dividing by $\| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}$ leaves us with
