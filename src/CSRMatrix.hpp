@@ -357,7 +357,7 @@ namespace Utility {
 
 		void ResetRow(const size_type row)
 		{
-			assert(0 < row && row < m_Rows);
+			assert(0 <= row && row < m_Rows);
 			m_EntriesBuildUpMap[row].clear();
 		}
 

@@ -111,11 +111,9 @@ namespace IterativeSolvers {
 		iparm[18] = -1;       /* Output: Mflops for LU factorization */
 		iparm[19] = 0;        /* Output: Numbers of CG Iterations */
 
-	#ifndef NDEBUG
 		msglvl = 1;
+	#ifndef NDEBUG
 		iparm[26] = 1;
-	#else
-		msglvl = 0;
 	#endif
 		PARDISO(pt.data(), &maxfct, &mnum, &mtype, &phase, &N, A.m_Entries.data(), A.m_RowIndices.data(), A.m_ColumnIndices.data(), &perm_dum, &nrhs, iparm.data(), &msglvl, const_cast<double*>( b.data() ), x.data(), &error);
 
@@ -165,11 +163,9 @@ namespace IterativeSolvers {
 		iparm[18] = -1;       /* Output: Mflops for LU factorization */
 		iparm[19] = 0;        /* Output: Numbers of CG Iterations */
 
-#ifndef NDEBUG
 		msglvl = 1;
+#ifndef NDEBUG
 		iparm[26] = 1;
-#else
-		msglvl = 0;
 #endif
 		PARDISO(pt.data(), &maxfct, &mnum, &mtype, &phase, &N, A.m_Entries.data(), A.m_RowIndices.data(), A.m_ColumnIndices.data(), &perm_dum, &nrhs, iparm.data(), &msglvl, const_cast<double*>(b.data()), x.data(), &error);
 

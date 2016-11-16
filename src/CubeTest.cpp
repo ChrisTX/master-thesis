@@ -1,6 +1,7 @@
 //#define HEAT_SYSTEM
-//#define SYMMETRIC_SYSTEM
+#define SYMMETRIC_SYSTEM
 //#define QUADRATIC_BASIS
+//#define EXACT_PRECISION_DIRICHLET
 
 #ifdef HEAT_SYSTEM
 #undef SYMMETRIC_ASSEMBLY
@@ -65,7 +66,7 @@ int main() {
 	const auto xmax = 10;
 	const auto ymax = 10;
 #else
-	auto mesh = TetrahedralMesh<double>{ 0., 1 };
+	auto mesh = TetrahedralMesh<double>{ 0., 1. };
 
 	const auto xdelta = 1.;
 	const auto xmax = 1;
@@ -94,9 +95,9 @@ int main() {
 #if defined(PRINT_MATRIX)
 	const auto reflim = 0;
 #elif !defined(NDEBUG)
-	const auto reflim = 2;
+	const auto reflim = 0;
 #elif defined(SYMMETRIC_SYSTEM)
-	const auto reflim = 3;
+	const auto reflim = 1;
 #else
 	const auto reflim = 4;
 #endif
@@ -152,14 +153,18 @@ int main() {
 		}
 	}
 #endif
-	
-	auto beta = 1.;
-	auto lambda = 0.1;
-	auto alpha = 0.1;
-	auto sigma = 50.;
-	auto theta = 0.1;
 
 	const auto pi = 3.14159265359;
+	
+	auto beta = 1.;
+#ifdef SYMMETRIC_SYSTEM
+	auto lambda = std::pow(pi, -4.);
+#else
+	auto lambda = 0.1;
+#endif
+	auto alpha = 1.;
+	auto sigma = 50.;
+	auto theta = 1.;
 
 #ifdef HEAT_SYSTEM
 	auto stmass = HeatAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda, theta };
@@ -191,7 +196,7 @@ int main() {
 	auto lvA = stmass.AssembleLV_Symmetric<basis_t>(f, yQ, y0);
 #else
 	auto matA = stmass.AssembleMatrix_Boundary<basis_t>();
-	auto lvA = stmass.AssembleLV_Boundary<basis_t>([pi](double x, double y, double) -> double { return 5.; }, [pi](double x, double y, double) -> double { return 5. * ( std::sin(pi * x) * std::sin(pi * y) ); });
+	auto lvA = stmass.AssembleLV_Boundary<basis_t>([pi](double x, double y, double) -> double { return 1.; }, [pi](double x, double y, double) -> double { return 5.; });
 #endif
 #else
 	auto matAandLV = stmass.AssembleMatrixAndLV<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 1.; });
@@ -242,7 +247,7 @@ int main() {
 	};
 
 	std::cout << "y error\t" << stmsol.L2NormError_SpaceTime<QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>(y_opt, true) << std::endl;
-	std::cout << "u error\t" << stmsol.L2NormError_SpaceTime<QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>(u_opt, true) << std::endl;
+	std::cout << "u error\t" << stmsol.L2NormError_SpaceTime<QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>(u_opt, false) << std::endl;
 #endif
 	std::cout << "DONE" << std::endl;
 

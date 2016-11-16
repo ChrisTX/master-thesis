@@ -448,6 +448,33 @@ public:
 
 		return surface_integral_part();
 	}
+
+	template<class BasisFuncs, class BasisIndex>
+	auto Test_Surface(const SurfaceId_t& surfid, const BasisFuncs& bf, const BasisIndex biv) const {
+		const auto& cur_surface_data = m_Mesh.SurfaceDataById(surfid);
+
+		const auto adj_elem_id = cur_surface_data.adjacent_elements[0];
+		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(adj_elem_id);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
+
+		const auto surface_integral_part = [&]() -> auto {
+			const auto cur_triangle = m_Mesh.SurfaceIdToTriangle(surfid);
+			const auto ref_triang_tran = QuadratureFormulas::Triangles::ReferenceTransform<T>(cur_triangle);
+
+			const auto integrand_fn = [&](auto sp) -> auto {
+				const auto p_space = ref_triang_tran(sp);
+
+				const auto vh = ref_tran.EvaluateTransformedBasis(bf, biv, p_space);
+
+				return vh * vh;
+			};
+
+			const auto ref_triang_tran_det = ref_triang_tran.GetDeterminantSqrt();
+			return triang_quadfm(integrand_fn) * ref_triang_tran_det;
+		};
+
+		return (surface_integral_part() > 5 * std::numeric_limits<T>::epsilon());
+	}
 };
 
 template<class T, class TriangQuadFm, class TetraQuadFm>
@@ -653,9 +680,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
 					const auto offset_vi = start_offset + bi;
 
-					const auto form_val_L2surf = this->EvaluateJh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bi));
-					assert(std::isfinite(form_val_L2surf));
-					if (form_val_L2surf > 5 * std::numeric_limits<T>::epsilon() ) {
+					if(this->Test_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi))) {
 						loadvec[offset_vi] = T{ 0 };
 						loadvec[block_size + offset_vi] = T{ 0 };
 					}
@@ -1008,9 +1033,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
 					const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
 
-					const auto form_val_L2surf = this->EvaluateJh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bi));
-					assert(std::isfinite(form_val_L2surf));
-					if (form_val_L2surf > 5 * std::numeric_limits<T>::epsilon()) {
+					if (this->Test_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi))) {
 						matassembler.ResetRow(offset_vi);
 						matassembler.ResetRow(block_size + offset_vi);
 
@@ -1023,8 +1046,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						matassembler(offset_vi, offset_vi) = T{ 1 };
 						matassembler(block_size + offset_vi, block_size + offset_vi) = T{ 1 };
 #else
-						matassembler(offset_vi, offset_vi) = T{ 1e+20 };
-						matassembler(block_size + offset_vi, block_size + offset_vi) = T{ 1e+20 };
+						matassembler(offset_vi, offset_vi) = T{ 1e+10 };
+						matassembler(block_size + offset_vi, block_size + offset_vi) = T{ 1e+10 };
 #endif
 					}
 				}
@@ -1043,6 +1066,61 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		}
 
 		return matassembler.AssembleMatrix(1e-13);
+	}
+
+	template<class BasisFuncs>
+	auto AssembleLV_Type() const {
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		const auto block_size = num_basis * num_elems;
+		const auto matrix_dim = block_size;
+		auto loadvec = std::vector<T>(matrix_dim);
+
+		// We need to ensure homogenous Dirichlet boundary conditions
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+				case SurfaceType_t::StartTime:
+				{
+					const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+					for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+						const auto offset_vi = start_offset + bi;
+
+						if (this->Test_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi))) {
+							loadvec[offset_vi] = T{ 1 };
+						}
+					}
+				}
+			}
+		}
+
+		return std::move(loadvec);
+	}
+
+	template<class BasisFuncs>
+	auto AssembleMatrix_Type() const {
+		// In a dG approach, we have a given amount of functions ( BasisFuncs' size ) per element
+		// Hence, the number of *active* elements in the mesh times the BasisFuncs is what we're looking for.
+
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		using csr_size_t = typename Utility::CSRMatrixAssembler<T>::size_type;
+		const auto block_size = static_cast<csr_size_t>(num_basis * num_elems);
+		const auto matrix_dim = static_cast<csr_size_t>(block_size);
+
+		auto matassembler = Utility::CSRMatrixAssembler<T>{ matrix_dim, matrix_dim };
+
+		for (auto i = 0; i < matrix_dim; ++i)
+			matassembler(i, i) = T{ 1 };
+
+		return matassembler.AssembleMatrix();
 	}
 };
 
@@ -1196,23 +1274,6 @@ public:
 		for (auto i = ElementId_t{ 0 }; i < m_Mesh.m_ElementList.size(); ++i)
 			normval += L2NormErrorSq_Element(tetra_quadfm, i, yError, rhs_func);
 		return std::sqrt(normval);
-	}
-
-	template<class TetraQuadFm, class F>
-	auto DGNormErrorSq_Element(const TetraQuadFm& tetra_quadfm, const ElementId_t elemid, const bool yError, const F& rhs_func) const {
-		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
-		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
-		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
-
-		const auto integrand = [&](const auto& sp) -> auto {
-			const auto p_space = ref_tran(sp);
-			const auto rhsval = rhs_func(p_space[0], p_space[1], p_space[2]);
-			const auto exval = (yError ? yEvaluateElement_Ref(elemid, sp) : uEvaluateElement_Ref(elemid, sp));
-			const auto errorval = rhsval - exval;
-			return errorval * errorval;
-		};
-
-		return tetra_quadfm(integrand) * ref_tran_det;
 	}
 
 	void PrintToVTU(const std::string& file_name, bool EvaluateY) const
