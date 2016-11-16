@@ -18,6 +18,7 @@
 #include "TetrahedralQuadrature.hpp"
 
 #include <vtkTetra.h>
+#include <vtkQuadraticTetra.h>
 #include <vtkCellArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkSmartPointer.h>
@@ -1197,7 +1198,32 @@ public:
 		return std::sqrt(normval);
 	}
 
+	template<class TetraQuadFm, class F>
+	auto DGNormErrorSq_Element(const TetraQuadFm& tetra_quadfm, const ElementId_t elemid, const bool yError, const F& rhs_func) const {
+		const auto cur_tetrahedron = m_Mesh.ElementIdToTetrahedron(elemid);
+		const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(cur_tetrahedron);
+		const auto ref_tran_det = ref_tran.GetDeterminantAbs();
+
+		const auto integrand = [&](const auto& sp) -> auto {
+			const auto p_space = ref_tran(sp);
+			const auto rhsval = rhs_func(p_space[0], p_space[1], p_space[2]);
+			const auto exval = (yError ? yEvaluateElement_Ref(elemid, sp) : uEvaluateElement_Ref(elemid, sp));
+			const auto errorval = rhsval - exval;
+			return errorval * errorval;
+		};
+
+		return tetra_quadfm(integrand) * ref_tran_det;
+	}
+
 	void PrintToVTU(const std::string& file_name, bool EvaluateY) const
+	{
+		if (basis_f.size() > 4)
+			PrintToVTU_Quadratic(file_name, EvaluateY);
+		else
+			PrintToVTU_Linear(file_name, EvaluateY);
+	}
+
+	void PrintToVTU_Linear(const std::string& file_name, bool EvaluateY) const
 	{
 		auto points = vtkSmartPointer<vtkPoints>::New();
 		auto cells = vtkSmartPointer<vtkCellArray>::New();
@@ -1224,6 +1250,59 @@ public:
 		auto usgrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 		usgrid->SetPoints(points);
 		usgrid->SetCells(VTK_TETRA, cells);
+		usgrid->GetPointData()->SetScalars(dataarr);
+		auto usgridwriter = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+		usgridwriter->SetFileName(file_name.c_str());
+		usgridwriter->SetInputData(usgrid);
+		usgridwriter->Write();
+	}
+
+	void PrintToVTU_Quadratic(const std::string& file_name, bool EvaluateY) const
+	{
+		auto points = vtkSmartPointer<vtkPoints>::New();
+		auto cells = vtkSmartPointer<vtkCellArray>::New();
+		auto dataarr = vtkSmartPointer<vtkDoubleArray>::New();
+		for (auto i = ElementId_t{ 0 }; i < m_Mesh.m_ElementList.size(); ++i) {
+			const auto& curelem = m_Mesh.m_ElementList[i];
+
+			const auto tetrahedr = m_Mesh.ElementIdToTetrahedron(i);
+			const auto ref_tran = QuadratureFormulas::Tetrahedra::ReferenceTransform<T>(tetrahedr);
+
+			auto tetra = vtkSmartPointer<vtkQuadraticTetra>::New();
+			auto j = NodeId_t{ 0 };
+			for (; j < curelem.corners.size(); ++j) {
+				const auto p = m_Mesh.m_NodeList[curelem.corners[j]];
+				const auto p_VtkId = points->InsertNextPoint(p[0], p[1], p[2]);
+				tetra->GetPointIds()->SetId(j, p_VtkId);
+
+				auto p_Ref = ref_tran.InverseMap(p);
+				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : uEvaluateElement_Ref(i, p_Ref)));
+			}
+
+			const auto inserthalfpt = [&](NodeId_t k, NodeId_t l) -> void {
+				const auto p_k = m_Mesh.m_NodeList[curelem.corners[k]];
+				const auto p_l = m_Mesh.m_NodeList[curelem.corners[l]];
+				const auto p = Point_t{ (p_k[0] + p_l[0]) / T{ 2 }, (p_k[1] + p_l[1]) / T{ 2 }, (p_k[2] + p_l[2]) / T{ 2 } };
+				const auto p_VtkId = points->InsertNextPoint(p[0], p[1], p[2]);
+				tetra->GetPointIds()->SetId(j++, p_VtkId);
+
+				auto p_Ref = ref_tran.InverseMap(p);
+				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : uEvaluateElement_Ref(i, p_Ref)));
+			};
+
+			inserthalfpt(NodeId_t{ 0 }, NodeId_t{ 1 });
+			inserthalfpt(NodeId_t{ 1 }, NodeId_t{ 2 });
+			inserthalfpt(NodeId_t{ 2 }, NodeId_t{ 0 });
+			inserthalfpt(NodeId_t{ 0 }, NodeId_t{ 3 });
+			inserthalfpt(NodeId_t{ 1 }, NodeId_t{ 3 });
+			inserthalfpt(NodeId_t{ 2 }, NodeId_t{ 3 });
+
+			cells->InsertNextCell(tetra);
+		}
+
+		auto usgrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+		usgrid->SetPoints(points);
+		usgrid->SetCells(VTK_QUADRATIC_TETRA, cells);
 		usgrid->GetPointData()->SetScalars(dataarr);
 		auto usgridwriter = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		usgridwriter->SetFileName(file_name.c_str());

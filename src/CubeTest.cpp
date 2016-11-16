@@ -1,5 +1,6 @@
 //#define HEAT_SYSTEM
 //#define SYMMETRIC_SYSTEM
+//#define QUADRATIC_BASIS
 
 #ifdef HEAT_SYSTEM
 #undef SYMMETRIC_ASSEMBLY
@@ -94,6 +95,8 @@ int main() {
 	const auto reflim = 0;
 #elif !defined(NDEBUG)
 	const auto reflim = 2;
+#elif defined(SYMMETRIC_SYSTEM)
+	const auto reflim = 3;
 #else
 	const auto reflim = 4;
 #endif
@@ -153,8 +156,8 @@ int main() {
 	auto beta = 1.;
 	auto lambda = 0.1;
 	auto alpha = 0.1;
-	auto sigma = 20.;
-	auto theta = 1.;
+	auto sigma = 50.;
+	auto theta = 0.1;
 
 	const auto pi = 3.14159265359;
 
@@ -188,7 +191,7 @@ int main() {
 	auto lvA = stmass.AssembleLV_Symmetric<basis_t>(f, yQ, y0);
 #else
 	auto matA = stmass.AssembleMatrix_Boundary<basis_t>();
-	auto lvA = stmass.AssembleLV_Boundary<basis_t>([pi](double x, double y, double) -> double { return std::sin(pi * x) * std::sin(pi * y); }, [pi](double x, double y, double) -> double { return 5 * (std::pow(std::sin(pi * x), 3) * std::sin(pi * y)); });
+	auto lvA = stmass.AssembleLV_Boundary<basis_t>([pi](double x, double y, double) -> double { return 5.; }, [pi](double x, double y, double) -> double { return 5. * ( std::sin(pi * x) * std::sin(pi * y) ); });
 #endif
 #else
 	auto matAandLV = stmass.AssembleMatrixAndLV<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 1.; });
