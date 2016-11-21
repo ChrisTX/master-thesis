@@ -1,7 +1,8 @@
 //#define HEAT_SYSTEM
 #define SYMMETRIC_SYSTEM
-//#define QUADRATIC_BASIS
+#define QUADRATIC_BASIS
 //#define EXACT_PRECISION_DIRICHLET
+#define USE_GMRES
 
 #ifdef HEAT_SYSTEM
 #undef SYMMETRIC_ASSEMBLY
@@ -69,8 +70,10 @@ int main() {
 	auto mesh = TetrahedralMesh<double>{ 0., 1. };
 
 	const auto xdelta = 1.;
-	const auto xmax = 1;
-	const auto ymax = 1;
+	const auto xmax = 5;
+	const auto ymax = 5;
+
+#define NO_CHECK_GEOMETRY
 #endif
 
 	for (auto lx = 0; lx < xmax; ++lx) {
@@ -95,9 +98,9 @@ int main() {
 #if defined(PRINT_MATRIX)
 	const auto reflim = 0;
 #elif !defined(NDEBUG)
-	const auto reflim = 0;
+	const auto reflim = 2;
 #elif defined(SYMMETRIC_SYSTEM)
-	const auto reflim = 1;
+	const auto reflim = 0;
 #else
 	const auto reflim = 4;
 #endif

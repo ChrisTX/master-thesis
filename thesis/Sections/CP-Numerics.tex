@@ -10,12 +10,12 @@ We're going to work with weak solutions in appropriate spaces. To this end, we i
 \begin{equation}
 \label{eq:generalized-problem}
 \begin{IEEEeqnarraybox}[][c]{rCl"lCl}
-\frac{\partial y}{\partial t} (x, t) - \lapl y(x, t) &=& g_I(x, t) & \text{for } (x, t) \in \Omega &\coloneqq& \Omega \times (0, T), \\
+\frac{\partial y}{\partial t} (x, t) - \lapl y(x, t) &=& g_I(x, t) & \text{for } (x, t) \in Q &\coloneqq& \Omega \times (0, T), \\
 n_x(x,t) \cdot \nabla_x y(x, t) + \alpha y(x, t) &=& g_R(x, t) & \text{for } (x, t) \in \Sigma &\coloneqq& \partial \Omega \times (0, T) \\
 y(x, 0) &=& y_0(x) & \text{for } (x, t) \in \Omega,
 \end{IEEEeqnarraybox}
 \end{equation}
-where we assume that $\Omega$ is a bounded Lipschitz domain, $T > 0$ is a fixed time and $\alpha \in L^\infty(\Sigma)$, $\alpha(x, t) \geq 0$ almost everywhere.
+where we assume that $\Omega$ is a bounded Lipschitz domain, $T > 0$ is a fixed time and $\alpha \in L^\infty(\Sigma)$, $\alpha(x, t) \geq 0$ almost everywhere. The functions $g_I(x, t) \in L^2(Q)$ and $g_R(x, t) \in L^2(\Sigma)$ act as generic right hand sides.
 
 Formally, we test the first equation of \cref{eq:generalized-problem} by multiplying with a function $v$ and integrating over $Q$:
 \begin{IEEEeqnarray*}{rCl}
@@ -30,14 +30,14 @@ For the term containing the time derivative, we then obtain using integration by
 \end{IEEEeqnarray*}
 In order to deal with the term containing $\lapl y$, we use Green's first identity and exploit the given normal derivative on the boundary:
 \begin{IEEEeqnarray*}{rCl}
-	- \iint_Q \lapl y v \dd x \dd t &=& \iint_Q \nabla y \nabla v \dd x \dd t - \iint_{\Sigma} (\nabla y v) \cdot \nu \dd s(x) \dd t \\
-	&=& \iint_Q \nabla y \nabla v \dd x \dd t - \iint_{\Sigma} \left(-\alpha y - g_R \right) v \dd s(x) \dd t \\
-	&=& \iint_Q \nabla y \nabla v \dd x \dd t + \alpha \iint_{\Sigma} y v \dd s(x) \dd t - \iint_{\Sigma} g_R v \dd s(x) \dd t.
+	- \iint_Q \lapl y v \dd x \dd t &=& \iint_Q \nabla y \cdot \nabla v \dd x \dd t - \iint_{\Sigma} (\nabla y v) \cdot \nu \dd s(x) \dd t \\
+	&=& \iint_Q \nabla y \cdot \nabla v \dd x \dd t - \iint_{\Sigma} \left(-\alpha y - g_R \right) v \dd s(x) \dd t \\
+	&=& \iint_Q \nabla y \cdot \nabla v \dd x \dd t + \alpha \iint_{\Sigma} y v \dd s(x) \dd t - \iint_{\Sigma} g_R v \dd s(x) \dd t.
 \end{IEEEeqnarray*}
 
 Adding these two terms up again yields
 \begin{IEEEeqnarray*}{rCl}
-	\iint_Q \left(\frac{\partial y}{\partial t} - \lapl y\right) v \dd x \dd t &=& \iint_Q \nabla y \nabla v \dd x \dd t - \iint_Q y \frac{\partial v}{\partial t} \dd x \dd t \\
+	\iint_Q \left(\frac{\partial y}{\partial t} - \lapl y\right) v \dd x \dd t &=& \iint_Q \nabla y \cdot \nabla v \dd x \dd t - \iint_Q y \frac{\partial v}{\partial t} \dd x \dd t \\
 	&& \quad {} + \alpha \iint_{\Sigma} y v \dd s(x) \dd t + \int_\Omega y(\cdot, T) v(\cdot, T) \dd x \\
 	&& \quad {} - \int_\Omega y_0(\cdot) v(\cdot, 0) \dd x  - \iint_{\Sigma} g_R v \dd s(x) \dd t.
 \end{IEEEeqnarray*}
@@ -45,21 +45,23 @@ Reorganizing the terms gives us the formulation
 \begin{equation}
 \label{eq:generalized-weak-form}
 \begin{IEEEeqnarraybox}[][c]{l}
-	\iint_Q \nabla y \nabla v \dd x \dd t - \iint_Q y \frac{\partial v}{\partial t} \dd x \dd t + \alpha \iint_{\Sigma} y v \dd s(x) \dd t + \int_\Omega y(\cdot, T) v(\cdot, T) \dd x \qquad \\
+	\iint_Q \nabla y \cdot \nabla v \dd x \dd t - \iint_Q y \frac{\partial v}{\partial t} \dd x \dd t + \alpha \iint_{\Sigma} y v \dd s(x) \dd t + \int_\Omega y(\cdot, T) v(\cdot, T) \dd x \qquad \\
 	\IEEEeqnarraymulticol{1}{r}{ {} = \iint_Q g_I v \dd x \dd t + \int_\Omega y_0 v(\cdot, 0) \dd x + \iint_{\Sigma} g_R v \dd s(x) \dd t }.
 \end{IEEEeqnarraybox}
 \end{equation}
-While we have only used a formal function $v$, we conclude that $Q$ must be bounded and have a piecewise smooth boundary, $y$ must be twice continuously differentiable in space and once continuously differentiable in time, whereas $v$ has to be continuously differentiable in both space and time directions.
+While we have only used a formal function $v$, we conclude that in order for these transformations to work, and Green's first identity and integration by parts to be applicable we need a few requirements:
+$Q$ must be a bounded domain with a piecewise smooth boundary, $y$ must be twice continuously differentiable in space and once continuously differentiable in time, whereas $v$ has to be continuously differentiable in both space and time directions.
 
 Before proceeding, we consider the following partial differential equation as well:
 \begin{equation}
 \label{eq:generalized-adjoint-problem}
 \begin{IEEEeqnarraybox}[][c]{rCl"lCl}
-- \frac{\partial p}{\partial t} (x, t) - \lapl p(x, t) &=& d_I(x, t) & \text{for } (x, t) \in \Omega), \\
+- \frac{\partial p}{\partial t} (x, t) - \lapl p(x, t) &=& d_I(x, t) & \text{for } (x, t) \in Q, \\
 n_x(x,t) \cdot \nabla_x p(x, t) + \alpha p(x, t) &=& d_R(x, t) & \text{for } (x, t) \in \Sigma, \\
 p(x, T) &=& p_T(x) & \text{for } (x, t) \in \Omega,
 \end{IEEEeqnarraybox}
 \end{equation}
+where $d_I(x, t) \in L^2(Q)$ and $d_R(x, t) \in L^2(\Sigma)$ are left as generic right hand side functions for now.
 The motivation for considering this problem is that it will turn out to play an important role for defining the so called adjoint state en route to an optimality system for \cref{eq:BoundaryOptimalControl,eq:InnerOptimalControl}.
 
 One could perform the analogous procedure we just performed for $p$.
@@ -68,7 +70,7 @@ Observing that we have
 \[
 	\lapl \tilde{p}(x, t) = \lapl p(x, T - t) \quad \text{and} \quad \frac{\partial \tilde{p}}{\partial t}(x, t) = - \frac{\partial p}{\partial t}(x, T - t),
 \] 
-the system for $p$ can be written instead as
+the boundary value problem for $p$ can be written instead as
 \begin{IEEEeqnarray*}{rCl}
 \frac{\partial \tilde{p}}{\partial t} - \lapl \tilde{p} &=& d_I(x, T - t) \\
 \partial_\nu \tilde{p} + \alpha \tilde{p} &=& d_R(x, T - t) \\
@@ -77,7 +79,7 @@ p(x, t) &=& \tilde{p}(x, T - t)
 \end{IEEEeqnarray*}
 by applying the results for $y$, and substituting $\tilde{p}$ again, one arrives at the following weak formulation:
 \begin{IEEEeqnarray*}{l}
-	\iint_Q \nabla p \nabla v \dd x \dd t + \iint_Q p \frac{\partial v}{\partial t} \dd x \dd t + \alpha \iint_{\Sigma} p v \dd s(x) \dd t + \int_\Omega p(\cdot, 0) v(\cdot, 0) \dd x \qquad\qquad \\
+	\iint_Q \nabla p \cdot \nabla v \dd x \dd t + \iint_Q p \frac{\partial v}{\partial t} \dd x \dd t + \alpha \iint_{\Sigma} p v \dd s(x) \dd t + \int_\Omega p(\cdot, 0) v(\cdot, 0) \dd x \qquad\qquad \\
 	\IEEEeqnarraymulticol{1}{r}{ {} = \int_\Omega p(T) v(\cdot, T) \dd x + \iint_Q d_I v \dd x \dd t + \iint_\Sigma d_R v \dd s(x) \dd t }.
 \end{IEEEeqnarray*}
 Assuming that $\Omega$ is bounded Lipschitz domain and that $\alpha \in L^\infty(\Sigma)$, $\alpha (x, t) \geq 0$ almost everywhere in $\Sigma$, one can prove that these formal calculations can be put into a setting where they make sense and have a unique solution, which continuously depends on the right hand side.
@@ -85,8 +87,32 @@ To this end, one defines two different spaces for $v$ and $y$, one which has wea
 This however is not a result directly useful to us, as we would like to seek $v$ and $y$ in the same space. As of such, we're going to skip this discussion here.
 
 Instead, one can prove these solutions lie in a more general space in which is what we want to work with. As of such, we're first going to introduce that space, following \cite[3.4.1 Abstrakte Funktionen, p.\ 113ff.]{Troeltzsch}.
+Further information on these spaces can be found for example in \cite{Wloka} or in \cite{HillePhillips}.
+\begin{definition}[Abstract functions]
+Let $\{ X, \| \cdot \|_X \}$ be a real Banach space.
+An mapping of $[a, b] \subset \R$ into $X$ is called abstract function.
+\end{definition}
+We proceed to define some spaces of abstract functions that we will work with:
 \begin{definition}
-For a Banach space $X$ let $L^p(a, b; X)$, $1 \leq p < \infty$ be the linear space of the equivalence classes of functions $y : [a, b] \to X$ with the property
+Let $\{ X, \| \cdot \|_X \}$ be a real Banach space.
+An abstract function $y : [a, b] \to X$ is called continuous in the point $t \in [a, b]$, if $\tau \to t, \tau \in [a, b]$ implies the convergence $y(\tau) \to y(t)$ in X.
+
+We denote by $C([a, b], X)$ the Banach space of all continuous abstract functions $y : [a, b] \to X$, equipped with the norm
+\[
+	\| y \|_{C([a, b], X)} = \max_{t \in [a, b]} \| y(t) \|_X.
+\]
+\end{definition}
+As a next step, we aim to introduce $L^p$-spaces of abstract functions.
+For this purpose, we require a notion of measurable functions in these spaces.
+\begin{definition}
+An abstract function $y : [a, b] \to X$ is called step function if there exist finitely many elements $y_i \in X$ and Lebesgue-measurable, pairwise disjoint sets $M_i \subset [a, b]$, $i = 1, \ldots, m$ with $[a, b] = \bigcup_{i=1}^m M_i$ and $y(t) = y_i$ for all $t \in M_i$, $i = 1, \ldots, m$.
+
+If for an abstract function $y : [a, b] \to X$ there exists a sequence of step functions $\{ y_k \}_{k=1}^\infty$ such that $y(t) = \lim_{k\to\infty} y_k(t)$ for almost all $t \in [a, b]$, then we call $y$ measurable.
+\end{definition}
+This permits us to introduce the $L^p$-spaces we need:
+\begin{definition}
+\label{def:Bochner-space}
+For a real Banach space $\{ X, \| \cdot \|_X \}$ let $L^p(a, b; X)$, $1 \leq p < \infty$ be the linear space of the equivalence classes of measurable abstract functions $y : [a, b] \to X$ with the property
 \[
 	\int_a^b \| y(t) \|_X^p \dd t < \infty.
 \]
@@ -94,8 +120,30 @@ The norm of this space is
 \[
 	\| y \|_{L^p(a, b; X)} \coloneqq \left( \int_a^b \| y(t) \|_X^p \dd t \right)^{\frac{1}{p}}.
 \]
+The space $L^\infty(a, b; X)$ is the space of equivalence classes of measurable abstract functions $y : [a, b] \to X$ with
+\[
+	\| y \|_{L^\infty(a, b; X)} \coloneqq \esssup_{[a, b]} \| y(t) \|_{X} < \infty.
+\]
 \end{definition}
-As a next step, we need a notion of derivatives for this space. For this, we introduce vector-valued distributions, see \cite[p.\ 117]{Troeltzsch}:
+As a next step, we need a notion of derivatives for this space. For this, we introduce vector-valued distributions, see \cite[p.\ 117]{Troeltzsch}.
+However, before we can do that, we need to introduce an integral operating on the $L^p$-spaces.
+In their definition we used a Lebesgue integral over the real-valued $\| \cdot \|_X$ norm, but we now need to define integrals via the means of the step functions that we just introduced:
+\begin{definition}
+For any of the $L^p(a, b; X)$, $p \in [1, \infty]$ spaces we define the so called Bochner-integral as follows:
+Given a step function $y$, it is defined as
+\[
+	\int_a^b y(t) \dd t \coloneqq \sum_{i=1}^m y_i |M_i|.
+\]
+Note that this is an element of $X$.
+
+On the other hand, given a measurable function $y$ with a series of step functions $\{ y_k\}_{k=1}^\infty$, we define
+\[
+	\int_a^b y(t) \dd t = \lim_{k \to \infty} \int_a^b y_k(t) \dd t.
+\]
+\end{definition}
+It can be shown, see e.g.\ \cite{HillePhillips}, that the Bochner-integral converges independently of the choice of the series $\{ y_k \}_{k=1}^\infty$.
+
+Using the Bochner-integral we can now introduced vector-valued derivatives:
 \begin{definition}
 For a given function $y \in L^2(0, T; X)$ we define a vector-valued distribution $\distT : C_0^\infty(0, T) \to X$ by
 \[
@@ -115,14 +163,33 @@ With these definitions, we can introduce the space we were looking for (see \cit
 \begin{definition}
 Let $W(0, T)$ be the space of all $y \in L^2(0, T; X)$ with distributional derivative $y'$ in $L^2(0, T; X^\adj)$ with the norm
 \[
-	\| y \|_{W(0, T)} = \left( \int_0^T ( \| y(t) \|_X^2 + \| y'(t) \|_{X^\adj}^2 ) \dd t \right)^{\frac{1}{2}},
+	\| y \|_{W(0, T)} = \left( \int_0^T ( \| y(t) \|_X^2 + \| y'(t) \|_{X^\adj}^2 ) \dd t \right)^{\frac{1}{2}} < \infty,
 \]
 or in other words:
 \[
 	W(0, T) = \left\{ y \in L^2(0, T; X) \midcolon y' \in L^2(0, T; X^\adj) \right\}.
 \]
 \end{definition}
-In the following we always choose $X = H^1(Q)$. A weak formulation of the problem \cref{eq:generalized-problem} is that for all $v \in W(0, T)$ the equation \cref{eq:generalized-weak-form} should hold.
+Using the notion of so called Gelfand triples, the following emedding theorem can be proved:
+\begin{theorem}
+\label{thm:W0T-continuous-embedding}
+Any $y \in W(0, T)$ can be interpreted, after a potential change on a set of zero measure, be interpreted as an element of $C([0, T], H)$.
+In this sense the embedding $W(0, T) \hookrightarrow C([0, T], H)$ exists and is continuous, i.e.\ there exists a constant $c_E$ such that
+\[
+	\| y \|_{C([0, T], H)} \leq c_E \| y \|_{W(0, T)} \quad \forall y \in W(0, T).
+\] 
+\end{theorem}
+\begin{proof}
+The proof can be found in \cite{Wloka} or \cite{Zeidler-IIA}.
+\end{proof}
+In the following we always choose $X = H^1(Q)$. A weak formulation of the problem \cref{eq:generalized-problem} in these spaces reads as follows:
+Let $u \in W(0, T)$ such that equation \cref{eq:generalized-weak-form}, i.e.
+\begin{IEEEeqnarray*}{l}
+	\iint_Q \nabla y \cdot \nabla v \dd x \dd t - \iint_Q y \frac{\partial v}{\partial t} \dd x \dd t + \alpha \iint_{\Sigma} y v \dd s(x) \dd t + \int_\Omega y(\cdot, T) v(\cdot, T) \dd x \qquad \\
+	\IEEEeqnarraymulticol{1}{r}{ {} = \iint_Q g_I v \dd x \dd t + \int_\Omega y_0 v(\cdot, 0) \dd x + \iint_{\Sigma} g_R v \dd s(x) \dd t }.
+\end{IEEEeqnarray*}
+holds for all $v \in W(0, T)$.
+As intended, this choice of spaces permits to use the same space $W(0, T)$ for $u$ and $v$.
 
 In order to proof that this formulation makes sense, one uses the aforementioned spaces with a stronger regularity requirement first, proves existence and uniqueness of a solution in them and then proves that the solution is in $W(0, T)$ and testing with $v \in W(0, T)$ makes sense. For more details, see \cite[3.3 Schwache Lösungen in $W^{1, 0}_2(Q)$]{Troeltzsch}.
 Eventually, one can prove the following result:
@@ -136,7 +203,10 @@ with a constant $c_w > 0$ independent of $g_I$, $g_R$ and $y_0$.
 Consequentially, the mapping $(g_I, g_R, y_0) \mapsto f$ is continuous from $L^2(Q) \times L^2(\Sigma) \times L^2(\Omega)$ to $W(0, T)$, especially $C([0, T], L^2(\Omega))$.
 \end{theorem}
 \begin{proof}
-For the existence of a solution in a more general space, see \cite[Satz 3.9, p.\ 112]{Troeltzsch}, for that solution lying in $W(0, T)$ see \cite[Satz 3.12, p.\ 120]{Troeltzsch} and for the continuity result, see \cite[Satz 3.13, p.\ 121]{Troeltzsch}.
+For the existence of a solution in a more general space, see \cite[Satz 3.9, p.\ 112]{Troeltzsch} and more specifically \cite[Satz 7.9, p.\ 289]{Troeltzsch}. The proof as presented there follows the monography \cite{Ladyzhenskaya}.
+
+In order to prove solution lying in $W(0, T)$ see \cite[Satz 3.12, p.\ 120]{Troeltzsch} and for the continuity result, see \cite[Satz 3.13, p.\ 121]{Troeltzsch}.
+One can also work with $W(0, T)$ directly to simplify the proof, see \cite{Wloka}. However, this approach shares less analogies with the work needed for treating the elliptic optimal control case.
 \end{proof}
 Due to \cref{thm:generalized-problem-solution}, linear and continuous operators $G_Q : L^2(Q) \to W(0, T)$, $G_\Sigma : L^2(\Sigma) \to W(0, T)$ and $G_0 : L^2(\Omega) \to W(0, T)$ exist such that
 \[
@@ -173,7 +243,7 @@ To that end, we define operators that map $g_I$, $g_R$ and $y_0$ into their disc
 \begin{IEEEeqnarray*}{rCl}
 	\boldsymbol{g_I}[i] (g_I) &=& \iint_Q g_I \varphi_i \dd x \dd t, \\
 	\boldsymbol{g_R}[i] (g_R) &=& \iint_\Sigma g_R \varphi_i \dd x \dd t, \\
-	\boldsymbol{y_0}[i] (y_0) &=& \int_\Omega y_0 \varphi_i(\cdot, 0) \dd x \dd t.
+	\boldsymbol{y_0}[i] (y_0) &=& \int_\Omega y_0 \varphi_i(\cdot, 0) \dd x.
 \end{IEEEeqnarray*}
 Moreover, we define an operator to map discrete solutions of \cref{eq:dg-discrete-prob} into the function they correspond to in $\Shp(\meshT_N)$:
 \begin{IEEEeqnarray*}{rCl}
@@ -185,15 +255,16 @@ Then, we can define the solution operators
 	G_\Sigma^h (g_R) &\coloneqq& E_V A_h^{-1} \boldsymbol{g_R} (g_R), \\
 	G_0^h (y_0) &\coloneqq& E_V A_h^{-1} \boldsymbol{y_0} (y_0).
 \end{IEEEeqnarray*}
-Note that these operators are well defined for $\sigma \geq 4 c_K$ due to \cref{thm:A-injective}. Therefore, the rest of this discussion assumes that \cref{as:mesh-assumptions} holds and that $\sigma$ is chosen such that $\sigma \geq 4 c_K$.
+Note that these operators are well defined for $\sigma \geq 4 c_K$ due to \cref{thm:A-bijective}. Therefore, the rest of this discussion assumes that \cref{as:mesh-assumptions} holds and that $\sigma$ is chosen such that $\sigma \geq 4 c_K$.
 As of such, we can define a discrete analogous to $S$, called $S_h$:
 \[
 	y_h(T) - y_\Omega = S_h u_h + (G_0^h y_0)(T) - y_\Omega = S_h u_h - z_h,
 \]
 where $S_h \coloneqq E_T G_\Sigma \beta \cdot$ and $z_h \coloneqq y_\Omega - (G_0^h y_0)(T)$.
-Note that both operators work from $L^2(\Sigma)$ to $L^2(\Omega)$, because \cref{thm:asip-lower-bound} (and in a stronger sense, for quasi-uniform meshes, \cref{thm:Astab-est}) guarantees that $S_h$ is a continuous and linear operator between these spaces.
+Note that both operators, $S$ and $S_h$ work from $L^2(\Sigma)$ to $L^2(\Omega)$. One can immediately see that $S_h$ is a linear operator.
+Using that the term $\| f_h(T) \|_{L^2(\Omega)}$ is contained in $\| f_h \|_A$ together with the ellipticity estimate \cref{thm:A-ellip-weak} (or alternatively, for quasi-uniform meshes, the estimate \cref{thm:Astab-est}) guarantees that $S_h$ is also a continuous operator between these spaces.
 
-With these operators defined, we can express the optimal control problems as
+With these operators defined, we can express the continuous and discretized optimal control problems as
 \begin{equation}
 \label{eq:f-S}
 \min_{u \in L^2(\Sigma)} f(u) \coloneqq \frac{1}{2} \| S u - z \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2,
@@ -203,22 +274,12 @@ and
 \label{eq:f-Sh}
 \min_{u_h \in L^2(\Sigma)} f_h(u_h) \coloneqq \frac{1}{2} \| S_h u_h - z_h \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u_h \|_{L^2(\Sigma)}^2.
 \end{equation}
+Note that the discretized optimal control is being searched in $L^2(\Sigma)$ and not a discretized space.
+However, one will see afterwards that it indeed has to lie in the boundary projection of $\Shp(\meshT_N)$ after a potential modification on a set of zero measure.
 
-As a next step, note that for a function $u \in L^2(\Sigma)$, we can define
-\[
-	u^h = \sum_{j=1}^m \langle u, \varphi_j \rangle_{L^2(\Sigma)} \varphi_j
-\]
-and observe that
-\begin{IEEEeqnarray*}{rCl}
-	\iint_\Sigma u^h \varphi_i \dd x \dd t &=& \iint_\Sigma \sum_{j=1}^m \langle u, \varphi_j \rangle_{L^2(\Sigma)} \varphi_j \varphi_i \dd x \dd t \\
-	&=& \sum_{j=1}^m \langle u, \varphi_j \rangle_{L^2(\Sigma)} \iint_\Sigma \varphi_j \varphi_i \dd x \dd t \\
-	&=& \sum_{j=1}^m \langle u, \varphi_j \rangle_{L^2(\Sigma)} \delta_{ij} \\
-	&=& \langle u, \varphi_i \rangle_{L^2(\Sigma)} \\
-	&=& \iint_\Sigma u \varphi_i \dd x \dd t.
-\end{IEEEeqnarray*}
-As of such, $S_h u^h = S_h u$. Therefore, if there is an optimal solution $u_h \in L^2(\Sigma)$, there is also an optimal solution attaining the same value in the boundary projection of $\Shp(\meshT_N)$.
+The approach to look for $u_h$ in a non-discretized space is called variational discretization and was first introduced in \cite{Hinze}.
+By not discretizing the control, \cite{Hinze} established error estimates for continuous finite element approaches for elliptic optimal control problems. This was later applied to parabolic problems in \cite{DeckelnickHinze}, where they use an approach via a continuous Galerkin scheme in space and a discontinuous approach in time. A similar approach can be found in \cite{MeidnerVexler-I}, which was later on generalized to the state-constrained case in \cite{MeidnerVexler-II}.
 
-The approach to look for $u_h$ in a non-discretized space is called variational discretization, see \cite{Hinze}.
 In order to discuss uniqueness and existence of solutions to these problems, we can use the following, general result:
 \begin{theorem}
 \label{thm:optimal-control-existence}
@@ -231,7 +292,7 @@ Then the quadratic optimization problem in the Hilbert space
 admits an optimal solution $\bar{u}$. If $\lambda$ is positive or $S$ injective, then is is uniquely determined.
 \end{theorem}
 \begin{proof}
-See \cite[Satz 2.14]{Troeltzsch} and \cite[Satz 2.15]{Troeltzsch}.
+We present the proof given by \cite[Satz 2.14]{Troeltzsch} and \cite[Satz 2.15]{Troeltzsch}.
 
 Assume $U_{ad}$ is bounded. Because $f \geq 0$, the infimum of all possible function values exists:
 \[
@@ -284,31 +345,39 @@ By using the adjoint operator $S^*$, one can characterize the solution of an opt
 Hence, one can define the solution by making use of the adjoint state $p \coloneqq  S^* ( S \bar{u} - z ) $.
 For the parabolic case, it is however easier to work with the form given in \cref{thm:variational-ineq} and proving equivalence for a reasonably defined $p$ rather than attempting to determine $S^*$ directly.
 
-For the boundary control problem, one can show that the solution of the the adjoint problem defined as follows
+In order to be able to treat the various formulations of the optimal control problem at once, we introduce a general parabolic problem that will serve as the adjoint problem: Consider the boundary value problem
 \begin{equation}
 \label{eq:generalized-problem-adj}
 \begin{IEEEeqnarraybox}[][c]{rCl"l}
--\frac{\partial p}{\partial t} (x, t) - \lapl p(x, t) &=& a_Q(x, t) & \text{for } (x, t) \in \Omega, \\
+-\frac{\partial p}{\partial t} (x, t) - \lapl p(x, t) &=& a_Q(x, t) & \text{for } (x, t) \in Q, \\
 n_x(x,t) \cdot \nabla_x p(x, t) + \alpha p(x, t) &=& a_\Sigma(x, t) & \text{for } (x, t) \in \Sigma, \\
-p(x, T) &=& a_\Omega(x) & \text{for } (x, t) \in \Omega.
+p(x, T) &=& a_\Omega(x) & \text{for } (x, t) \in \Omega,
 \end{IEEEeqnarraybox}
 \end{equation}
-characterizes the solution $\bar{u} \in U_{ad}$ equivalently to \cref{thm:variational-ineq} by
+with $\alpha$ being a constant as before and $a_Q \in L^2(Q)$, $a_\Sigma \in L^2(\Sigma)$ and $a_\Omega \in L^2(\Omega)$.
+Using a transformation $\tilde{p}(x, t) = p(x, T - t)$, this can be shown to have a unique weak solution solution by applying \cref{thm:generalized-problem-solution} to the transformation and transforming back.
+We have previously derived a discretized solution for this problem in \cref{sec:adj-dG-treatment}. As argued there, the same transformation together with \cref{thm:A-bijective} and \cref{thm:dg-convergence} delivers the existence of a unique discrete solution that converges in the $\lDG \cdot \rDG$ norm.
+
+For the boundary optimal control case, the solution of \cref{eq:generalized-problem-adj} with the choices $a_Q = 0$, $a_\Sigma = 0$, $a_\Omega = \bar{y}(T) - y_\Omega$ characterizes the solution $\bar{u} \in U_{ad}$ equivalently to \cref{thm:variational-ineq} with the inequality
 \[
 	\langle \beta \bar{p} + \lambda \bar{u}, u - \bar{u} \rangle_U \geq 0 \quad \forall u \in U_{ad}.
 \]
-Refer to \cite[Lemma 3.17 and Satz 3.18, p.\ 126f.]{Troeltzsch} for this result.
+This result has been shown in \cite[Lemma 3.17 and Satz 3.18, p.\ 126f.]{Troeltzsch}.
 
-Nonetheless, we have to derive a similarly defined adjoint state for the discrete operator.
-For this, we pick special right hand sides for the \cref{eq:generalized-problem} where each boundary value depends on a control, called $v$, $u$ and $w$, respectively. The motivation behind this is so that we can transfer the result on the adjoint to the interior heat source problem.
+We aim to prove the analogous result for the discrete case, i.e.\ that the discretization introduced in \cref{sec:adj-dG-treatment} with similar right hand sides also delivers an adjoint state with the same functionality as in the continuous case.
+
+Again, for the sake of covering multiple possible problem formulations at once, we work with \cref{eq:generalized-problem}, where each boundary term depends on controls, named $v$, $u$ and $w$, respectively.
+For $b_Q \in L^\infty(Q)$, $b_\Sigma \in L^\infty(\Sigma)$, $b_\Omega \in L^\infty(\Omega)$ and given controls $v \in L^2(Q)$, $u \in L^2(\Sigma)$ and $w \in L^2(\Omega)$ as well as the constant $\alpha$, we define the problem
 \begin{equation}
 \label{eq:generalized-problem-state}
 \begin{IEEEeqnarraybox}[][c]{rCl"l}
-\frac{\partial y}{\partial t} (x, t) - \lapl y(x, t) &=& b_Q(x, t) v & \text{for } (x, t) \in \Omega, \\
-n_x(x,t) \cdot \nabla_x y(x, t) + \alpha y(x, t) &=& b_\Sigma(x, t) u & \text{for } (x, t) \in \Sigma, \\
-y(x, 0) &=& b_\Omega(x) w & \text{for } (x, t) \in \Omega.
+\frac{\partial y}{\partial t} (x, t) - \lapl y(x, t) &=& b_Q(x, t) v(x, t) & \text{for } (x, t) \in Q, \\
+n_x(x,t) \cdot \nabla_x y(x, t) + \alpha y(x, t) &=& b_\Sigma(x, t) u(x, t) & \text{for } (x, t) \in \Sigma, \\
+y(x, 0) &=& b_\Omega(x) w(x) & \text{for } (x, t) \in \Omega.
 \end{IEEEeqnarraybox}
 \end{equation}
+Alas, we have right hand sides that consist of the product between some coefficients and a control.
+ 
 By applying the discontinuous Galerkin formulation for \cref{eq:generalized-problem-state} we obtain
 \begin{equation}
 \label{eq:generalized-problem-state-dG}
@@ -323,7 +392,7 @@ where $\boldsymbol{y_T} : L^2(\Omega) \to \R^m$ is defined in an analogous fashi
 \begin{IEEEeqnarray*}{rCl}
 	\boldsymbol{y_T}[i] (y_T) &=& \int_\Omega y_T \varphi_i(\cdot, T) \dd x \dd t.
 \end{IEEEeqnarray*}
-One would assert that \cref{eq:generalized-problem-adj-dG} is the adjoint in the given sense to \cref{eq:generalized-problem-state-dG}, because \cref{eq:generalized-problem-adj} is the adjoint in that sense to \cref{eq:generalized-problem-state} for the continuous case.
+One would assert that \cref{eq:generalized-problem-adj-dG} is the adjoint in the given sense to \cref{eq:generalized-problem-state-dG}, because \cref{eq:generalized-problem-adj} is the adjoint problem with analogous right hand sides to \cref{eq:generalized-problem-state} for the continuous case.
 In order to prove this, we need the following statement:
 \begin{lemma}
 \label{thm:discrete-adj-state-helper}
@@ -358,7 +427,7 @@ Noticing that the left hand sides of both equations are the same gives us the de
 Using \cref{thm:discrete-adj-state-helper}, we can prove:
 \begin{theorem}
 \label{thm:discrete-variational-ineq}
-A control $\bar{u}_h \in L^2(\Omega)$ is optimal for \cref{eq:f-Sh} if and only if with the associated adjoined state $\bar{p}_h$ defined as the solution of \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = 0$ and $a_\Omega = \bar{y}_h(T) - y_\Omega$ fulfills the following variational inequality
+A control $\bar{u}_h \in L^2(\Omega)$ is optimal for \cref{eq:f-Sh} if and only if with the associated adjoint state $\bar{p}_h$ defined as the solution of \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = 0$ and $a_\Omega = \bar{y}_h(T) - y_\Omega$ fulfills the following variational inequality
 \[
 	\langle \beta(x, t) \bar{p}_h (x, t) + \lambda \bar{u}_h(x, t), u_h - \bar{u}_h \rangle_{L^2(\Sigma)} \geq 0 \quad \forall u_h \in L^2(\Sigma)
 \]
@@ -396,6 +465,8 @@ Due to the choice $U_{ad} = L^2(\Sigma)$ for both the continuous and discretized
 	\beta p_h + \lambda \bar{u}_h &=& 0
 \end{IEEEeqnarray*}
 almost everywhere.
+
+If for example $\beta$ is constant, this means that $\bar{u}_h$ can be interpreted to be a boundary projection of a function in $\Shp(\meshT_N)$, i.e. the function $-\lambda^{-1} \beta p_h \in \Shp(\meshT_N)$.
 \end{remark}
 Bringing the optimality conditions for the continuous case into a single system, one obtains:
 \begin{IEEEeqnarray*}{c}
@@ -427,22 +498,23 @@ In a further step, we would like to prove convergence of the discrete problem.
 Given that \cref{thm:dg-convergence} requires at least $y \in H^2(\meshT_N) \subset H^2(Q)$, we have to make the following assumption:
 \begin{assumption}
 \label{as:continuous-Hs-regularity}
-The solution of the system \cref{eq:generalized-weak-form} lies in $H^s(Q) \cap W(0,T)$ with $s \geq 2$, i.e.
+The solution of the system \cref{eq:generalized-weak-form} lies in $H^s(\meshT_N) \cap W(0,T)$ with $s \geq 2$, i.e.
 \[
 	\| y \|_{H^s(Q)} \leq c_w' \left( \| g_I \|_{L^2(Q)} + \| g_R \|_{L^2(\Sigma)} + \| y_0 \|_{L^2(\Omega)} \right)
 \]
 with a constant $c_w' > 0$ independent of $g_I$, $g_R$ and $y_0$.
 \end{assumption}
+As discussed in the remark after \cref{thm:dg-convergence}, a result like $y \in L^2(0, T; H^2(\Omega)) \cap H^1(0, T; L^2(\Omega))$, which often can be proved, is not sufficient.
 \begin{theorem}
 \label{thm:optimal-control-convergence}
-Let $\bar{u}$ be the optimal control for the continuous problem \cref{eq:BoundaryOptimalControl-restricted} and let \cref{as:continuous-Hs-regularity} hold. Moreover, be $\bar{u}_h$ the discretized solution to \cref{eq:f-Sh}.
+Let $\bar{u}$ be the optimal control for the continuous problem \cref{eq:BoundaryOptimalControl-restricted} and let \cref{as:continuous-Hs-regularity} hold. Moreover, be $\bar{u}_h$ the optimal control to the discretized problem \cref{eq:f-Sh}.
 Then there is a $C > 0$ independent of $h$, such that:
 \[
 	\| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} + \| \bar{y}(T) - \bar{y}_h(T) \|_{L^2(\Omega)} \leq C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right).
 \]
 \end{theorem}
 \begin{proof}
-This proof follows ideas presented in \cite{Hinze}.
+This proof is based on the previously mentioned variational discretization technique presented in \cite{Hinze}.
 
 The optimal solutions to both problems fulfill
 \begin{IEEEeqnarray*}{rCl"l}
@@ -464,32 +536,33 @@ By bringing the first two terms on the other side, we obtain
 We want to estimate the left hand side by an upper bound and the right hand side by a lower bound.
 Therefore, we start with the left hand side:
 \begin{IEEEeqnarray*}{rCl}
-	\IEEEeqnarraymulticol{3}{l}{ - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} + \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] } \\
+	\IEEEeqnarraymulticol{3}{l}{ \chi_1 \coloneqq - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} + \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] } \\
 	&=& - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} \\
 \noalign{\noindent Performing a zero addition of $\langle S_h \bar{u} - z_h, S v \rangle$ gives \vspace{\jot}}
-	&=& - \langle S \bar{u} - z - [ S_h \bar{u} - z_h ], S v \rangle_{L^2(\Omega)} + \langle S_h \bar{u} - z_h, S_h v -S v \rangle_{L^2(\Omega)} \\
+	\chi_1 &=& - \langle S \bar{u} - z - [ S_h \bar{u} - z_h ], S v \rangle_{L^2(\Omega)} + \langle S_h \bar{u} - z_h, S_h v -S v \rangle_{L^2(\Omega)} \\
 	&=& - \langle S \bar{u} + (G_0 y_0)(T) - y_\Omega - S_h \bar{u} - (G_0^h y_0)(T) + y_\Omega, S v \rangle_{L^2(\Omega)} \\
 	&& \quad {} + \langle S_h \bar{u} + (G_0^h y_0)(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \\
 \noalign{\noindent Due to the definition of $\bar{y}(T) = S \bar{u} + (G_0 y_0)(T)$, we can replace that term. By defining $\bar{y}^h$ as the state deriving from the discrete state equation with the control $\bar{u}$, we can also replace $\bar{y}^h(T) = S_h \bar{u} + (G_0^h y_0)(T)$: \vspace{\jot}}
-	&=& - \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} + \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \\
-\noalign{\noindent Using the triangle inequality and the Cauchy-Schwarz inequality, we obtain with the definitions $y^v = G_\Sigma v$ and $y_h^v = G_\Sigma^h v$, so that we have $y^v(T) = Sv$ and $y_h^v(T) = S_h v$, giving us\vspace{\jot}}
-	&\leq& \left| \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} \right| + \left| \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \right| \\
+	\chi_1 &=& - \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} + \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \\
+\noalign{\noindent Using the triangle inequality and the Cauchy-Schwarz inequality, we obtain with the definitions $y^v \coloneqq G_\Sigma v$ and $y_h^v \coloneqq G_\Sigma^h v$, so that we have $y^v(T) = Sv$ and $y_h^v(T) = S_h v$, giving us\vspace{\jot}}
+	\chi_1 &\leq& \left| \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} \right| + \left| \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \right| \\
 	&\leq& \left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \| y^v(T) \|_{L^2(\Omega)} \\
 	&& \quad {}+ \left\| \bar{y}^h(T) - y_\Omega \right\|_{L^2(\Omega)} \left\| y^v_h(T) - y^v(T) \right\|_{L^2(\Omega)} \\
-\noalign{\noindent By the definition of the $\lDG \cdot \rDG$ norm, we have the term $\| f(T) \|_{L^2(\Omega)}$ in it, we can estimate \vspace{\jot}}
-	&\overset{\text{\cref{eq:dg-DG-norm}}}{\leq}& \left\lDG \bar{y} - \bar{y}^h \right\rDG \| y^v(T) \|_{L^2(\Omega)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
-\noalign{\noindent Due to the continuity estimate on exact solutions given by \cref{thm:generalized-problem-solution} and the fact that $W(0, T) \hookrightarrow C([0, T], L^2(\Omega))$, we estimate this further as\vspace{\jot}}
-	&\overset{\text{\cref{thm:generalized-problem-solution}}}{\leq}& c_w \left\lDG \bar{y} - \bar{y}^h \right\rDG \| v \|_{L^2(\Sigma)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
+\noalign{\noindent By the definition of the $\lDG \cdot \rDG$ norm, we have the term $\| f(T) \|_{L^2(\Omega)}$ in it, c.f.\ \cref{eq:dg-DG-norm}, we can estimate \vspace{\jot}}
+	\chi_1 &\overset{\text{\cref{eq:dg-DG-norm}}}{\leq}& \left\lDG \bar{y} - \bar{y}^h \right\rDG \| y^v(T) \|_{L^2(\Omega)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
+\noalign{\noindent Due to the continuity estimate on exact solutions given by \cref{thm:generalized-problem-solution,thm:W0T-continuous-embedding}, we estimate this further as\vspace{\jot}}
+	\chi_1 &\overset{\text{\cref{thm:generalized-problem-solution}}}{\leq}& c_w c_E \left\lDG \bar{y} - \bar{y}^h \right\rDG \| v \|_{L^2(\Sigma)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
 \noalign{\noindent Using the stability estimate for $A(\cdot, \cdot)$ given by \cref{thm:Astab-est}, we can estimate the operator $G_\Sigma^h$ because it consists out of the inverse $A_h^{-1}$:}
-	&\overset{\text{\cref{thm:Astab-est}}}{\leq}& c_w \left\lDG \bar{y} - \bar{y}^h \right\rDG \| v \|_{L^2(\Sigma)} + \left( \frac{1}{c_S^A} \beta \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
+	\chi_1 &\overset{\text{\cref{thm:Astab-est}}}{\leq}& c_w c_E \left\lDG \bar{y} - \bar{y}^h \right\rDG \| v \|_{L^2(\Sigma)} \\
+	&& \quad {}+ \left( \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Omega)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
 \noalign{\noindent As a next step we can apply the result \cref{thm:dg-convergence} because we made \cref{as:continuous-Hs-regularity}:}
-	&\overset{\text{\cref{thm:dg-convergence}}}{\leq}& c_w c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |\bar{y}|_{H^s(\meshT_N)} \| v \|_{L^2(\Sigma)} \\
-	&& \quad {}+ \left( \frac{1}{c_S^A} \beta \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |y_v|_{H^s(\meshT_N)} \\
+	\chi_1 &\overset{\text{\cref{thm:dg-convergence}}}{\leq}& c_w c_E c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |\bar{y}|_{H^s(\meshT_N)} \| v \|_{L^2(\Sigma)} \\
+	&& {}+ \left( \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Omega)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |y_v|_{H^s(\meshT_N)} \\
 \noalign{\noindent The assumption of continuous dependence of the solution in the stronger $H^2$ norm on the right hand side gives the estimate}
-	&\overset{\text{\cref{as:continuous-Hs-regularity}}}{\leq}& c_w c_w' c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \|\bar{u}\|_{L^2(\Sigma)} \| v \|_{L^2(\Sigma)} \\
-	&& \quad {}+ \left( \frac{1}{c_S^A} \beta \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) c c_w' \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \|v\|_{L^2(\Sigma)} \\
+	\chi_1 &\overset{\text{\cref{as:continuous-Hs-regularity}}}{\leq}& c_w c_E c_w' c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} ( \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ) \| v \|_{L^2(\Sigma)} \\
+	&& {}+ \left( \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Omega)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) c c_w' \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \|v\|_{L^2(\Sigma)} \\
 \noalign{\noindent Finally, by combining the constants into a single one called $C > 0$, we obtain}
-	&\leq& C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \| v \|_{L^2(\Sigma)}
+	\chi_1 &\leq& C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \| v \|_{L^2(\Sigma)}
 \end{IEEEeqnarray*}
 
 For the remaining two terms, we have
@@ -521,13 +594,22 @@ In a further step, we have to estimate $\| \bar{y}(T) - \bar{y}_h(T) \|_{L^2(\Om
 \begin{IEEEeqnarray*}{rCl}
 \| \bar{y}(T) - \bar{y}_h(T) \|_{L^2(\Omega)} &=& \| S \bar{u} - S_h \bar{u}_h \|_{L^2(\Omega)} \\
 &\leq& \| S \bar{u} - S_h \bar{u} \|_{L^2(\Omega)} + \| S_h \bar{u} - S_h \bar{u}_h \|_{L^2(\Omega)} \\
-&\leq& \| y(T) - y^h(T) \|_{L^2(\Omega)} + \| y^h(T) - y_h(T) \|_{L^2(\Omega)} \\
-&\leq& c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |\bar{y}|_{H^s(\meshT_N)} + \frac{1}{c_S^A} \beta \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} \\
+&\leq& \| \bar{y}(T) - \bar{y}^h(T) \|_{L^2(\Omega)} + \| \bar{y}^h(T) - \bar{y}_h(T) \|_{L^2(\Omega)} \\
+&\leq& c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |\bar{y}|_{H^s(\meshT_N)} + \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Omega)} \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} \\
 &\leq& C h^{\min \{ s, p+1\} - 1} \| \bar{u} \|_{L^2(\Sigma)} \\
-&& \quad {} + C' h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right)
+&& \quad {} + C' h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right),
 \end{IEEEeqnarray*}
+where we used the same stability argument to estimate the stability of the discrete solution as before when estimating the control.
 Together, the estimates prove the claim made.
 \end{proof}
+\begin{remark}
+We observe that \cref{as:continuous-Hs-regularity} can be weaked somewhat:
+Instead of making the demand for general right hand sides, it was only necessary to use this for
+\begin{IEEEeqnarray*}{rCl}
+\| \bar{y} \|_{H^s(Q)} &\leq& c_w' \left( \| g_I \|_{L^2(Q)} + \| g_R \|_{L^2(\Sigma)} + \| y_0 \|_{L^2(\Omega)} \right) \\
+\| y^v \|_{H^s(Q)} &\leq& c_w' \left( \| g_I \|_{L^2(Q)} + \| g_R \|_{L^2(\Sigma)} + \| y_0 \|_{L^2(\Omega)} \right)
+\end{IEEEeqnarray*}
+\end{remark}
 \section{Optimal control with interior heat sources}
 Analogously to the previous section, we can treat the interior heat source problem with the same restrictions made:
 \begin{equation}
@@ -573,7 +655,7 @@ As a next step we would like to apply \cref{thm:variational-ineq} again, too. Ju
 \begin{theorem}
 There exists a unique optimal control $\bar{u}_h \in L^2(Q)$ for \cref{eq:InnerOptimalControl-restricted}.
 
-It can be characterized with a variational inequality: A control $\bar{u}_h \in L^2(Q)$ is optimal if and only if with the associated adjoined state $\bar{p}_h$ defined as the solution of \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = \bar{y}_h - y_\Sigma$ and $a_\Omega = 0$ fulfills the following variational inequality
+It can be characterized with a variational inequality: A control $\bar{u}_h \in L^2(Q)$ is optimal if and only if with the associated adjoint state $\bar{p}_h$ defined as the solution of \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = \bar{y}_h - y_\Sigma$ and $a_\Omega = 0$ fulfills the following variational inequality
 \[
 	\langle \beta(x, t) \bar{p}_h (x, t) + \lambda \bar{u}_h(x, t), u_h - \bar{u}_h \rangle_{L^2(Q)} \geq 0 \quad \forall u_h \in L^2(Q)
 \]
@@ -593,7 +675,7 @@ u_h = - \lambda^{-1} \beta p_h.
 In order to replicate the convergence theorem \cref{thm:optimal-control-convergence}, we need to make assumption \cref{as:continuous-Hs-regularity} again.
 However, this alone is not enough: During the proof of \cref{thm:optimal-control-convergence} we used the estimate
 \[
-	\left\| \bar{y})(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \leq \left\lDG \bar{y} - \bar{y}^h \right\rDG.
+	\left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \leq \left\lDG \bar{y} - \bar{y}^h \right\rDG.
 \]
 In contrast, we now use the observation operator $E_\Sigma$ instead of $E_T$, which means we have to estimate
 \[

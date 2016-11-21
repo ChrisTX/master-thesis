@@ -16,7 +16,7 @@ For a boundary control, that is to say a heating element at the boundary of a do
 \begin{IEEEeqnarraybox}[][c]{c}
 \min J(y, u) = \frac{1}{2} \int_\Omega \left( y(x, T) - y_\Omega(x) \right)^2 \dd x + \frac{\lambda}{2} \int_0^T \int_{\partial \Omega} u(x, t)^2 \dd s(x) \dd t \\
 \noalign{\noindent subject to\vspace{\jot}}
-\begin{IEEEeqnarraybox}{rCl"l}
+\begin{IEEEeqnarraybox}[][c]{rCl"l}
 \frac{\partial y}{\partial t} - \lapl y &=& 0 & \text{in } Q \coloneqq \Omega \times (0, T) \\
 \partial_\nu y + \alpha y &=& \beta u & \text{in } \Sigma \coloneqq \partial \Omega \times (0, T) \\
 y(x, 0) &=& y_0(x) & \text{in } \Omega
@@ -25,18 +25,20 @@ y(x, 0) &=& y_0(x) & \text{in } \Omega
 u_a(x, t) \leq u(x, t) \leq u_b(x, t) \quad \text{a.e.\ in $\Sigma$}.
 \end{IEEEeqnarraybox}
 \end{equation}
-The partial differential equation system for the state $y$ is the instationary heat equation with mixed boundary conditions.
+The partial differential equation for the state $y$ is the instationary heat equation with mixed boundary conditions.
 Several parameters are available, namely $\lambda$ for weighting the impact of the energy required for $u(x, t)$, $\alpha$ and $\beta$ for balancing the heating effect.
-We assume here and in the following that $\lambda \geq 0$, $\alpha \geq 0$ and $\beta > 0$ are constants.
+We assume here and in the following that $\lambda \geq 0$ and $\alpha \geq 0$ are constants and that $\beta \in L^\infty(\Omega)$ with $\beta \geq 0$ almost everywhere.
+
 From a physical point of view, the correct boundary conditions are to choose the same value for $\alpha$ and $\beta$, and thus obtaining
 \[
 	\partial_\nu y = \alpha( u - y )
 \]
-on the boundary. Physics calls $\alpha$ the heat diffusivity, which depends on the material in which the heat distribution is considered. In fact, the physically correct form of the equation itself would be
+on the boundary. Physics calls $\alpha$ the heat diffusivity, which depends on the material in which the heat distribution is considered.
+Another simplification has been made in this formulation: The physically correct form of the equation itself would be to multiply the Laplace term with the heat diffusivity as well, i.e.
 \[
 	\frac{\partial y}{\partial t} - \alpha \lapl y = 0.
 \]
-For a mathematical treatment the form given above is more reasonable, however. Upon implementing the method discussed here one should to keep these caveats in mind when it comes to working with a specific heating problem on a given material.
+For a mathematical treatment the form given above is sufficient, and it makes sense to separate $\alpha$ and $\beta$ for this purpose. Upon implementing the method discussed here one should to keep these caveats in mind when it comes to working with a specific heating problem on a given material.
 
 Analogously, one can establish the problem with an instationary, inner temperature source. This leads to the following formulation (cf.\ \cite[p.\ 124ff.]{Troeltzsch}):
 \begin{equation}
@@ -88,7 +90,7 @@ p(T) &=& y(T) - y_\Omega
 \end{IEEEeqnarraybox} \\
 u = - \lambda^{-1} \beta p
 \end{IEEEeqnarray*}
-While this system can be solved as-is, the intertwining of the state and the adjoined state equations, and especially the fact that one is operating forward in time and the other one backwards in time, make this a difficult system to solve.
+While this system can be solved as-is, the intertwining of the state and the adjoint state equations, and especially the fact that one is operating forward in time and the other one backwards in time, make this a difficult system to solve.
 
 In \cite{Neumueller}, a space-time discontinuous Galerkin method for the parabolic heat equation has been derived. The approach made here will be to take said discretization, derive the corresponding discrete adjoint problem to then ultimately prove convergence of the discretized solution towards the continuous solution.
 The first step will be therefore to introduce and to expand the space-time discontinuous Galerkin method.

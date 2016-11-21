@@ -16,7 +16,7 @@ Let $U$ and $V$ be Hilbert spaces. A linear map $L : U \to V^\adj$ is an isomorp
 \[
 	\sup_{v \in V} \frac{a(u, v)}{\| v \|_V} \geq c_e \| u \|_U \quad \text{for } u \in U.
 \] 
-\item For each $v \in V$, $v \neq 0$, there exists a $u \in U$ with
+\item For each $v \in V$, $v \neq 0$, there exists an element $u \in U$ with
 \[
 	a(u, v) \neq 0.
 \]
@@ -38,11 +38,11 @@ Moreover, let there be a constant $\tilde{c}_G \geq 1$ such that for two adjacen
 \[
 	\tilde{c}_G^{-1} \leq \frac{h_k}{h_\ell} \leq \tilde{c}_G.
 \]
+\end{assumption}
 By this assumption we have for $\bar{h}_{k\ell} = \frac{1}{2} (h_k + h_\ell)$ with $c_G \coloneqq \frac{1}{2} (\tilde{c}_G + 1)$:
 \[
 	c_G^{-1} \leq \frac{\bar{h}_{k\ell}}{h_\ell} \leq c_G, \quad c_G^{-1} \leq \frac{\bar{h}_{k\ell}}{h_\ell} \leq c_G.
 \]
-\end{assumption}
 \begin{lemma}
 \label{thm:inverse-ineq}
 For any discrete function $v_h \in \Shp(\meshT_N)$ there holds for all interior facets $\Gamma_{k \ell} \in \intfI_N$ the inverse inequalities
@@ -61,7 +61,7 @@ Here, $c_I > 0$ is a generic constant depending on the mesh and the polynomial d
 \begin{proof}
 For the statements see \cite[Lemma 2.2.3]{Neumueller}. For the last statement, see the proof of \cite[(4.28), (4.29)]{XuZou}.
 \end{proof}
-In the light of \cref{thm:Necas-Babuska}, we first define some energy norms with respect to the bilinear form $a(\cdot, \cdot)$.
+In the light of \cref{thm:Necas-Babuska}, we first define some energy norms with respect to the bilinear form $a(\cdot, \cdot)$, compare \cite{Neumueller}.
 For a function $f \in H^s(\mathcal{T}_N)$ with $s > \frac{3}{2}$ we define
 \begin{IEEEeqnarray*}{rCl}
 \| f \|_A^2 &\coloneqq& \sum_{\ell = 1}^N \| \nabla_x f \|_{[L^2(\tau_\ell)]^d}^2 + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \frac{\sigma}{\bar{h}_{k \ell}} \left\| \ljump f \rjump_{\Gamma_{k \ell}, x} \right\|_{[L^2(\Gamma_{k \ell})]^d}^2, \\
@@ -88,7 +88,7 @@ Alternatively, this has been proven in \cite[Lemma 4.16]{DiPietroErn}.
 \end{proof}
 \begin{lemma}
 \label{thm:aR-bounded}
-The bilinear form $a^R(\cdot, \cdot)$ is bounded, i.e.
+The bilinear form $a^R(\cdot, \cdot)$ defined by \cref{eq:aR-definition} is bounded, i.e.
 \[
 	|a^R(f, v_h)| \leq \| f \|_{A, R} \| v_h \|_{A, R}.
 \]
@@ -150,11 +150,14 @@ For $\sigma \geq 4 c_K$, with $c_K \coloneqq c_I^2 c_G c_{R_2}$, it holds that
 \end{proof}
 \begin{proposition}
 \label{thm:aR-lower-bound}
-The bilinear form $a^R(\cdot, \cdot)$ fulfills by definition
+The bilinear form $a^R(\cdot, \cdot)$ fulfills
 \[
-	a^R(f_h, f_h) = \alpha \| f_h \|_{L^2(\Sigma_R)}^2.
+	a^R(f_h, f_h) = \alpha \| f_h \|_{L^2(\Sigma_R)}^2 \quad \text{for all } f_h \in \Shp(\meshT_N).
 \]
 \end{proposition}
+\begin{proof}
+This follows immediately from the definition \cref{eq:aR-definition}.
+\end{proof}
 \begin{lemma}
 \label{thm:b-lower-bound-weak}
 The bilinear form $b(\cdot, \cdot)$ is bounded from below with
@@ -167,13 +170,17 @@ for all $f_h \in \Shp(\meshT_N)$.
 Refer to \cite[Lemma 2.2.11]{Neumueller}.
 \end{proof}
 Bringing \cref{thm:asip-lower-bound,thm:aR-lower-bound,thm:b-lower-bound-weak} together, we obtain
-\begin{equation}
-\label{eq:A-ellip-weak}
-\begin{IEEEeqnarraybox}[][c]{rCl}
-	A(f_h, f_h) &\geq& \frac{1}{2} \left[ \| f_h \|_A^2 + \| f_h \|_{A,R}^2 + \| f_h(0) \|_{L^2(\Omega)}^2 + \| f_h(T) \|_{L^2(\Omega)}^2 + \sum_{\Gamma_{k\ell} \in \intfI_N} \left\| \ljump f_h \rjump_{\Gamma_{k \ell}, t} \right\|^2 \right] \\
-	&\eqqcolon& \frac{1}{2} \lDGw f_h \rDGw^2.
-\end{IEEEeqnarraybox}
-\end{equation}
+\begin{theorem}
+\label{thm:A-ellip-weak}
+For all $f_h \in \Shp(\meshT_N)$ it holds that
+\begin{IEEEeqnarray*}{rCl}
+	A(f_h, f_h) &\geq& \frac{1}{2} \lDGw f_h \rDGw^2,
+\end{IEEEeqnarray*}
+where the seminorm $\lDGw \cdot \rDGw$ is defined as
+\begin{IEEEeqnarray*}{rCl}
+	\lDGw f_h \rDGw^2 &\coloneqq& \| f_h \|_A^2 + \| f_h \|_{A,R}^2 + \| f_h(0) \|_{L^2(\Omega)}^2 + \| f_h(T) \|_{L^2(\Omega)}^2 + \sum_{\Gamma_{k\ell} \in \intfI_N} \left\| \ljump f_h \rjump_{\Gamma_{k \ell}, t} \right\|^2.
+\end{IEEEeqnarray*}
+\end{theorem}
 Given that $\Shp(\meshT_N)$ has a finite dimension, we know that any linear operator is continuous and that all norms are equivalent. Furthermore, $\lDGw \cdot \rDGw$ is defined as the sum of norms, so we immediately know that it fulfills the triangle inequality and possesses absolute homogeneity.
 Hence, we know that $\lDGw \cdot \rDGw$ is a seminorm, and if we can prove that it separates points, it would be a norm on $\Shp(\meshT_N)$. One can easily see that it will separate points if $\Gamma_D$ has positive measure. In this case, \cref{thm:Necas-Babuska} will guarantee existence and uniqueness of a solution.
 
@@ -190,7 +197,7 @@ then $f_h = 0$ holds.
 \end{theorem}
 \begin{proof}
 Let $f_h \in \Shp(\meshT_N)$ be arbitrary.
-Due to \cref{eq:A-ellip-weak} and by choosing $v_h = f_h$ we have
+Due to \cref{thm:A-ellip-weak} and by choosing $v_h = f_h$ we have
 \[
 	0 = A(f_h, f_h) \geq \frac{1}{2} \lDGw f_h \rDGw^2,
 \]
@@ -209,17 +216,26 @@ Finally, the remaining terms of $\lDGw \cdot \rDGw$ give us
 	\item $f_h = 0$ on $\Omega \times \{ T \}$,
 	\item $\ljump f_h \rjump_{\Gamma_{k\ell}, t} = 0$ for all $\Gamma_{k\ell} \in \intfI_N$.
 \end{itemize}
-Therefore, we know that $f_h$ is continuous. Choosing $v_h = \frac{\partial f_h}{\partial t} \in S_h^{p-1}(\meshT_N) \subset \Shp(\meshT_N)$, and using \cref{eq:b-up-down-equal} for $b(\cdot, \cdot)$, we observe that
-\[
-	0 = A \left(f_h, \frac{\partial f_h}{\partial t}\right) = b\left(f_h,  \frac{\partial f_h}{\partial t}\right) = \sum_{\ell=1}^N \left\| \frac{\partial f_h}{\partial t} \right\|_{L^2(\tau_\ell)}^2,
-\]
-because $a^\sip(f_h, v_h)$ vanishes due to $f_h$ being continuous and $\nabla_x f_h = 0$, and $a^R(f_h, v_h)$ vanishes since $f_h$ vanishes on the boundary.
+Because $\ljump f_h \rjump_{\Gamma_{k\ell}, x}$ and $\ljump f_h \rjump_{\Gamma_{k\ell}, t}$ for all $\Gamma_{k\ell} \in \intfI_N$, we know that $f_h$ is continuous.
 
-Hence we know that $f_h$ is a continuous function with zero derivatives on $\meshT_N$ and zero boundary values, i.e.\ $f_h = 0$ has to hold.  
+Choosing $v_h = \frac{\partial f_h}{\partial t} \in S_h^{p-1}(\meshT_N) \subset \Shp(\meshT_N)$, we observe that
+\[
+	0 = A \left(f_h, \frac{\partial f_h}{\partial t}\right) = a^\sip \left(f_h,  \frac{\partial f_h}{\partial t}\right) + a^R \left(f_h,  \frac{\partial f_h}{\partial t}\right) + b\left(f_h,  \frac{\partial f_h}{\partial t}\right) = b\left(f_h,  \frac{\partial f_h}{\partial t}\right),
+\]
+because $a^\sip(f_h, v_h)$ vanishes due to $f_h$ being continuous and $\nabla_x f_h = 0$, and $a^R(f_h, v_h)$ vanishes since $f_h = 0$ on the boundary $\Sigma_R$ holds.
+
+Using \cref{eq:b-up-down-equal}, we furthermore conclude
+\[
+	0 = b\left(f_h,  \frac{\partial f_h}{\partial t}\right) = \sum_{\ell=1}^N \left\| \frac{\partial f_h}{\partial t} \right\|_{L^2(\tau_\ell)}^2,
+\]
+because $f_h = 0$ on $\Omega \times \{ 0 \}$ and $\ljump f_h \rjump_{\Gamma_{k\ell}, t}$ for all $\Gamma_{k\ell} \in \intfI_N$ imply that the other terms in \cref{eq:b-up-down-equal} vanish.
+
+Finally, we know that $f_h$ is a continuous function with zero derivatives on $\meshT_N$ and zero boundary values, i.e.\ $f_h = 0$ has to hold.  
 \end{proof}
 Summarizing \cref{thm:A-injective} and the previously made remarks, we obtain
 \begin{theorem}
-Let \cref{as:mesh-assumptions} hold. There exists a unique solution $f_h \in \Shp(\meshT_N)$ of \cref{eq:dg-discrete-form}.
+\label{thm:A-bijective}
+Let \cref{as:mesh-assumptions} hold and be $\sigma \geq 4 c_K$. There exists a unique solution $f_h \in \Shp(\meshT_N)$ of \cref{eq:dg-discrete-form}.
 \end{theorem}
 
 While \cref{thm:b-lower-bound-weak} was sufficient to prove existence and uniqueness of a solution, it will not suffice to prove a convergence result. With an $\inf$-$\sup$-condition (or an ellipticity estimate, which implies it) and boundedness, a convergence result could usually be shown, like \cite[3.7 Hilfssatz]{Braess}.
@@ -227,7 +243,7 @@ While \cref{thm:b-lower-bound-weak} was sufficient to prove existence and unique
 For such a result we will have to make a slightly stronger assumption on the mesh $\meshT_N$. In that case, we can prove via a special test function that we have an $\inf$-$\sup$-condition given and can prove convergence.
 
 Remembering the equivalent formulation of $b(\cdot, \cdot)$ given as \cref{eq:b-up-down-equal}, we observe that the first term is an integral between the time derivative of the function $f_h$ and $v_h$ itself.
-As of such, an approach is made where our special test function is element-wise defined as the product of the time derivative and a special, so called mesh function.
+As of such, an approach is made where our special test function is element-wise defined as the product of the time derivative and a special, so called mesh function, which acts as a linear, piecewise weight scale, see for example \cite{Neumueller}.
 \begin{definition}
 Let $\bar{h}$ be a piecewise linear function on $\meshT_N$, i.e.\ $\bar{h}|_{\tau_\ell} \in \polyP_1(\tau_\ell)$ for all $\tau_\ell \in \meshT_N$, with the property
 \[
@@ -235,14 +251,14 @@ Let $\bar{h}$ be a piecewise linear function on $\meshT_N$, i.e.\ $\bar{h}|_{\ta
 \]
 and $c_g \geq 1$. Then $\bar{h}$ is called a mesh function.
 \end{definition}
-Given an $f_h \in \Shp(\meshT_N)$ and a mesh function $\bar{h}$ we define the function $w_h \in \Shp(\meshT_N)$ as
+With this definition, we can follow \cite{Neumueller} and introduce for a given an $f_h \in \Shp(\meshT_N)$ and a given mesh function $\bar{h}$, the function $w_h \in \Shp(\meshT_N)$ as
 \begin{equation}
 \label{eq:wh}
 	w_h|_{\tau_\ell} \coloneqq \bar{h}|_{\tau_\ell} \partial_t f_h|_{\tau_\ell} \in \polyP^p(\tau_\ell)
 \end{equation}
 for all $\tau_\ell \in \meshT_N$. Obviously, $w_h \in \Shp(\meshT_N)$ holds by definition.
 
-Our approach will be to choose for a given mesh function and a given $f_h \in \Shp(\meshT_N)$ the test function
+Our approach will be to choose for a given mesh function $\bar{h}$ and a given $f_h \in \Shp(\meshT_N)$ the test function
 \[
 	v_h = f_h + \delta w_h,
 \]
@@ -253,22 +269,31 @@ More specifically, we'll use the following mesh function, which is constant on $
 \label{eq:mesh-func}
 	\bar{h} = \frac{1}{N} \sum_{\ell = 1}^N h_\ell.
 \end{equation}
-Assuming that $\meshT_N$ does not only fulfill \cref{as:mesh-assumptions}, but is also quasi-uniform, i.e.\ there is a $c_q \geq 1$ and a $h > 0$ such that
+
+\begin{definition}
+If there is a $c_q \geq 1$ and a $h > 0$ such that
 \[
 	c_q^{-1} h \leq h_\ell \leq c_q h \quad \text{for all } \tau_\ell \in \meshT_N,
 \]
-one can see that \cref{eq:mesh-func} is indeed a mesh function:
+we call $\meshT_N$ quasi-uniform.
+\end{definition}
+Assuming that $\meshT_N$ does not only fulfill \cref{as:mesh-assumptions}, but is also quasi-uniform, i.e.\ one can see that \cref{eq:mesh-func} is indeed a mesh function:
 \[
 	\bar{h} = \frac{1}{N} \sum_{k = 1}^N h_k \leq \frac{1}{N} \sum_{k=1}^N c_q h \leq c_q^2 \frac{1}{N} \sum_{k=1}^N c_q^{-1} h \leq c_q^2 \frac{1}{N} \sum_{k=1}^N h_\ell = c_q^2 h_\ell.
 \]
 Analogously, one obtains $c_q^{-2} h_\ell \leq \bar{h}$. Hence, $\bar{h}$ is a mesh function for $c_g = c_q^2$.
-Due to this, we assume in the following that $\meshT_N$ is always quasi-uniform.
+Due to this, we make the following assumption:
+\begin{assumption}
+From here on, we assume that $\meshT_N$ is always quasi-uniform.
+\end{assumption}
+With this mesh function, one can procure stability results, which we introduce in the following.
+Here, we cite \cite{Neumueller}, who followed ideas presented in \cite{EggerSchoberl} in order to prove these results.
 \begin{lemma}
 \label{thm:wh-b-bound}
 For $f_h \in \Shp(\meshT_N)$ let $w_h \in \Shp(\meshT_N)$ be defined by \cref{eq:mesh-func}.
 Then for $\delta > 0$ there exists a $c_1^b(\delta) \coloneqq \frac{1}{2} \min \left\{ 1, \delta c_g^{-1}, 1 - 2 c_I^2 c_{R_2} c_g^3 \delta \right\} > 0$ independent of $f_h$ such that
 \[
-	b(f_h, f_h + \delta w_h) \geq c_1^b \| f_h \|_B^2.
+	b(f_h, f_h + \delta w_h) \geq c_1^b(\delta) \| f_h \|_B^2.
 \]
 Moreover, there exist a $c_I^b > 0$ such that
 \[
@@ -276,11 +301,11 @@ Moreover, there exist a $c_I^b > 0$ such that
 \]
 \end{lemma}
 \begin{proof}
-\cite[Lemma 2.2.14]{Neumueller} and \cite[Lemma 2.2.15]{Neumueller}.
+Refer to \cite[Lemma 2.2.14]{Neumueller} and \cite[Lemma 2.2.15]{Neumueller}.
 \end{proof}
 \begin{lemma}
 \label{thm:wh-A-bound}
-For $f_h \in \Shp(\meshT_N)$ let $w_h \in \Shp(\meshT_N)$ be defined by \cref{eq:mesh-func}. Then there exists a $c_I^a > 0$ such that
+For $f_h \in \Shp(\meshT_N)$ let $w_h \in \Shp(\meshT_N)$ be defined by \cref{eq:mesh-func}. Then there exists a constant $c_I^a > 0$ such that
 \[
 	\| w_h \|_A \leq c_I^a \| f_h \|_A.
 \]
@@ -290,22 +315,22 @@ See \cite[Lemma 2.2.19]{Neumueller}.
 \end{proof}
 \begin{lemma}
 \label{thm:wh-aR-bound}
-For $f_h \in \Shp(\meshT_N)$ let $w_h \in \Shp(\meshT_N)$ be defined by \cref{eq:mesh-func}. Then there exists a $c_I^{a, R} > 0$ such that
+For $f_h \in \Shp(\meshT_N)$ let $w_h \in \Shp(\meshT_N)$ be defined by \cref{eq:mesh-func}. Then there exists a constant $c_I^{a, R} > 0$ such that
 \[
 	\| w_h \|_{A, R} \leq c_I^{a, R} \| f_h \|_{A, R}.
 \]
 \end{lemma}
 \begin{proof}
-We first show $\| w_h \|_{L^2(\Sigma_R)} \leq c \| f_h \|_{L^2(\Sigma_R)}^2$:
+We first show $\| w_h \|_{L^2(\Sigma_R)}^2 \leq c \| f_h \|_{L^2(\Sigma_R)}^2$:
 \begin{IEEEeqnarray*}{rCl}
 	\| w_h \|_{L^2(\Sigma_R)}^2 &=& \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R \neq \emptyset}} \| w_h \|_{L^2(\partial \tau_\ell \cap \Sigma_R)}^2 \\
-	&=& \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R \neq \emptyset}} \| \bar{h} \partial_t f_h \|_{L^2(\partial \tau_\ell \cap \Sigma_R)}^2 \\
+	&=& \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R \neq \emptyset}} \| \bar{h} \partial_t f_h \|_{L^2(\partial \tau_\ell \cap \Sigma_R)}^2. \\
 \noalign{\noindent By using that $\bar{h}$ as defined in \cref{eq:mesh-func} is constant:\vspace{\jot}}
-	&=& \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R \neq \emptyset}} \bar{h}^2 \| \partial_t f_h \|_{L^2(\partial \tau_\ell \cap \Sigma_R)}^2 \\
+	\| w_h \|_{L^2(\Sigma_R)}^2  &=& \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R \neq \emptyset}} \bar{h}^2 \| \partial_t f_h \|_{L^2(\partial \tau_\ell \cap \Sigma_R)}^2. \\
 \noalign{\noindent Since $\bar{h}$ was a mesh function, we can estimate this as follows:\vspace{\jot}}
-	&\leq& c_g^2 \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R \neq \emptyset}} h_\ell^2 \| \partial_t f_h \|_{L^2(\partial \tau_\ell \cap \Sigma_R)}^2 \\
-\noalign{\noindent The last statement of \cref{thm:inverse-ineq} transforms this into:\vspace{\jot}}
-	&\leq& c_g^2 c_I^2 \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R \neq \emptyset}} h_\ell^2 h_\ell^{-2} \| f_h \|_{L^2(\partial \tau_\ell \cap \Sigma_R)}^2 \\
+	\| w_h \|_{L^2(\Sigma_R)}^2 &\leq& c_g^2 \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R \neq \emptyset}} h_\ell^2 \| \partial_t f_h \|_{L^2(\partial \tau_\ell \cap \Sigma_R)}^2. \\
+\noalign{\noindent The inverse inequality of \cref{thm:inverse-ineq} transforms this into:\vspace{\jot}}
+	\| w_h \|_{L^2(\Sigma_R)}^2 &\leq& c_g^2 c_I^2 \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R \neq \emptyset}} h_\ell^2 h_\ell^{-2} \| f_h \|_{L^2(\partial \tau_\ell \cap \Sigma_R)}^2 \\
 	&=& c_g^2 c_I^2 \| f_h \|_{L^2(\Sigma_R)}^2.
 \end{IEEEeqnarray*}
 Therefore we have
@@ -315,6 +340,30 @@ Therefore we have
 and as of such have proven the statement for a choice of $c_I^{a, R} = c_g c_I$.
 \end{proof}
 As a next step, we will combine all previous estimates to obtain stability and boundedness estimates for the bilinear form $A(\cdot, \cdot)$ itself.
+However, we first need the following result for the proof:
+\begin{lemma}
+\label{thm:Astar-to-A-estimate}
+For a function $f_h \in \Shp(\meshT_N)$, the norm $\| f_h \|_{A, *}$ can be estimated as follows:
+\[
+	\| f_h \|_{A, *} \leq \sqrt{1 + c_K} \| f_h \|_A,
+\]
+with the constant $c_K$ as introduced before.
+\end{lemma}
+\begin{proof}
+In \cite[Lemma 2.2.6]{Neumueller} it is being shown that
+\[
+\sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \bar{h}_{k \ell} \left\| \lavg \nabla_x f_h \ravg_{\Gamma_{k \ell}} \right\|_{[L^2(\Gamma_{k \ell})]^d}^2 \leq c_K \sum_{\ell=1}^N \left\| \nabla_x f_h \right\|_{[L^2(\tau_\ell)]^d}^2,
+\]
+for all $f_h \in \Shp(\meshT_N)$ and $c_K = c_K(c_I, c_G, c_{R_2})$.
+
+Therefore
+\begin{IEEEeqnarray*}{rCl}
+	\| f_h \|_{A, *}^2 &=& \| f \|_A^2 + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \bar{h}_{k \ell} \left\| \lavg \nabla_x f \ravg_{\Gamma_{k \ell}} \right\|_{[L^2(\Gamma_{k \ell})]^d}^2 \\
+	&\leq& \| f_h \|_A^2 + c_K \sum_{\ell=1}^N \left\| \nabla_x f_h \right\|_{[L^2(\tau_\ell)]^d}^2 \\
+	&\leq& \| f_h \|_A^2 + c_K \| f_h \|_A^2.
+\end{IEEEeqnarray*}
+Hence, we conclude the statement.
+\end{proof}
 \begin{theorem}
 \label{thm:Astab-est}
 Let $\meshT_N$ be a quasi-uniform decomposition and let $\sigma \geq 4 c_K$ then the following stability estimate holds:
@@ -325,10 +374,10 @@ Let $\meshT_N$ be a quasi-uniform decomposition and let $\sigma \geq 4 c_K$ then
 \begin{proof}
 Let a function $f_h \in \Shp(\meshT_N)$ be given.
 The case $f_h = 0$ is trivial, so we assume $f_h \neq 0$ in the following.
-We use the specific test function $v_h = u_h + \delta w_h$, where $\delta > 0$ and $w_h$ is stemming from the mesh function $\bar{h}$ defined in \cref{eq:mesh-func}.
+We use the specific test function $v_h = f_h + \delta w_h$, where $\delta > 0$ and $w_h$ is stemming from the mesh function $\bar{h}$ defined in \cref{eq:mesh-func}.
 Because $f_h \neq 0$, we can assume that $\delta$ is small enough so that $v_h \neq 0$. Furthermore $v_h \in \Shp(\meshT_N)$ holds and we have
 \begin{IEEEeqnarray*}{rCl}
-	\sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(f_h, v_h)}{\lDG v_h \rDG} &\geq& \frac{A(f_h, f_h + \delta w_h)}{\lDG u_h + \delta w_h \rDG} \\
+	\sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(f_h, v_h)}{\lDG v_h \rDG} &\geq& \frac{A(f_h, f_h + \delta w_h)}{\lDG f_h + \delta w_h \rDG} \\
 	&=& \frac{a^\sip(f_h, f_h + \delta w_h) + a^R(f_h, f_h + \delta w_h) + b(f_h, f_h + \delta w_h)}{\lDG f_h + \delta w_h \rDG}
 \end{IEEEeqnarray*}
 By applying estimates from the previous \cref{thm:asip-lower-bound,thm:asip-bounded}, we obtain
@@ -337,20 +386,21 @@ By applying estimates from the previous \cref{thm:asip-lower-bound,thm:asip-boun
 	&\geq& \frac{1}{2} \| f_h \|_A^2 - c_2^a \delta \| f_h \|_{A,*} \| w_h \|_A
 \end{IEEEeqnarray*}
 Using \cref{thm:wh-A-bound}, one has $\| w_h \|_A \leq c_I^a \| f_h \|_A$.
-Moreover, it can be shown that under \cref{as:mesh-assumptions} it holds that $\| f_h \|_{A,*} \leq \sqrt{1 + c_K}\| f_h \|_A$, see \cite[Lemma 2.2.6]{Neumueller}. Overall we obtain for this term
+
+Overall we obtain for this term
 \begin{equation}
 \label{eq:Astab-asip-est}
 \begin{IEEEeqnarraybox}[][c]{rCl}
 	a^\sip(f_h, f_h + \delta w_h) &\geq& \frac{1}{2} \| f_h \|_A^2 - c_2^a \delta \| f_h \|_{A,*} \| w_h \|_A \\
-	&\geq& \frac{1}{2} \| f_h \|_A^2 - c_2^a \sqrt{1 + c_K} c_I^a \delta \| f_h \|_{A}^2 \\
+	&\overset{\text{\cref{thm:Astar-to-A-estimate}}}{\geq}& \frac{1}{2} \| f_h \|_A^2 - c_2^a \sqrt{1 + c_K} c_I^a \delta \| f_h \|_{A}^2 \\
 	&=& \left( \frac{1}{2} - c_2^a \sqrt{1 + c_K} c_I^a \delta \right) \| f_h \|_{A}^2
 \end{IEEEeqnarraybox}
 \end{equation}
 For the second term we can estimate:
 \begin{IEEEeqnarray*}{rCl}
 	a^R(f_h, f_h + \delta w_h) &=& a^R(f_h, f_h) + \delta a^R(f_h, w_h) \\
-	&\geq& \| f_h \|_{A, R}^2 - \delta \| f_h \|_{A, R} \| w_h \|_{A, R} \\
-	&\geq& \left( 1 - \delta c_I^{a, R} \right) \| f_h \|_{A, R}^2
+	&\overset{\text{\cref{thm:aR-bounded,thm:aR-lower-bound}}}{\geq}& \| f_h \|_{A, R}^2 - \delta \| f_h \|_{A, R} \| w_h \|_{A, R} \\
+	&\overset{\text{\cref{thm:wh-aR-bound}}}{\geq}& \left( 1 - \delta c_I^{a, R} \right) \| f_h \|_{A, R}^2
 \end{IEEEeqnarray*}
 Finally, in order to treat the last term, we can use \cref{thm:wh-b-bound}. Overall we obtain
 \begin{IEEEeqnarray*}{rCl}
@@ -368,7 +418,7 @@ we obtain
 	A(f_h, v_h) \geq \min \{ 1, \delta^* c_g^{-1} \} \lDG f_h \rDG^2
 \]
 
-Additionally, we also have to estimate the denominator.
+Additionally, we also have to estimate the denominator. For this we employ \cref{thm:wh-A-bound,thm:wh-b-bound,thm:wh-aR-bound}:
 \begin{IEEEeqnarray*}{rCl}
 	\lDG f_h + \delta w_h \rDG &=& \| f_h + \delta w_h \|_A + \| f_h + \delta w_h \|_{A, R} + \| f_h + \delta w_h \|_B \\
 	&\leq& \lDG f_h \rDG + \delta ( \| w_h \|_A + \| w_h \|_{A, R} + \| w_h \|_B ) \\
@@ -378,7 +428,7 @@ Additionally, we also have to estimate the denominator.
 \end{IEEEeqnarray*}
 Combining the two inequalities:
 \begin{IEEEeqnarray*}{rCl}
-	\sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(f_h, v_h)}{\lDG v_h \rDG} &\geq& \frac{A(f_h, f_h + \delta w_h)}{\lDG u_h + \delta w_h \rDG} \\
+	\sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(f_h, v_h)}{\lDG v_h \rDG} &\geq& \frac{A(f_h, f_h + \delta w_h)}{\lDG f_h + \delta w_h \rDG} \\
 	&\geq& \frac{ \min\{ 1, \delta^* c_g^{-1} \} }{2 ( 1 + \delta^* \max\{c_I^a, c_I^{a, R}, c_I^b\} )} \lDG f_h \rDG \\
 	&=& c_S^A \lDG f_h \rDG.
 \end{IEEEeqnarray*}
@@ -396,18 +446,18 @@ Then the following error estimate holds:
 \begin{proof}
 From \cref{thm:Astab-est}, we conclude for any discrete function $z_h \in \Shp(\meshT_N)$:
 \begin{IEEEeqnarray*}{rCl}
-	c_S^A \lDG z_h - f_h \rDG &\leq& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(z_h - f_h, v_h)}{\lDG v_h \rDG} \\
+	c_S^A \lDG z_h - f_h \rDG &\leq& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(z_h - f_h, v_h)}{\lDG v_h \rDG}. \\
 \noalign{\noindent Using \cref{eq:dg-Galerkin-orthogonality}, we can insert the exact solution: \vspace{\jot}}
-	&=& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(f - f_h - (f - z_h), v_h)}{\lDG v_h \rDG} \\
-	&=& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(z_h - f, v_h)}{\lDG v_h \rDG} \\
+	c_S^A \lDG z_h - f_h \rDG &=& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(f - f_h - (f - z_h), v_h)}{\lDG v_h \rDG} \\
+	&\overset{\text{\cref{eq:dg-Galerkin-orthogonality}}}{=}& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{A(z_h - f, v_h)}{\lDG v_h \rDG}. \\
 \noalign{\noindent Using the boundedness estimate \cref{thm:A-bounded}: \vspace{\jot}}
-	&\leq& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{c_2^A \lDGs z_h - f \rDGs \lDG v_h \rDG}{\lDG v_h \rDG} \\
+	c_S^A \lDG z_h - f_h \rDG &\leq& \sup_{0 \neq v_h \in \Shp(\meshT_N)} \frac{c_2^A \lDGs z_h - f \rDGs \lDG v_h \rDG}{\lDG v_h \rDG} \\
 	&=& \sup_{0 \neq v_h \in \Shp(\meshT_N)} c_2^A \lDGs z_h - f \rDGs \\
 	&=& c_2^A \lDGs f - z_h \rDGs.
 \end{IEEEeqnarray*}
 Using the triangle inequality we obtain:
 \begin{IEEEeqnarray*}{rCl}
-	\lDG f - f_h \rDG &\leq& \lDG f - z_h \lDG + \lDG z_h - u_h \rDG \\
+	\lDG f - f_h \rDG &\leq& \lDG f - z_h \lDG + \lDG z_h - f_h \rDG \\
 	&\leq& \lDG f - z_h \lDG + \frac{c_2^A}{c_S^A} \lDGs f - z_h \rDGs.
 \end{IEEEeqnarray*}
 This is exactly the statement we aimed to prove.
@@ -424,37 +474,39 @@ By $Q_\ell f \in \polyP^p(\tau_\ell)$ we denote the local $L^2$-projection on $\
 Then the following error estimates for the local $L^2$-projection hold:
 For $s \in \N_0$ and $0 \leq \mu \leq s$ there holds
 \[
-	| f - Q_\ell f |_{H^\mu(\tau_\ell)} \leq ch_\ell^{\min\{s, p+1\} - \mu} |u|_{H^s(\tau_\ell)}.
+	| f - Q_\ell f |_{H^\mu(\tau_\ell)} \leq ch_\ell^{\min\{s, p+1\} - \mu} |f|_{H^s(\tau_\ell)}.
 \]
 For $s \in \N$ there holds the $L^2$-error estimate on the boundary
 \[
-	\| f - Q_\ell f \|_{L^2(\partial \tau_\ell)} \leq ch_\ell^{\min\{s, p+1\} - \frac{1}{2}} |u|_{H^s(\tau_\ell)}.
+	\| f - Q_\ell f \|_{L^2(\partial \tau_\ell)} \leq ch_\ell^{\min\{s, p+1\} - \frac{1}{2}} |f|_{H^s(\tau_\ell)}.
 \]
 For $s \in \N$ with $s \geq 2$ the $L^2$-error on the boundary $\partial \tau_\ell$ for the gradient can be estimated by
 \[
-	\| \nabla_x (f - Q_\ell f) \|_{[L^2(\tau_\ell)]^d} \leq ch_\ell^{\min\{s, p+1\} - \frac{3}{2}} |u|_{H^s(\tau_\ell)}.
+	\| \nabla_x (f - Q_\ell f) \|_{[L^2(\partial \tau_\ell)]^d} \leq ch_\ell^{\min\{s, p+1\} - \frac{3}{2}} |f|_{H^s(\tau_\ell)}.
 \]
 \end{lemma}
 \begin{proof}
-The Lemma has been proven in \cite{DiPietroErn}.
+The Lemma has been proven in \cite[Lemma 1.58 and Lemma 1.59]{DiPietroErn}.
 \end{proof}
 We define the global $L^2$-projection $Q_{\meshT_N} f \in \Shp(\meshT_N)$ such that
 \[
 	Q_{\meshT_N} f|_{\tau_\ell} \coloneqq Q_\ell f \quad \text{for all } \tau_\ell \in \meshT_N.
 \]
 \begin{lemma}
+\label{thm:L2proj-A-error}
 For $f \in H^s(\meshT_N)$ with $s \geq 1$ the following error estimate in the energy norm $\| \cdot \|_A$ holds
 \[
-	\| f - Q_{\meshT_N} f \|_A \leq c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} -2 } |u|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}.
+	\| f - Q_{\meshT_N} f \|_A \leq c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} -2 } |f|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}.
 \]
 \end{lemma}
 \begin{proof}
 See \cite[Lemma 2.2.24]{Neumueller}.
 \end{proof}
 \begin{lemma}
+\label{thm:L2proj-AR-error}
 For $f \in H^s(\meshT_N)$ with $s \geq 1$ the following error estimate in the energy norm $\| \cdot \|_{A,R}$ holds
 \[
-	\| f - Q_{\meshT_N} f \|_{A,R} \leq \sqrt{\alpha} c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1} |u|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}.
+	\| f - Q_{\meshT_N} f \|_{A,R} \leq \sqrt{\alpha} c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1} |f|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}.
 \]
 \end{lemma}
 \begin{proof}
@@ -465,27 +517,29 @@ Let $f \in H^s(\meshT_N)$ with $s \geq 1$.
 	\| f - Q_{\meshT_N} f \|_{L^2(\Sigma_R)}^2 &=& \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R}} \| f - Q_{\meshT_N} f \|_{L^2(\partial \tau_\ell \cap \Sigma_R)} \\
 	&\leq& \sum_{\ell=1}^N \| f - Q_{\meshT_N} f \|_{L^2(\partial \tau_\ell)}^2 \\
 \noalign{\noindent Applying \cref{thm:L2-approximation-props} we estimate this as}
-	&\leq& c^2 \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1} |u|^2_{H^s(\tau_\ell)}.
+	&\leq& c^2 \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1} |f|^2_{H^s(\tau_\ell)}.
 \end{IEEEeqnarray*}
 By definition of $\| \cdot \|_{A,R}$:
 \[
-	\| f - Q_{\meshT_N} f \|_{A,R}^2 \leq \alpha c^2 \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1} |u|^2_{H^s(\tau_\ell)}.
+	\| f - Q_{\meshT_N} f \|_{A,R}^2 \leq \alpha c^2 \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1} |f|^2_{H^s(\tau_\ell)}.
 \]
 \end{proof}
 \begin{lemma}
+\label{thm:L2proj-Astar-error}
 For $f \in H^s(\meshT_N)$ with $s \geq 2$ the following error estimate in the energy norm $\| \cdot \|_{A,*}$ holds
 \[
-	\| f - Q_{\meshT_N} f \|_{A,*} \leq c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} -2 } |u|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}.
+	\| f - Q_{\meshT_N} f \|_{A,*} \leq c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} -2 } |f|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}.
 \]
 \end{lemma}
 \begin{proof}
 See \cite[Lemma 2.2.25]{Neumueller}.
 \end{proof}
 \begin{lemma}
+\label{thm:L2proj-B-error}
 For $f \in H^s(\meshT_N)$ with $s \geq 1$ the following error estimate in the energy norms $\| \cdot \|_{B}$ and $\| \cdot \|_{B,*}$ holds
 \begin{IEEEeqnarray*}{rCl}
-	\| f - Q_{\meshT_N} f \|_{B} &\leq& c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1 } |u|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}, \\
-	\| f - Q_{\meshT_N} f \|_{B,*} &\leq& c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1 } |u|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}.
+	\| f - Q_{\meshT_N} f \|_{B} &\leq& c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1 } |f|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}, \\
+	\| f - Q_{\meshT_N} f \|_{B,*} &\leq& c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1 } |f|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}.
 \end{IEEEeqnarray*}
 \end{lemma}
 \begin{proof}
@@ -496,21 +550,40 @@ See \cite[Lemma 2.2.27]{Neumueller}.
 Let $\meshT_N$ be a quasi-uniform decomposition and let $f \in H^s(\meshT_N)$, $s \geq 2$, be the exact solution of \cref{eq:dg-model-prob} and for $\sigma \geq 4 c_K$ let $f_h \in \Shp(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-form}.
 Then the following error estimate holds
 \[
-	\lDG f - f_h \rDG \leq c \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |u|_{H^s(\meshT_N)}.
+	\lDG f - f_h \rDG \leq c \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |f|_{H^s(\meshT_N)}.
 \]
 \end{theorem}
 \begin{proof}
 We apply \cref{thm:A-convergence-abstract} and use the $L^2$-projection $Q_{\meshT_N} u \in \Shp(\meshT_N)$ to obtain:
 \begin{IEEEeqnarray*}{rCl}
 	\lDG f - f_h \rDG &\leq& \inf_{z_h \in \Shp(\meshT_N)} \left[ \lDG f - z_h \rDG + \frac{c_2^A}{c_S^A} \lDGs f - z_h \rDGs \right] \\
-	&\leq& \lDG f - Q_{\meshT_N} f \rDG + \frac{c_2^A}{c_S^A} \lDGs f - Q_{\meshT_N} f \rDGs \\
-	&=& \left[ \| f - Q_{\meshT_N} f \|_A^2 + \| f - Q_{\meshT_N} f \|_{A, R}^2 + \| f - Q_{\meshT_N} f \|_B^2 \right]^\frac{1}{2} \\
+	&\leq& \lDG f - Q_{\meshT_N} f \rDG + \frac{c_2^A}{c_S^A} \lDGs f - Q_{\meshT_N} f \rDGs. \\
+\noalign{\noindent Using the previously derived results \cref{thm:L2proj-A-error,thm:L2proj-AR-error,thm:L2proj-Astar-error,thm:L2proj-B-error}, we obtain:}
+	\lDG f - f_h \rDG &=& \left[ \| f - Q_{\meshT_N} f \|_A^2 + \| f - Q_{\meshT_N} f \|_{A, R}^2 + \| f - Q_{\meshT_N} f \|_B^2 \right]^\frac{1}{2} \\
 	&& \quad {} + \frac{c_2^A}{c_S^A} \left[ \| f - Q_{\meshT_N} f \|_{A,*}^2 + \| f - Q_{\meshT_N} f \|_{A, R}^2 + \| f - Q_{\meshT_N} f \|_{B,*}^2 \right]^\frac{1}{2} \\
 	&\leq& c \max\{ 1, \alpha \} \left(1 + \frac{c_2^A}{c_S^A} \right)\left[ \sum_{\ell=1}^N (1 + h_\ell) h_\ell^{2 \min \{ s, p+ 1 \} - 2 } |f|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2} \\
-	&\leq& c \max\{ 1, \alpha \} \left(1 + \frac{c_2^A}{c_S^A} \right)\left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 2 } |f|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2} \\
+	&\leq& c \max\{ 1, \alpha \} \left(1 + \frac{c_2^A}{c_S^A} \right)\left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 2 } |f|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}. \\
 \noalign{\noindent Exploiting the quasi-uniform property of $\meshT_N$, we obtain}
-	&\leq& c c_g \max\{ 1, \alpha \} \left(1 + \frac{c_2^A}{c_S^A} \right) h^{\min \{ s, p+1 \} - 1 } |f|_{H^s(\meshT_N)}.
+	\lDG f - f_h \rDG &\leq& c c_g \max\{ 1, \alpha \} \left(1 + \frac{c_2^A}{c_S^A} \right) h^{\min \{ s, p+1 \} - 1 } |f|_{H^s(\meshT_N)}.
 \end{IEEEeqnarray*}
 This proves the convergence result we were looking for.
 \end{proof}
+\begin{remark}
+Unlike all the other estimates needed in the proof of \cref{thm:dg-convergence}, the \cref{thm:L2proj-Astar-error} needs $s \geq 2$ and therefore increases the requirements of the theorem to $s \geq 2$. The reason why $s \geq 2$ is needed in order to prove \cref{thm:L2proj-Astar-error} is that the last estimate of \cref{thm:L2-approximation-props} is needed for estimating the term
+\[
+	\sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \bar{h}_{k \ell} \left\| \lavg \nabla_x (f - Q_{\meshT_N} f) \ravg_{\Gamma_{k \ell}} \right\|_{[L^2(\Gamma_{k \ell})]^d}^2
+\]
+in the norm $\| f - Q_{\meshT_N} f \|_{A,*}^2$.
+
+One might think that it would suffice to have $H^2$ ``only in space direction'' in order for the estimate of \cref{thm:L2-approximation-props} to hold, i.e.\ in the terms of \cref{def:Bochner-space}, that $f \in L^2(0, T; H^2(\Omega)) \cap H^1(0, T; L^2(\Omega))$ holds.
+However, this does not seem to be the case.
+In order to prove the estimate of the gradient on the interfaces, one needs the continuous trace inequality on the elements, see \cite[Lemma 1.49]{DiPietroErn} and subsequently applies the estimate for $|f - Q_\ell f|_{H^\mu(\tau_\ell)}$ for $\mu \geq 2$.
+Overall, this approach does not seem to be portable to a mixed regularity setup, as the trace inequality used requires an estimation of the term $\| \nabla ( \nabla_x (f - Q_\ell f) ) \|_{[L^2(\tau_\ell)]^d}$.
+Even if one could estimate this by $\| \nabla_x^2 (f - Q_\ell f) ) \|_{[L^2(\tau_\ell)]^d}$ using different techniques, estimating that term would likely prove difficult as well, because the proof of \cref{thm:L2-approximation-props} is classically performed by estimating them against polynomial approximations that require $f \in H^2(\meshT_N)$ still.
+
+In some sense, this poses a problem: There exists a variety of results for situations where an improved regularity of $f \in L^2(0, T; H^2(\Omega)) \cap H^1(0, T; L^2(\Omega))$ holds for the exact solution, for example if $\Omega$ is polynomial and convex, compare for example \cite[7.1.3 Regularity]{Evans}.
+However, a result of $f \in H^2(0, T; L^2(\Omega))$ is difficult to obtain under a generic setup.
+
+The regularity assumption $f \in H^s(\meshT_N)$, $s \geq 2$ can be relaxed a bit nonetheless: It suffices to ask for $f \in W_p^2(\meshT_N)$ with $p \in ( \frac{2d}{d+2}, 2 ]$, see \cite[4.2.5 Analysis for Low-Regularity Solutions]{DiPietroErn}, as originally presented in \cite{Wihler} for two space dimensions and in \cite{DiPietroErn-Low} for any space dimension.
+\end{remark}
 \end{document}

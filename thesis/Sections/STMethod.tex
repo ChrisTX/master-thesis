@@ -20,7 +20,7 @@ f(x, 0) &=& f_0(x) & \text{for } (x, t) \in \Omega.
 \end{equation}
 Note that by choosing $g_I$ and $g_R$ appropriately, we can cover both, inner and boundary heat sources.
 \begin{remark}
-One could extend this method to include a mixture of Neumann and Robin boundary conditions. However, that setting is not useful for optimal control problems and we already cover Neumann boundary conditions as discussed in \cite{Neumueller} if we chose $\alpha = 0$.
+One could directly extend this method to include a mixture of Neumann and Robin boundary conditions on different parts of the boundary. However as we will see, that setting is not useful for optimal control problems and by choosing $\alpha = 0$, we already cover Neumann boundary conditions as discussed in \cite{Neumueller}. Therefore, we do not cover this setting here, in order to simplify the notation.
 \end{remark}
 
 Following the proceedings of \cite[Chapter 2]{Neumueller}, we can derive a space-time discontinuous Galerkin method for this problem.
@@ -29,6 +29,7 @@ In order to arrive at a discretization, we make an approach of decomposing the s
 \[
 	\bar{Q} = \bar{\meshT}_N \coloneqq \bigcup_{\ell=1}^N \bar{\tau}_\ell.
 \]
+By this definition, $Q$ is a polygonally-bounded domain.
 For two neighboring elements $\tau_k, \tau_\ell \in \meshT_N$, we define the interior facet $\Gamma_{k \ell}$ as
 \[
 	\Gamma_{k \ell} \coloneqq \bar{\tau}_k \cap \bar{\tau}_\ell
@@ -86,14 +87,12 @@ In order to obtain a discontinuous Galerkin formulation in this space, we multip
 We begin by working with the second term containing the Laplace operator.
 As before, we apply Green's first identity to deal with it and make use of the given boundary conditions
 \begin{IEEEeqnarray*}{rCl}
-	- \iint_Q \lapl f v \dd x \dd t &=& \iint_Q \nabla f \nabla v \dd x \dd t - \iint_{\Sigma} (\nabla f v) \cdot \nu \dd s(x) \dd t \\
-	&=& \iint_Q \nabla f \nabla v \dd x \dd t - \iint_{\Sigma_R} \left(-\alpha f + g_R \right) v \dd s(x) \dd t \\
-	&=& \iint_Q \nabla f \nabla v \dd x \dd t + \alpha \iint_{\Sigma_R} f v \dd s(x) \dd t - \iint_{\Sigma_R} g_R v \dd s(x) \dd t
+	- \iint_Q \lapl f v \dd x \dd t &=& \iint_Q \nabla f \cdot \nabla v \dd x \dd t - \iint_{\Sigma} (\nabla f v) \cdot \nu \dd s(x) \dd t \\
+	&=& \iint_Q \nabla f \cdot \nabla v \dd x \dd t - \iint_{\Sigma_R} \left(-\alpha f + g_R \right) v \dd s(x) \dd t \\
+	&=& \iint_Q \nabla f \cdot \nabla v \dd x \dd t + \alpha \iint_{\Sigma_R} f v \dd s(x) \dd t - \iint_{\Sigma_R} g_R v \dd s(x) \dd t
 \end{IEEEeqnarray*}
 Here, we used that $v$ is zero on the Dirichlet boundary, so that the term vanishes.
-
-Exploiting the simplex decomposition, we know that the boundary $\Sigma_R$ can be decomposed into triangles, each belonging to exactly one element of $\meshT_N$. On each of those triangles, functions of our ansatz space are polynomial and therefore in particular continuous. The remainder of the $\Sigma_R$ has zero measure and therefore no effect on integration.
-Alas, it's not necessary to treat these boundary terms separately. The last term would be added to the right hand side of a discontinuous Galerkin equation system.
+Moreover, the last term can be added to the right hand side of the equation system.
 
 In order to obtain an approach for the remaining term,
 \[
@@ -106,14 +105,17 @@ we use the so called ``symmetric interior penalty'' method, see \cite[Chapter 4.
 	&& {} - \sum_{\Gamma_{k\ell} \in \intfI_N} \iint_{\Gamma_{k \ell}} \ljump f_h \rjump_{\Gamma_{k \ell}, x} (x, t) \lavg \nabla_x v_h \ravg_{\Gamma_{k \ell}} (x, t) \dd s(x) \dd t \\
 	&& {} + \sum_{\Gamma_{k \ell} \in \intfI_N} \frac{\sigma}{\bar{h}_{k\ell}} \iint_{\Gamma_{k \ell}} \ljump f_h \rjump_{\Gamma_{k \ell}, x} \cdot \ljump v_h \rjump_{\Gamma_{k \ell}, x} \dd s(x) \dd t.
 \end{IEEEeqnarray*}
-Here, $\bar{h}_{k \ell}$ is a local length scale associated with the interior facet $\Gamma_{k \ell}$. Several choices are possible, see \cite[Remark 4.6, p.\ 125]{DiPietroErn}. We will use the average of the longest edges of the elements $\tau_k$ and $\tau_\ell$, denoted by $h_k$ and $h_\ell$, respectively:
+Here, $\bar{h}_{k \ell}$ is a local length scale associated with the interior facet $\Gamma_{k \ell}$ and $\sigma > 0$ is a stability parameter. For $\bar{h}_{k \ell}$ there are several choices possible, see \cite[Remark 4.6, p.\ 125]{DiPietroErn}. We will use the average of the longest edges of the elements $\tau_k$ and $\tau_\ell$, denoted by $h_k$ and $h_\ell$, respectively:
 \[
 	\bar{h}_{k \ell} = \lavg h \ravg_{\Gamma_{k \ell}} \coloneqq \frac{1}{2} \left( h_k + h_\ell \right).
 \]
+The requirements that the choice of $\sigma > 0$ has to fulfill become obvious while proving stability of the bilinear form.
+
 For the term stemming from the Robin boundary we define:
-\[
+\begin{equation}
+\label{eq:aR-definition}
 	a^R(f_h, v_h) \coloneqq \alpha \iint_{\Sigma_R} f_h v_h \dd s(x) \dd t.
-\]
+\end{equation}
 With these definitions, we set
 \[
 	a(f_h, v_h) = a^\sip(f_h, v_h) + a^R(f_h, v_h).
@@ -131,9 +133,9 @@ As we have differentiability inside single elements of $\meshT_N$, we proceed el
 	&& {} + \sum_{\Gamma_{k \ell} \in \intfI_N} \iint_{\Gamma_{k \ell}} \ljump f (x, t) v(x, t) \rjump_{\Gamma_{k \ell}, t} \dd s(x) \dd t \\
 	&& {} + \int_{\Omega} f(x, T) v(x, T) \dd s(x) - \int_{\Omega} f(x, 0) v(x, 0) \dd s(x)
 \end{IEEEeqnarray*}
-Given the boundary condition $f(\cdot, 0) = f_0(\cdot)$, we can add the term
+Given the initial condition $f(\cdot, 0) = f_0(\cdot)$, we can add the term
 \[
-	\int_{\Omega} f(x, t) v(x, t) \dd s(x) = \int_{\Omega} f_0(x) v(x, t) \dd s(x)
+	\int_{\Omega} f(x, 0) v(x, 0) \dd s(x) = \int_{\Omega} f_0(x) v(x, 0) \dd s(x)
 \]
 to the right-hand side. For continuous $f$ and $v$, the term
 \[
@@ -149,7 +151,7 @@ Thus, we use that for a \textit{continuous} function $f$ we would have the follo
 For elements of the \textit{discrete} function spaces this equality will not hold, but it will penalize jumps in a way we desire.
 Overall, obtain a second bilinear form:
 \begin{IEEEeqnarray*}{rCl}
-	b(f_h, v_h) &\coloneqq& - \sum_{\ell = 1}^N \iint_{\tau_\ell} f_h(x, t) \frac{\partial v_h}{\partial t}(x, t) \dd x \dd t + \int_{\Omega} f_h(x, T) v_h(x, T) \dd s(x) \dd t \\
+	b(f_h, v_h) &\coloneqq& - \sum_{\ell = 1}^N \iint_{\tau_\ell} f_h(x, t) \frac{\partial v_h}{\partial t}(x, t) \dd x \dd t + \int_{\Omega} f_h(x, T) v_h(x, T) \dd s(x) \\
 	&& {} + \sum_{\Gamma_{k\ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \lupw f_h \rupw_{\Gamma_{k \ell}} (x, t) \ljump v_h \rjump_{\Gamma_{k \ell}, t} (x, t) \dd s(x) \dd t.
 \end{IEEEeqnarray*}
 Before moving on, we remark that if we integrate by parts, we obtain:
@@ -228,7 +230,8 @@ with
 \[
 	A_h[i, j] \coloneqq A(\varphi_j, \varphi_i) \quad \text{and} \quad \boldsymbol{g}[i] \coloneqq \tilde{g}(\varphi_i). 
 \]
-\subsubsection{Adjoint problem treatment}
+\section{Adjoined problem treatment}
+\label{sec:adj-dG-treatment}
 We can additionally transport the same approach to obtain a discretization of $- \partial_t f$. For this we consider the problem
 \begin{equation}
 \label{eq:dg-adjoint-prob}
@@ -239,7 +242,7 @@ n_x(x,t) \cdot \nabla_x f(x, t) + \alpha f(x, t) &=& g_R(x, t) & \text{for } (x,
 f(x, T) &=& f_T(x) & \text{for } (x, t) \in \Omega.
 \end{IEEEeqnarraybox}
 \end{equation}
-It will later on enable us to work without the transformation $\tilde{p}(x, t) = p(x, T - t)$ when treating the adjoined state equation.
+It will later on enable us to work without the transformation $\tilde{p}(x, t) = p(x, T - t)$ when treating the adjoint state equation.
 For this purpose, let us start with the term
 \[
 	\iint_Q - \frac{\partial f}{\partial t} v \dd x \dd t.
