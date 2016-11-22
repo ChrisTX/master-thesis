@@ -173,10 +173,10 @@ or in other words:
 Using the notion of so called Gelfand triples, the following emedding theorem can be proved:
 \begin{theorem}
 \label{thm:W0T-continuous-embedding}
-Any $y \in W(0, T)$ can be interpreted, after a potential change on a set of zero measure, be interpreted as an element of $C([0, T], H)$.
-In this sense the embedding $W(0, T) \hookrightarrow C([0, T], H)$ exists and is continuous, i.e.\ there exists a constant $c_E$ such that
+Any $y \in W(0, T)$ can be interpreted, after a potential change on a set of zero measure, be interpreted as an element of $C([0, T], L^2(\Omega))$.
+In this sense the embedding $W(0, T) \hookrightarrow C([0, T], L^2(\Omega))$ exists and is continuous, i.e.\ there exists a constant $c_E$ such that
 \[
-	\| y \|_{C([0, T], H)} \leq c_E \| y \|_{W(0, T)} \quad \forall y \in W(0, T).
+	\| y \|_{C([0, T], L^2(\Omega))} \leq c_E \| y \|_{W(0, T)} \quad \forall y \in W(0, T).
 \] 
 \end{theorem}
 \begin{proof}
@@ -515,13 +515,14 @@ Then there is a $C > 0$ independent of $h$, such that:
 \end{theorem}
 \begin{proof}
 This proof is based on the previously mentioned variational discretization technique presented in \cite{Hinze}.
+The choice of the control space $L^2(\Omega)$ for the discretized problem becomes essential here: We may test the discretized 
 
 The optimal solutions to both problems fulfill
 \begin{IEEEeqnarray*}{rCl"l}
 	0 &=& \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \lambda \langle\bar{u}, v \rangle_{L^2(\Sigma)} & \text{for all } v \in L^2(\Sigma) \\
 	0 &=& \langle S_h \bar{u}_h - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle\bar{u}_h, v\rangle_{L^2(\Sigma)} & \text{for all } v \in L^2(\Sigma)
 \end{IEEEeqnarray*}
-We perform a zero addition of the second term evaluated with $v = \bar{u}$:
+We perform a zero addition of the term $\langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle\bar{u}, v\rangle_{L^2(\Sigma)}$:
 \begin{IEEEeqnarray*}{rCl}
 	0 &=& \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \lambda \langle\bar{u}, v \rangle_{L^2(\Sigma)} \\
 	&& {} - \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] \\
@@ -530,13 +531,13 @@ We perform a zero addition of the second term evaluated with $v = \bar{u}$:
 \end{IEEEeqnarray*}
 By bringing the first two terms on the other side, we obtain
 \begin{IEEEeqnarray*}{rCl}
-	\IEEEeqnarraymulticol{3}{l}{ - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \lambda \langle\bar{u}, v \rangle_{L^2(\Sigma)} + \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] } \\
+	\IEEEeqnarraymulticol{3}{l}{ - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} - \lambda \langle\bar{u}, v \rangle_{L^2(\Sigma)} + \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] } \\
 	\qquad &=&  \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] - \langle S_h \bar{u}_h - z_h, S_h v \rangle_{L^2(\Omega)} - \lambda \langle \bar{u}_h, v \rangle_{L^2(\Sigma)} 
 \end{IEEEeqnarray*}
 We want to estimate the left hand side by an upper bound and the right hand side by a lower bound.
 Therefore, we start with the left hand side:
 \begin{IEEEeqnarray*}{rCl}
-	\IEEEeqnarraymulticol{3}{l}{ \chi_1 \coloneqq - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} + \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] } \\
+	\IEEEeqnarraymulticol{3}{l}{ \chi_1 \coloneqq - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} - \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} + \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] } \\
 	&=& - \langle S \bar{u} - z, S v \rangle_{L^2(\Omega)} + \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} \\
 \noalign{\noindent Performing a zero addition of $\langle S_h \bar{u} - z_h, S v \rangle$ gives \vspace{\jot}}
 	\chi_1 &=& - \langle S \bar{u} - z - [ S_h \bar{u} - z_h ], S v \rangle_{L^2(\Omega)} + \langle S_h \bar{u} - z_h, S_h v -S v \rangle_{L^2(\Omega)} \\
@@ -544,28 +545,30 @@ Therefore, we start with the left hand side:
 	&& \quad {} + \langle S_h \bar{u} + (G_0^h y_0)(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \\
 \noalign{\noindent Due to the definition of $\bar{y}(T) = S \bar{u} + (G_0 y_0)(T)$, we can replace that term. By defining $\bar{y}^h$ as the state deriving from the discrete state equation with the control $\bar{u}$, we can also replace $\bar{y}^h(T) = S_h \bar{u} + (G_0^h y_0)(T)$: \vspace{\jot}}
 	\chi_1 &=& - \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} + \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \\
-\noalign{\noindent Using the triangle inequality and the Cauchy-Schwarz inequality, we obtain with the definitions $y^v \coloneqq G_\Sigma v$ and $y_h^v \coloneqq G_\Sigma^h v$, so that we have $y^v(T) = Sv$ and $y_h^v(T) = S_h v$, giving us\vspace{\jot}}
+\noalign{\noindent Using the triangle inequality and the Cauchy-Schwarz inequality, we obtain with the observation that $(G_\Sigma \beta v)(T) = Sv$ and $( G_\Sigma^h \beta v)(T) = S_h v$ we can transform this into:\vspace{\jot}}
 	\chi_1 &\leq& \left| \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} \right| + \left| \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \right| \\
-	&\leq& \left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \| y^v(T) \|_{L^2(\Omega)} \\
-	&& \quad {}+ \left\| \bar{y}^h(T) - y_\Omega \right\|_{L^2(\Omega)} \left\| y^v_h(T) - y^v(T) \right\|_{L^2(\Omega)} \\
-\noalign{\noindent By the definition of the $\lDG \cdot \rDG$ norm, we have the term $\| f(T) \|_{L^2(\Omega)}$ in it, c.f.\ \cref{eq:dg-DG-norm}, we can estimate \vspace{\jot}}
-	\chi_1 &\overset{\text{\cref{eq:dg-DG-norm}}}{\leq}& \left\lDG \bar{y} - \bar{y}^h \right\rDG \| y^v(T) \|_{L^2(\Omega)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
-\noalign{\noindent Due to the continuity estimate on exact solutions given by \cref{thm:generalized-problem-solution,thm:W0T-continuous-embedding}, we estimate this further as\vspace{\jot}}
-	\chi_1 &\overset{\text{\cref{thm:generalized-problem-solution}}}{\leq}& c_w c_E \left\lDG \bar{y} - \bar{y}^h \right\rDG \| v \|_{L^2(\Sigma)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
+	&\leq& \left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \| (G_\Sigma \beta v)(T) \|_{L^2(\Omega)} \\
+	&& \quad {}+ \left\| \bar{y}^h(T) - y_\Omega \right\|_{L^2(\Omega)} \left\| ( G_\Sigma^h \beta v)(T) - (G_\Sigma \beta v)(T) \right\|_{L^2(\Omega)} \\
+\noalign{\noindent By the definition of the $\lDG \cdot \rDG$ norm, we have the term $\| f(T) \|_{L^2(\Omega)}$ in it, c.f.\ \cref{eq:dg-DG-norm}, we can estimate after employing the triangle inequality once again \vspace{\jot}}
+	\chi_1 &\leq& \left\lDG \bar{y} - \bar{y}^h \right\rDG \| (G_\Sigma \beta v)(T) \|_{L^2(\Omega)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG G_\Sigma^h \beta v - G_\Sigma \beta v \right\rDG \\
+\noalign{\noindent Due to \cref{thm:W0T-continuous-embedding} we estimate this further via \vspace{\jot}}
+	\IEEEeqnarraymulticol{3}{c}{ \| (G_\Sigma \beta v)(T) \|_{L^2(\Omega)} \leq \| (G_\Sigma \beta v) \|_{C([0, T], L^2(\Omega))} \leq c_E \| (G_\Sigma \beta v) \|_{W(0, T)}, } \\
+\noalign{\noindent which then leads with \cref{thm:generalized-problem-solution} to \vspace{\jot}}
+	\chi_1 &\leq& c_w c_E \left\lDG \bar{y} - \bar{y}^h \right\rDG \| \beta \|_{L^\infty(\Omega)} \| v \|_{L^2(\Sigma)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG G_\Sigma^h \beta v - G_\Sigma \beta v \right\rDG \\
 \noalign{\noindent Using the stability estimate for $A(\cdot, \cdot)$ given by \cref{thm:Astab-est}, we can estimate the operator $G_\Sigma^h$ because it consists out of the inverse $A_h^{-1}$:}
-	\chi_1 &\overset{\text{\cref{thm:Astab-est}}}{\leq}& c_w c_E \left\lDG \bar{y} - \bar{y}^h \right\rDG \| v \|_{L^2(\Sigma)} \\
-	&& \quad {}+ \left( \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Omega)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG y^v_h - y_v \right\rDG \\
+	\chi_1 &\leq& c_w c_E \left\lDG \bar{y} - \bar{y}^h \right\rDG \| \beta \|_{L^\infty(\Omega)} \| v \|_{L^2(\Sigma)} \\
+	&& {}+ \left( \frac{1}{c_S^A} \left( \| \beta \|_{L^\infty(\Omega)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG G_\Sigma^h \beta v - G_\Sigma \beta v \right\rDG \\
 \noalign{\noindent As a next step we can apply the result \cref{thm:dg-convergence} because we made \cref{as:continuous-Hs-regularity}:}
-	\chi_1 &\overset{\text{\cref{thm:dg-convergence}}}{\leq}& c_w c_E c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |\bar{y}|_{H^s(\meshT_N)} \| v \|_{L^2(\Sigma)} \\
-	&& {}+ \left( \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Omega)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |y_v|_{H^s(\meshT_N)} \\
-\noalign{\noindent The assumption of continuous dependence of the solution in the stronger $H^2$ norm on the right hand side gives the estimate}
-	\chi_1 &\overset{\text{\cref{as:continuous-Hs-regularity}}}{\leq}& c_w c_E c_w' c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} ( \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ) \| v \|_{L^2(\Sigma)} \\
-	&& {}+ \left( \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Omega)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) c c_w' \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \|v\|_{L^2(\Sigma)} \\
+	\chi_1 &\leq& c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \cdot \Bigg[ c_w c_E |\bar{y}|_{H^s(\meshT_N)} \| \beta \|_{L^\infty(\Omega)} \| v \|_{L^2(\Sigma)} \\
+	&& {}+ \left( \frac{1}{c_S^A} \left( \| \beta \|_{L^\infty(\Omega)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) + \| y_\Omega \|_{L^2(\Omega)} \right) |G_\Sigma \beta v|_{H^s(\meshT_N)} \Bigg] \\
+\noalign{\noindent Again via the \cref{as:continuous-Hs-regularity} this leads to}
+	\chi_1 &\leq& c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \cdot \Bigg[ c_w c_E c_w'  ( \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ) \| \beta \|_{L^\infty(\Omega)} \| v \|_{L^2(\Sigma)} \\
+	&& {}+ \left( \frac{1}{c_S^A} \left( \| \beta \|_{L^\infty(\Omega)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) + \| y_\Omega \|_{L^2(\Omega)} \right) c_w' \| \beta \|_{L^\infty(\Omega)} \|v\|_{L^2(\Sigma)} \Bigg] \\
 \noalign{\noindent Finally, by combining the constants into a single one called $C > 0$, we obtain}
 	\chi_1 &\leq& C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \| v \|_{L^2(\Sigma)}
 \end{IEEEeqnarray*}
-
-For the remaining two terms, we have
+This is the estimate we were looking for.
+Hence, as a next step, we have to deal with the right hand side of the equation:
 \begin{IEEEeqnarray*}{rCl}
 	\IEEEeqnarraymulticol{3}{l}{ \left[ \langle S_h \bar{u} - z_h, S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, v \rangle_{L^2(\Sigma)} \right] - \langle S_h \bar{u}_h - z_h, S_h v \rangle_{L^2(\Omega)} - \lambda \langle \bar{u}_h, v \rangle_{L^2(\Sigma)} } \\
 	\qquad &=& \langle S_h (\bar{u} - \bar{u}_h), S_h v \rangle_{L^2(\Omega)} + \lambda \langle \bar{u} - \bar{u}_h, v \rangle_{L^2(\Sigma)}
@@ -576,10 +579,10 @@ Choosing the test function $v = \bar{u} - \bar{u}_h$, we can estimate:
 	&=& \lambda \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}^2
 \end{IEEEeqnarray*}
 
-By applying these estimates to the equation we started from yields:
+By applying these estimates to the equation we started from with the choice of test function $v = \bar{u} - \bar{u}_h$ yields:
 \begin{IEEEeqnarray*}{rCl}
 	\IEEEeqnarraymulticol{3}{l}{ C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} } \\
-	\qquad &\geq& -\langle S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \\
+	\qquad &\geq& -\langle S \bar{u} - z, S ( \bar{u} - \bar{u}_h ) \rangle_{L^2(\Omega)} - \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \\
 	&& \quad {} + \left[ \langle S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, \bar{u} - \bar{u}_h \rangle_{L^2(\Sigma)} \right] \\
 	&=& \left[ \langle S_h \bar{u} - z_h, S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} + \lambda \langle \bar{u}, (\bar{u} - \bar{u}_h) \rangle_{L^2(\Sigma)} \right] \\
 	&& \quad {} - \langle S_h \bar{u}_h - z_h, S_h (\bar{u} - \bar{u}_h) \rangle_{L^2(\Omega)} - \lambda \langle \bar{u}_h, (\bar{u} - \bar{u}_h) \rangle_{L^2(\Sigma)}  \\
@@ -596,19 +599,21 @@ In a further step, we have to estimate $\| \bar{y}(T) - \bar{y}_h(T) \|_{L^2(\Om
 &\leq& \| S \bar{u} - S_h \bar{u} \|_{L^2(\Omega)} + \| S_h \bar{u} - S_h \bar{u}_h \|_{L^2(\Omega)} \\
 &\leq& \| \bar{y}(T) - \bar{y}^h(T) \|_{L^2(\Omega)} + \| \bar{y}^h(T) - \bar{y}_h(T) \|_{L^2(\Omega)} \\
 &\leq& c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} |\bar{y}|_{H^s(\meshT_N)} + \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Omega)} \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} \\
-&\leq& C h^{\min \{ s, p+1\} - 1} \| \bar{u} \|_{L^2(\Sigma)} \\
+&\leq& C h^{\min \{ s, p+1\} - 1} \left( \| \beta \|_{L^\infty(\Omega)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right)\\
 && \quad {} + C' h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right),
 \end{IEEEeqnarray*}
-where we used the same stability argument to estimate the stability of the discrete solution as before when estimating the control.
+where we used the same stability argument to estimate the stability of the discrete solution as before when estimating the control:
+\begin{IEEEeqnarray*}{rCl}
+\| \bar{y}^h(T) - \bar{y}_h(T) \|_{L^2(\Omega)} &\leq& \lDG \bar{y}^h  - \bar{y}_h \rDG \\
+&=& \lDG G_\Sigma^h \beta \bar{u} - G_\Sigma^h \beta \bar{u}_h \rDG \\
+&\leq& \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Omega)} \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)}.
+\end{IEEEeqnarray*}
 Together, the estimates prove the claim made.
 \end{proof}
 \begin{remark}
-We observe that \cref{as:continuous-Hs-regularity} can be weaked somewhat:
-Instead of making the demand for general right hand sides, it was only necessary to use this for
-\begin{IEEEeqnarray*}{rCl}
-\| \bar{y} \|_{H^s(Q)} &\leq& c_w' \left( \| g_I \|_{L^2(Q)} + \| g_R \|_{L^2(\Sigma)} + \| y_0 \|_{L^2(\Omega)} \right) \\
-\| y^v \|_{H^s(Q)} &\leq& c_w' \left( \| g_I \|_{L^2(Q)} + \| g_R \|_{L^2(\Sigma)} + \| y_0 \|_{L^2(\Omega)} \right)
-\end{IEEEeqnarray*}
+We observe that \cref{as:continuous-Hs-regularity} can be weakened somewhat:
+Instead of making the demand for general right hand sides, it was only necessary to use this for two specific evaluations, namely $G_\Sigma \beta (\bar{u} - \bar{u}_h)$ and $\bar{y}$.
+Especially the former of the two conditions might be difficult to prove as it includes the optimal control of the discretized problem.
 \end{remark}
 \section{Optimal control with interior heat sources}
 Analogously to the previous section, we can treat the interior heat source problem with the same restrictions made:
