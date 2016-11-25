@@ -853,9 +853,9 @@ u = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p \right\}.
 \end{IEEEeqnarray*}
 For the discrete case, one obtains a corresponding formulation due to \cref{thm:inner-variational-ineq,thm:inner-projection-formula} the system
 \begin{IEEEeqnarray*}{c}
-\begin{IEEEeqnarraybox}{rCl}
-A(y_h, v_h) &=& \left\langle \beta u_h, v_h \right\rangle_{L^2(Q)} \\
-A(v_h, p_h) &=& \langle y_h - y_\Sigma, v_h \rangle_{L^2(\Sigma)}
+\begin{IEEEeqnarraybox}{rCl"l}
+A(y_h, v_h) &=& \left\langle \beta u_h, v_h \right\rangle_{L^2(Q)} & \text{for all $v_h \in \Shp(\meshT_N)$}\\
+A(v_h, p_h) &=& \langle y_h - y_\Sigma, v_h \rangle_{L^2(\Sigma)} & \text{for all $v_h \in \Shp(\meshT_N)$}
 \end{IEEEeqnarraybox} \\
 u_h = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p_h \right\}.
 \end{IEEEeqnarray*}
@@ -865,11 +865,11 @@ In order to replicate the convergence theorem \cref{thm:optimal-control-converge
 Let for $\alpha > 0$ be $\bar{u}$ be the optimal control for the continuous problem \cref{prb:InnerOptimalControl-restricted} and let \cref{as:continuous-Hs-regularity} hold. Moreover, be $\bar{u}_h$ the discretized solution to \cref{eq:f-Sh}.
 Then there is a $C > 0$ independent of $h$, such that:
 \[
-	\| \bar{u} - \bar{u}_h \|_{L^2(Q)} + \| \bar{y} - \bar{y}_h \|_{L^2(\Sigma)} \leq C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(Q)} + \| y_\Omega \|_{L^2(\Omega)} \right).
+	\| \bar{u} - \bar{u}_h \|_{L^2(Q)} + \| \bar{y} - \bar{y}_h \|_{L^2(\Sigma)} \leq C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(Q)} + \| y_\Sigma \|_{L^2(\Sigma)} \right).
 \]
 \end{theorem}
 \begin{proof}
-Under the assumption $\alpha > 0$, the proof is analogous to the one of \cref{thm:optimal-control-convergence}. Instead of $z_h$ and $z$ one uses $y_\Omega$ directly though, as the state is now linearly dependent on the control and not affine-linear as in the boundary control case.
+Under the assumption $\alpha > 0$, the proof is analogous to the one of \cref{thm:optimal-control-convergence}. Instead of $z_h$ and $z$ one uses $y_\Sigma$ directly though, as the state is now linearly dependent on the control and not affine-linear as in the boundary control case.
 \end{proof}
 As before, one can shown that the results of \cref{thm:state-error-bound,thm:discrete-state-convergence} hold in this case, too.
 We can also transport \cref{thm:J-convergence}:
@@ -883,11 +883,11 @@ Let \cref{as:continuous-Hs-regularity} hold. Then with some constant $C > 0$ ind
 \begin{proof}
 We proceed as before with the proof of \cref{thm:J-convergence}:
 \begin{IEEEeqnarray*}{rCl}
-|J(u) - J_h(u)| &=& \left| \frac{1}{2} \| S u - y_\Sigma \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2 - J_h(u) \right| \\
-&=& \left| \frac{1}{2} \| S u - y_\Sigma - (S_h u - y_\Sigma) + S_h u + y_\Sigma \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2 - J_h(u) \right| \\
-&\leq& \left| \frac{1}{2} \| S u - S_h u \|_{L^2(\Omega)} + \frac{1}{2} \| S_h u - y_\Sigma \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2 - J_h(u) \right| \\
-&=& \left| \frac{1}{2} \| S u - S_h u \|_{L^2(\Omega)} + J_h(u) - J_h(u) \right| \\
-&=& \frac{1}{2} \| S u - S_h u \|_{L^2(\Omega)}.
+|J(u) - J_h(u)| &=& \left| \frac{1}{2} \| S u - y_\Sigma \|_{L^2(\Sigma)}^2 + \frac{\lambda}{2} \| u \|_{L^2(Q)}^2 - J_h(u) \right| \\
+&=& \left| \frac{1}{2} \| S u - y_\Sigma - (S_h u - y_\Sigma) + S_h u + y_\Sigma \|_{L^2(\Sigma)}^2 + \frac{\lambda}{2} \| u \|_{L^2(Q)}^2 - J_h(u) \right| \\
+&\leq& \left| \frac{1}{2} \| S u - S_h u \|_{L^2(\Sigma)} + \frac{1}{2} \| S_h u - y_\Sigma \|_{L^2(\Sigma)}^2 + \frac{\lambda}{2} \| u \|_{L^2(Q)}^2 - J_h(u) \right| \\
+&=& \left| \frac{1}{2} \| S u - S_h u \|_{L^2(\Sigma)} + J_h(u) - J_h(u) \right| \\
+&=& \frac{1}{2} \| S u - S_h u \|_{L^2(\Sigma)}.
 \end{IEEEeqnarray*}
 Once again, we can apply the convergence result \cref{thm:dg-convergence} again and obtain
 \begin{IEEEeqnarray*}{rCl}
@@ -961,9 +961,9 @@ u = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p \right\}.
 This optimality system follows from the result \cite[Lemma 3.17, p.\ 126]{Troeltzsch}. Alternatively see the work \cite{MeidnerVexler-I}, which treats this formulation, too.
 For the discrete case, one obtains a corresponding formulation, derived in the same fashion as \cref{thm:discrete-variational-ineq,thm:projection-formula} were the system
 \begin{IEEEeqnarray*}{c}
-\begin{IEEEeqnarraybox}{rCl}
-A(y_h, v_h) &=& \left\langle \beta u_h, v_h \right\rangle_{L^2(\Sigma_R)} + \langle f, v_h \rangle_{L^2(Q)} \\
-A(v_h, p_h) &=& \langle y_h - y_Q, v_h \rangle_{L^2(Q)}
+\begin{IEEEeqnarraybox}{rCl"l}
+A(y_h, v_h) &=& \left\langle \beta u_h, v_h \right\rangle_{L^2(\Sigma_R)} + \langle f, v_h \rangle_{L^2(Q)} & \text{for all $v_h \in \Shp(\meshT_N)$} \\
+A(v_h, p_h) &=& \langle y_h - y_Q, v_h \rangle_{L^2(Q)} & \text{for all $v_h \in \Shp(\meshT_N)$}
 \end{IEEEeqnarraybox} \\
 u_h = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p_h \right\}.
 \end{IEEEeqnarray*}
