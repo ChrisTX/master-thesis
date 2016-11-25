@@ -217,7 +217,7 @@ We'll now go back to the optimal control problem with boundary controls:
 \begin{problem}
 \label{prb:BoundaryOptimalControl-restricted}
 \begin{IEEEeqnarray*}{c}
-\min J(y, u) = \frac{1}{2} \int_\Omega \left( y(x, T) - y_\Omega(x) \right)^2 \dd x + \frac{\lambda}{2} \int_0^T \int_{\partial \Omega} u(x, t)^2 \dd s(x) \dd t \\
+\min J(y, u) = \frac{1}{2} \int_\Omega \left( y(x, T) - y_\Omega(x) \right)^2 \dd x + \frac{\lambda}{2} \iint_{\Sigma} u(x, t)^2 \dd s(x) \dd t \\
 \noalign{\noindent subject to\vspace{\jot}}
 \begin{IEEEeqnarraybox}{rCl"l}
 \frac{\partial y}{\partial t} - \lapl y &=& 0 & \text{in } Q \\
@@ -249,7 +249,7 @@ For the discontinuous Galerkin method introduced in \cref{sec:dG-method}, we can
 To that end, we define operators that map $g_I$, $g_R$ and $y_0$ into their discrete right hand sides, i.e.\ we define $\boldsymbol{g_I} : L^2(Q) \to \R^m$, $\boldsymbol{g_R} : L^2(\Sigma) \to \R^m$ and $\boldsymbol{y_0} : L^2(\Omega) \to \R^m$ component-wise by
 \begin{IEEEeqnarray*}{rCl}
 	\boldsymbol{g_I}[i] (g_I) &=& \iint_Q g_I \varphi_i \dd x \dd t, \\
-	\boldsymbol{g_R}[i] (g_R) &=& \iint_\Sigma g_R \varphi_i \dd x \dd t, \\
+	\boldsymbol{g_R}[i] (g_R) &=& \iint_\Sigma g_R \varphi_i \dd s(x) \dd t, \\
 	\boldsymbol{y_0}[i] (y_0) &=& \int_\Omega y_0 \varphi_i(\cdot, 0) \dd x.
 \end{IEEEeqnarray*}
 Moreover, we define an operator to map discrete solutions of \cref{eq:dg-discrete-prob} into the function they correspond to in $\Shp(\meshT_N)$:
@@ -269,7 +269,7 @@ As of such, we can define a discrete analogous to $S$, called $S_h$:
 \]
 where $S_h \coloneqq E_T G_\Sigma \beta \cdot$ and $z_h \coloneqq y_\Omega - (G_0^h y_0)(T)$.
 Note that both operators, $S$ and $S_h$ work from $L^2(\Sigma)$ to $L^2(\Omega)$. One can immediately see that $S_h$ is a linear operator.
-Using that the term $\| f_h(T) \|_{L^2(\Omega)}$ is contained in $\| f_h \|_A$ together with the ellipticity estimate \cref{thm:A-ellip-weak} (or alternatively, for quasi-uniform meshes, the estimate \cref{thm:Astab-est}) guarantees that $S_h$ is also a continuous operator between these spaces.
+Using that the term $\| y_h(T) \|_{L^2(\Omega)}$ is contained in $\| y_h \|_A$ together with the ellipticity estimate \cref{thm:A-ellip-weak} (or alternatively, for quasi-uniform meshes, the estimate \cref{thm:Astab-est}) guarantees that $S_h$ is also a continuous operator between these spaces.
 
 Furthermore, we introduce the set of admissible controls $U_{ad}$ as
 \[
@@ -278,56 +278,76 @@ Furthermore, we introduce the set of admissible controls $U_{ad}$ as
 With this set and the operators defined, we can express the continuous and discretized optimal control problems in the following reduced form:
 \begin{equation}
 \label{eq:f-S}
-\min_{u \in U_{ad}} f(u) \coloneqq \frac{1}{2} \| S u - z \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2,
+\min_{u \in U_{ad}} J(u) \coloneqq \frac{1}{2} \| S u - z \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2,
 \end{equation}
 and
 \begin{equation}
 \label{eq:f-Sh}
-\min_{u_h \in U_{ad}} f_h(u_h) \coloneqq \frac{1}{2} \| S_h u_h - z_h \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u_h \|_{L^2(\Sigma)}^2.
+\min_{u_h \in U_{ad}} J_h(u_h) \coloneqq \frac{1}{2} \| S_h u_h - z_h \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u_h \|_{L^2(\Sigma)}^2.
 \end{equation}
 Note that the discretized optimal control is being searched in $U_{ad} \subset L^2(\Sigma)$ and not a discretized space.
 
 The approach to look for $u_h$ in a non-discretized space is called variational discretization and was first introduced in \cite{Hinze}.
 By applying no discretization to the control, \cite{Hinze} established error estimates for continuous finite element approaches for elliptic optimal control problems. This was later applied to parabolic problems in \cite{DeckelnickHinze}, where they use an approach via a continuous Galerkin scheme in space and a discontinuous approach in time. A similar approach can be found in \cite{MeidnerVexler-I}, which was later on generalized to the state-constrained case in \cite{MeidnerVexler-II}.
 
-In order to discuss uniqueness and existence of solutions to these problems, we can use the following, general result:
+In order to discuss uniqueness and existence of solutions to these problems, we need a general result on minimizers of functionals.
+For this purpose, we require some results from functional analysis.
+Each of the following theorems can be found in both \cite{Alt} and \cite{Werner}.
+\begin{theorem}
+\label{thm:bounded-set-seq-comp}
+Any convex and closed subset of a Banach space is weakly sequentially compact.
+If the space is reflexive and the set bounded on top of this, then the set is weakly compact.
+\end{theorem}
+This is a result of Mazur's theorem. Furthermore, one requires
+\begin{theorem}
+\label{thm:weakly-lower-seq-cont}
+In a Banach space $U$ any convex and continuous functional $J$ is weakly lower sequentially semi-continuous, i.e.\ $u_n \rightharpoonup u$ for $n \to \infty$ implies
+\[
+	\lim_{n \to \infty} J(u_n) \geq J(u).
+\]
+\end{theorem}
+With \cref{thm:bounded-set-seq-comp,thm:weakly-lower-seq-cont} introduced, we can prove the following, general result of minimizers:
 \begin{theorem}
 \label{thm:optimal-control-existence}
 Let $\{ U, \| \cdot \|_U \}$ and $\{ H, \| \cdot \|_H \}$ be real Hilbert spaces and a nonempty, closed and convex set $U_{ad} \subset U$, an element $z \in H$ and a constant $\lambda > 0$.
 Moreover, set $S : U \to H$ be a linear and continuous operator.
 Then the quadratic optimization problem in the Hilbert space
 \[
-	\min_{u \in U_{ad}} f(u) \coloneqq \frac{1}{2} \| Su - z \|_H^2 + \frac{\lambda}{2} \| u \|_U^2
+	\min_{u \in U_{ad}} J(u) \coloneqq \frac{1}{2} \| Su - z \|_H^2 + \frac{\lambda}{2} \| u \|_U^2
 \]
 admits an optimal solution $\bar{u}$. If $\lambda$ is positive or $S$ injective, then is is uniquely determined.
 \end{theorem}
 \begin{proof}
 We present the proof given by \cite[Satz 2.14]{Troeltzsch} and \cite[Satz 2.15]{Troeltzsch}.
 
-Assume $U_{ad}$ is bounded. Because $f \geq 0$, the infimum of all possible function values exists:
+Assume $U_{ad}$ is bounded. In that case, because $J \geq 0$, the infimum of all possible function values exists:
 \[
-	j \coloneqq \inf_{u \in U_{ad}} f(u).
+	j \coloneqq \inf_{u \in U_{ad}} J(u).
 \]
-Hence, a sequence $\{ u_n \}_{n=1}^\infty \subset U_{ad}$ with $f(u_n) \to j$ for $n \to \infty$ exists.
-Therefore one knows that $U_{ad}$ is weakly sequentially compact, i.e.\ a weakly convergent subsequence $\{ u_{n_k} \}_{k=1}^\infty \subset U_{ad}$ weakly converging against a $\bar{u} \in U_{ad}$ exists.
-As $S$ is continuous and $f$ strictly convex (because $\lambda > 0$), one can conclude weak lower semi-continuity of $f$ and thus has
-\[
-	j \leq f(\bar{u}) \leq \min_{k \to \infty} \inf f(u_{n_k}) = j.
-\]
-Because $f$ is strictly convex, $\bar{u}$ is uniquely determined.
+Hence, a sequence $\{ u_n \}_{n=1}^\infty \subset U_{ad}$ with $J(u_n) \to j$ for $n \to \infty$ exists.
+As $U_{ad}$ is bounded, closed and convex, one knows by \cref{thm:bounded-set-seq-comp} that $U_{ad}$ is weakly sequentially compact, which in turn implies existence of a weakly convergent subsequence $\{ u_{n_k} \}_{k=1}^\infty \subset U_{ad}$ weakly converging against a $\bar{u} \in U_{ad}$.
 
-Now let $U_{ad}$ not be bounded. Because $U_{ad}$ is nonempty, $u_0 \in U_{ad}$ exists. For $\| u \|_U^2 > 2 \lambda^{-1} f(u_0)$, one has
+The continuity of $S$ also implies that the functional $J$ is continuous.
+Moreover, $\lambda \geq 0$ ensures that $J$ is a convex functional.
+We now know by \cref{thm:weakly-lower-seq-cont} that $J$ is weakly lower semi-continuous and thus has the property
 \[
-	f(u) = \frac{1}{2} \| S u - z \|_H^2 + \frac{\lambda}{2} \| u \|_U^2 \geq \frac{\lambda}{2} \| u \|_U^2 > f(u_0).
+	j \leq J(\bar{u}) \leq \min_{k \to \infty} \inf J(u_{n_k}) = j.
+\]
+Therefore $J(\bar{u}) = j$ holds, which was to be shown.
+
+In the case $\lambda > 0$ one can even see $J$ being strictly convex, ensuring that $\bar{u}$ is also uniquely determined.
+
+Now let $U_{ad}$ be as in the theorem and thus not be bounded anymore. As $U_{ad}$ is nonempty, some $u_0 \in U_{ad}$ exists. For any $u \in U$ with $\| u \|_U^2 > 2 \lambda^{-1} J(u_0)$, one has
+\[
+	J(u) = \frac{1}{2} \| S u - z \|_H^2 + \frac{\lambda}{2} \| u \|_U^2 \geq \frac{\lambda}{2} \| u \|_U^2 > J(u_0).
 \]
 Hence, one can simply search within the bounded, convex and closed set
 \[
-	U_{ad} \cap \{ u \in U : \| u \|_U^2 \leq 2 \lambda^{-1} f(u_0) \}
+	U_{ad} \cap \{ u \in U : \| u \|_U^2 \leq 2 \lambda^{-1} J(u_0) \}
 \]
-and use the previously derived result.
+and use the previously derived result. Any function not in this restricted set has to have a function value greater than $u_0$ and therefore cannot be a minimizer.
 \end{proof}
-For $S$ continuity is guaranteed by \cref{thm:generalized-problem-solution} (with the choices $g_I = 0$, $g_R = \beta u$).
-On the other hand, for the discrete operator $S_h$ this is guaranteed by \cref{thm:Astab-est}.
+By pointing out that $U_{ad}$ as we defined it is going to be convex, closed and nonempty we can apply the result of \cref{thm:optimal-control-existence} directly. Note that $U_{ad}$ is nonempty since $u_a, u_b \in L^2(\Sigma)$ are both necessary admissible by the way we defined $U_{ad}$.
 In conclusion \cref{thm:optimal-control-existence} implies that both \cref{eq:f-S} and \cref{eq:f-Sh} admit unique solutions, named $\bar{u}$ and $\bar{u}_h$, respectively.
 Combined with the previously shown result that a solution in $L^2(\Sigma)$ implies that the optimal solution is in in the boundary projection of $\Shp(\meshT_N)$ after potentially changing it on a set of zero measure.
 
@@ -337,7 +357,7 @@ These unique solutions can be characterized using a so called variational inequa
 Let $U$ and $H$ be real Hilbert spaces, a nonempty and convex set $U_{ad} \subset U$, $z \in H$ and a constant $\lambda \geq 0$. Let $S : U \to H$ be a linear and continuous operator.
 The element $\bar{u} \in U_{ad}$ solves
 \[
-	\min_{u \in U_{ad}} f(u) \coloneqq \frac{1}{2} \| Su - z \|_H^2 + \frac{\lambda}{2} \| u \|_U^2
+	\min_{u \in U_{ad}} J(u) \coloneqq \frac{1}{2} \| Su - z \|_H^2 + \frac{\lambda}{2} \| u \|_U^2
 \]
 if and only if
 \[
@@ -400,10 +420,10 @@ A_h^\tp \boldsymbol{p} = \boldsymbol{g_I}(a_Q) + \boldsymbol{g_R}(a_\Sigma) + \b
 \end{equation}
 where $\boldsymbol{y_T} : L^2(\Omega) \to \R^m$ is defined in an analogous fashion as before:
 \begin{IEEEeqnarray*}{rCl}
-	\boldsymbol{y_T}[i] (y_T) &=& \int_\Omega y_T \varphi_i(\cdot, T) \dd x \dd t.
+	\boldsymbol{y_T}[i] (y_T) &=& \int_\Omega y_T \varphi_i(\cdot, T) \dd x.
 \end{IEEEeqnarray*}
 One would assert that \cref{eq:generalized-problem-adj-dG} is the adjoint in the given sense to \cref{eq:generalized-problem-state-dG}, because \cref{eq:generalized-problem-adj} is the adjoint problem with analogous right hand sides to \cref{eq:generalized-problem-state} for the continuous case.
-In order to prove this, we need the following statement:
+In order to prove this, we need the following statement, which corresponds to the result \cite[Lemma 3.17, p.\ 126]{Troeltzsch} for the continuous formulation.
 \begin{lemma}
 \label{thm:discrete-adj-state-helper}
 The solution $y_h$ of \cref{eq:f-Sh} and $p_h$ of \cref{eq:generalized-problem-adj-dG} with the choices of $a_Q = 0$, $a_\Sigma = 0$, and $a_\Omega = y_h(T) - y_\Omega$ adhere to the following equation:
@@ -481,6 +501,7 @@ Moreover, if for example $\beta$ is constant, this means that $\bar{u}_h$ can be
 \end{remark}
 An important consequence of a result like \cref{thm:discrete-variational-ineq} is that there exists a projection formula characterizing the optimal control:
 \begin{theorem}
+\label{thm:projection-formula}
 A control $\bar{u}_h \in U_{ad}$ is optimal for \cref{eq:f-Sh} if and only if the associated adjoint state $\bar{p}_h$ fulfills the equality
 \[
 	\bar{u}_h = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta \bar{p}_h \right\}.
@@ -501,7 +522,7 @@ Bringing the optimality conditions for the continuous case into a single system,
 \begin{IEEEeqnarraybox}{r"l}
 \begin{IEEEeqnarraybox}{rCl}
 \frac{\partial y}{\partial t} - \lapl y &=& 0 \\
-\partial_\nu y + \alpha y &=& - \beta \cdot \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p \right\} \\
+\partial_\nu y + \alpha y &=& \beta u \\
 y(0) &=& y_0
 \end{IEEEeqnarraybox} & 
 \begin{IEEEeqnarraybox}{rCl}
@@ -510,13 +531,13 @@ y(0) &=& y_0
 p(T) &=& y(T) - y_\Omega
 \end{IEEEeqnarraybox}
 \end{IEEEeqnarraybox} \\
-u = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p \right\}
+u = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p \right\}.
 \end{IEEEeqnarray*}
-For the discrete case, one obtains a corresponding formulation due to \cref{thm:discrete-variational-ineq} the system
+For the discrete case, one obtains a corresponding formulation due to \cref{thm:discrete-variational-ineq,thm:projection-formula} the system
 \begin{IEEEeqnarray*}{c}
-\begin{IEEEeqnarraybox}{rCl}
-A(y_h, v_h) &=& \left\langle \beta \cdot \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p_h \right\}, v_h \right\rangle_{L^2(\Sigma_R)} + \langle y_0, v_h(0) \rangle_{L^2(\Omega)} \\
-A(v_h, p_h) &=& \langle y_h(T) - y_\Omega, v_h(T) \rangle_{L^2(\Omega)}
+\begin{IEEEeqnarraybox}{rCl"l}
+A(y_h, v_h) &=& \left\langle \beta u_h, v_h \right\rangle_{L^2(\Sigma_R)} + \langle y_0, v_h(0) \rangle_{L^2(\Omega)} & \text{for all $v_h \in \Shp(\meshT_N)$}\\
+A(v_h, p_h) &=& \langle y_h(T) - y_\Omega, v_h(T) \rangle_{L^2(\Omega)} & \text{for all $v_h \in \Shp(\meshT_N)$}
 \end{IEEEeqnarraybox} \\
 u_h = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p_h \right\}.
 \end{IEEEeqnarray*}
@@ -524,12 +545,12 @@ We observe two things that may not come as a surprise: Firstly, our discrete opt
 
 In the case of unrestricted controls, i.e.\ $u_a = - \infty$ and $u_b = \infty$, this leads to a method which we can solve as linear equation system directly.
 
-With this, we have shown that the method we're working with is well defined and yields a solution to an optimal control problem similar to the continuous one.
+With this, we have shown that the setting we're working with is well defined and yields a solution to an optimal control problem similar to the continuous one.
 In a further step, we would like to prove convergence of the discrete problem.
 Given that \cref{thm:dg-convergence} requires at least $y \in H^2(\meshT_N) \subset H^2(Q)$, we have to make the following assumption:
 \begin{assumption}
 \label{as:continuous-Hs-regularity}
-The solution of the system \cref{eq:generalized-weak-form} lies in $H^s(\meshT_N) \cap W(0,T)$ with $s \geq 2$, i.e.
+The solution of the system \cref{eq:generalized-weak-form} lies in $H^s(Q) \cap W(0,T)$ with $s \geq 2$, i.e.
 \[
 	\| y \|_{H^s(Q)} \leq c_w' \left( \| g_I \|_{L^2(Q)} + \| g_R \|_{L^2(\Sigma)} + \| y_0 \|_{L^2(\Omega)} \right)
 \]
@@ -582,7 +603,7 @@ We start with the right hand side and perform a zero addition of $\langle S_h \b
 	\chi &\leq& \left| \langle \bar{y}(T) - \bar{y}^h(T) , S v \rangle_{L^2(\Omega)} \right| + \left| \langle \bar{y}^h(T) - y_\Omega, S_h v -S v \rangle_{L^2(\Omega)} \right| \\
 	&\leq& \left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \| (G_\Sigma \beta v)(T) \|_{L^2(\Omega)} \\
 	&& \quad {}+ \left\| \bar{y}^h(T) - y_\Omega \right\|_{L^2(\Omega)} \left\| ( G_\Sigma^h \beta v)(T) - (G_\Sigma \beta v)(T) \right\|_{L^2(\Omega)}. \\
-\noalign{\noindent By the definition of the $\lDG f \rDG$ norm, we have the term $\| f(T) \|_{L^2(\Omega)}$ in it, c.f.\ \cref{eq:dg-DG-norm}, we can estimate after employing the triangle inequality once again \vspace{\jot}}
+\noalign{\noindent By the definition of the $\lDG y \rDG$ norm, we have the term $\| y(T) \|_{L^2(\Omega)}$ in it, c.f.\ \cref{eq:dg-DG-norm}, we can estimate after employing the triangle inequality once again \vspace{\jot}}
 	\chi &\leq& \left\lDG \bar{y} - \bar{y}^h \right\rDG \| (G_\Sigma \beta v)(T) \|_{L^2(\Omega)} + \left( \left\lDG \bar{y}^h \right\rDG + \| y_\Omega \|_{L^2(\Omega)} \right) \left\lDG G_\Sigma^h \beta v - G_\Sigma \beta v \right\rDG. \\
 \noalign{\noindent Due to \cref{thm:W0T-continuous-embedding} we estimate this further via \vspace{\jot}}
 	\IEEEeqnarraymulticol{3}{c}{ \| (G_\Sigma \beta v)(T) \|_{L^2(\Omega)} \leq \| (G_\Sigma \beta v) \|_{C([0, T], L^2(\Omega))} \leq c_E \| (G_\Sigma \beta v) \|_{W(0, T)}, } \\
@@ -595,8 +616,8 @@ We start with the right hand side and perform a zero addition of $\langle S_h \b
 	\chi &\leq& c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \cdot \Bigg[ c_w c_E |\bar{y}|_{H^s(\meshT_N)} \| \beta \|_{L^\infty(\Sigma)} \| v \|_{L^2(\Sigma)} \\
 	&& {}+ \left( \frac{1}{c_S^A} \left( \| \beta \|_{L^\infty(\Sigma)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) + \| y_\Omega \|_{L^2(\Omega)} \right) |G_\Sigma \beta v|_{H^s(\meshT_N)} \Bigg]. \\
 \noalign{\noindent Again via the \cref{as:continuous-Hs-regularity} this leads to}
-	\chi &\leq& c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \cdot \Bigg[ c_w c_E c_w'  ( \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ) \| \beta \|_{L^\infty(\Sigma)} \| v \|_{L^2(\Sigma)} \\
-	&& {}+ \left( \frac{1}{c_S^A} \left( \| \beta \|_{L^\infty(\Sigma)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) + \| y_\Omega \|_{L^2(\Omega)} \right) c_w' \| \beta \|_{L^\infty(\Sigma)} \|v\|_{L^2(\Sigma)} \Bigg]. \\
+	\chi &\leq& c \max\{1, \alpha\} h^{\min \{ s, p+1\} - 1} \cdot \Bigg[ c_w c_E c_w'  ( \| \beta \|_{L^\infty(\Sigma)} \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ) \\
+	&& {}+ c_w' \left( \frac{1}{c_S^A} \left( \| \beta \|_{L^\infty(\Sigma)} \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) + \| y_\Omega \|_{L^2(\Omega)} \right)  \Bigg] \| \beta \|_{L^\infty(\Sigma)} \|v\|_{L^2(\Sigma)} . \\
 \noalign{\noindent Finally, by combining the constants into a single one called $C > 0$, we obtain}
 	\chi &\leq& C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right) \| v \|_{L^2(\Sigma)}.
 \end{IEEEeqnarray*}
@@ -635,32 +656,135 @@ We observe that \cref{as:continuous-Hs-regularity} can be weakened somewhat:
 Instead of making the demand for general right hand sides, it was only necessary to use this for two specific evaluations, namely $G_\Sigma \beta (\bar{u}_h - \bar{u})$ and $\bar{y}$.
 Especially the former of the two conditions might be difficult to prove as it includes the optimal control of the discretized problem.
 \end{remark}
+\cref{thm:optimal-control-convergence} only discusses the convergence of $\bar{y}_h$ and $\bar{y}$ on the domain they're being observed on.
+Before discussing that, we point out a rather astonishing result:
+\begin{theorem}
+\label{thm:state-error-bound}
+Let the assumptions of \cref{thm:optimal-control-convergence} hold and $\bar{u}_h$ be as in the theorem.
+Furthermore, let $y_{\bar{u}_h}$ be the \emph{actual} state associated with the control $\bar{u}_h$, i.e.\
+\[
+	y_{\bar{u}_h} \coloneqq G_\Sigma \beta \bar{u}_h + G_0 y_0.
+\]
+Then it holds for some constant $C > 0$ independent of $h$, with the state $\bar{y}$ associated with the optimal control $\bar{u}$ that
+\[
+	\| y_{\bar{u}_h} - \bar{y} \|_{W(0, T)} \leq C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right).
+\]
+If \cref{as:continuous-Hs-regularity} holds, this can be strengthened to
+\[
+	| y_{\bar{u}_h} - \bar{y} |_{H^s(Q)} \leq C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right).
+\]
+\end{theorem}
+\begin{proof}
+\begin{IEEEeqnarray*}{rCl}
+	\| y_{\bar{u}_h} - \bar{y} \|_{W(0, T)} &=& \| G_\Sigma \beta \bar{u}_h + G_0 y_0 - G_\Sigma \beta \bar{u} - G_0 y_0 \|_{W(0, T)} \\
+	&=& \| G_\Sigma (\beta (\bar{u}_h - \bar{u})) \|_{W(0, T)}.
+\end{IEEEeqnarray*}
+By \cref{thm:generalized-problem-solution}, this becomes:
+\begin{IEEEeqnarray*}{rCl}
+	\| y_{\bar{u}_h} - \bar{y} \|_{W(0, T)} &\leq& c_w \|\beta \|_{L^2(\Sigma)} \| \bar{u}_h - \bar{u} \|_{L^2(\Sigma)}.
+\end{IEEEeqnarray*}	
+Finally, using \cref{thm:optimal-control-convergence}, we obtain
+\begin{IEEEeqnarray*}{rCl}
+	\| y_{\bar{u}_h} - \bar{y} \|_{W(0, T)} &\leq& c_w \|\beta \|_{L^2(\Sigma)} C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right).
+\end{IEEEeqnarray*}
+Reorganizing the constants into a new one proves the claim.
+
+Naturally, we could also use \cref{as:continuous-Hs-regularity} instead of \cref{thm:generalized-problem-solution} and obtain the same estimate in the $| \cdot |_{H^s(0, T)}$ norm.
+\end{proof}
+What \cref{thm:state-error-bound} effectively means is not that our discretized state will converge in the stronger norm, but rather that the strong convergence of the control translates into a strong convergence of the associated, non-discretized state.
+For the discretized state we obtain:
+\begin{theorem}
+\label{thm:discrete-state-convergence}
+Let the assumptions of \cref{thm:optimal-control-convergence} hold and be $\bar{u}_h$ and $\bar{u}$ as in the theorem, with their respective associated states $\bar{y}_h$ and $\bar{y}$.
+Then it holds for some constant $C > 0$
+\begin{IEEEeqnarray*}{rCl}
+	\lDG \bar{y}_h - \bar{y} \rDG &\leq& C h^{\min \{ s, p+1\} -1} ( \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ).
+\end{IEEEeqnarray*}
+\end{theorem}
+\begin{proof}
+Using the triangle inequality we estimate:
+\begin{IEEEeqnarray*}{rCl}
+	\lDG \bar{y}_h - \bar{y} \rDG &\leq& \lDG \bar{y}_h - \bar{y}^h \rDG + \lDG \bar{y}^h - \bar{y} \rDG.
+\end{IEEEeqnarray*}
+For the first term, we use the previously applied stability estimate \cref{thm:Astab-est} followed by \cref{thm:optimal-control-convergence}:
+\begin{IEEEeqnarray*}{rCl}
+\lDG \bar{y}^h  - \bar{y}_h \rDG &=& \lDG G_\Sigma^h \beta \bar{u} + (G_0^h y_0) - G_\Sigma^h \beta \bar{u}_h - (G_0^h y_0) \rDG \\
+&\leq& \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Sigma)} \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} \\
+&\leq& \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Sigma)} \cdot C \lambda^{-1} h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right).
+\end{IEEEeqnarray*}
+For the second term, we can apply \cref{thm:dg-convergence} if \cref{as:continuous-Hs-regularity} is assumed:
+\begin{IEEEeqnarray*}{rCl}
+\lDG \bar{y}^h - \bar{y} \rDG &\leq& c \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |y|_{H^s(\meshT_N)} \\
+&\leq&  c c_w' \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} ( \| \beta \|_{L^\infty(\Sigma)} \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ).
+\end{IEEEeqnarray*}
+By combining both estimates, we obtain the desired result.
+\end{proof}
+We can summarize both \cref{thm:discrete-state-convergence,thm:state-error-bound} together in the sense that while we ``lose'' some precision in the discretized state that the actual state corresponding to the optimal control of the discretized problem converges in a benign fashion with the same convergence rate.
+
+Furthermore, we can prove that the functionals $J$ and $J_h$ converge in a pointwise fashion:
+\begin{lemma}
+\label{thm:J-convergence}
+Let \cref{as:continuous-Hs-regularity} hold. Then with some constant $C > 0$ independent of $h$, we have for any $u \in U_{ad}$ the estimate:
+\[
+	| J(u) - J_h(u) | \leq \frac{1}{2} C h^{\min \{ s, p+1\} - 1} \left( \| \beta \|_{L^\infty(\Sigma)} \| u \|_{L^2(\Sigma)} + \| y_0 \|_{L^2(\Omega)} \right).
+\]
+\end{lemma}
+\begin{proof}
+We start by considering $|J(u) - J_h(u)|$ and make use of the definitions and the triangle inequality:
+\begin{IEEEeqnarray*}{rCl}
+|J(u) - J_h(u)| &=& \left| \frac{1}{2} \| S u - z \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2 - J_h(u) \right| \\
+&=& \left| \frac{1}{2} \| S u - z - (S_h u - z_h) + S_h u + z_h \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2 - J_h(u) \right| \\
+&\leq& \Bigg| \frac{1}{2} \| S u + (G_0 y_0) - S_h u - (G_0^h y_0) \|_{L^2(\Omega)} \\
+&& \quad {}+ \frac{1}{2} \| S_h u - z_h \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2 - J_h(u) \Bigg| \\
+&=& \left| \frac{1}{2} \| S u + (G_0 y_0) - S_h u - (G_0^h y_0) \|_{L^2(\Omega)} + J_h(u) - J_h(u) \right| \\
+&=& \frac{1}{2} \| S u + (G_0 y_0) - S_h u - (G_0^h y_0) \|_{L^2(\Omega)}.
+\end{IEEEeqnarray*}
+We can apply the convergence result \cref{thm:dg-convergence} again and obtain by subsequently exploiting \cref{as:continuous-Hs-regularity}:
+\begin{IEEEeqnarray*}{rCl}
+	|J(u) - J_h(u)| &\leq& \frac{1}{2} c \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |y|_{H^s(\meshT_N)} \\
+	&\leq& \frac{1}{2} c c_w' \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} (\| \beta \|_{L^\infty(\Sigma)} \| u \|_{L^2(\Sigma)} + \| y_0 \|_{L^2(\Omega)} ).
+\end{IEEEeqnarray*}
+This was the result we aimed to prove.
+\end{proof}
 \section{Optimal control with interior heat sources}
-Analogously to the previous section, we can treat the interior heat source problem with the same restrictions made:
-\begin{equation}
-\label{eq:InnerOptimalControl-restricted}
-\begin{IEEEeqnarraybox}[][c]{c}
-\min J(y, u) = \frac{1}{2} \iint_\Sigma \left( y(x, T) - y_\Sigma(x) \right)^2 \dd s(x) \dd t + \frac{\lambda}{2} \iint_Q u(x, t)^2 \dd s(x) \dd t \\
+With methods analogous to the previous section we now treat a problem formulation with a distributed control, representing an interior source of heat:
+\begin{problem}
+\label{prb:InnerOptimalControl-restricted}
+\begin{IEEEeqnarray*}{c}
+\min J(y, u) = \frac{1}{2} \iint_\Sigma \left( y(x, t) - y_\Sigma(x, t) \right)^2 \dd s(x) \dd t + \frac{\lambda}{2} \iint_{Q} u(x, t)^2 \dd x \dd t \\
 \noalign{\noindent subject to\vspace{\jot}}
 \begin{IEEEeqnarraybox}{rCl"l}
-\frac{\partial y}{\partial t} - \lapl y &=& \beta u & \text{in } Q\\
-\partial_\nu y &=& 0 & \text{in } \Sigma \\
+\frac{\partial y}{\partial t} - \lapl y &=& \beta u & \text{in } Q \\
+\partial_\nu y + \alpha y &=& 0 & \text{in } \Sigma\\
 y(x, 0) &=& 0 & \text{in } \Omega
-\end{IEEEeqnarraybox}
-\end{IEEEeqnarraybox}
-\end{equation}
-The treatment of this equation is very similar to the one of \cref{prb:BoundaryOptimalControl-restricted}.
+\end{IEEEeqnarraybox} \\
+\noalign{\noindent and\vspace{\jot}}
+u_a(x, t) \leq u(x, t) \leq u_b(x, t) \quad \text{a.e.\ in $Q$}.
+\end{IEEEeqnarray*}
+\end{problem}
+This time around, we have an interior heat source with our observation taking place on the boundary of the domain.
+In other words, one can interpret this task as the search for an unknown, inner heat source fitting to an observed heat distribution on the boundary.
+
+As before, we assume $\Omega \subset \R^d$ to be a Lipschitz domain, $y_\Sigma \in L^2(\Sigma)$, $u_a, u_b \in L^2(Q)$ with $u_a(x, t) \leq u_b(x, t)$ and some constants $\lambda \geq 0$ and $\alpha \geq 0$. Moreover, $\beta \in L^\infty(Q)$ can function as a restriction to where the control may operate.
+
+The treatment of this problem is very similar to the one of \cref{prb:BoundaryOptimalControl-restricted}.
 In this case, the solution of the state equation can be expressed as
 \[
 	y = G_Q \beta u.
 \]
-Here, we need the analogous observation operator $E_\Sigma : y \mapsto y|_\Sigma$, so that we can define $S \coloneqq E_\Sigma G_Q \beta u$. The operator $E_\Sigma$ is continuous from $W(0, T)$ to $L^2(\Sigma)$, hence $S : u \mapsto y|_\Sigma$ is continuous from $L^2(Q)$ to $L^2(\Sigma)$.
+Here, we need the observation operator $E_\Sigma : y \mapsto y|_\Sigma$, so that we can define the control-to-state operator $S \coloneqq E_\Sigma G_Q \beta u$.
+The operator $E_\Sigma$ is continuous from $W(0, T)$ to $L^2(0, T; L^2(\partial \Omega)) \cong L^2(\Sigma)$, hence $S : u \mapsto y|_\Sigma$ is continuous from $L^2(Q)$ to $L^2(\Sigma)$.
 
 By applying \cref{thm:optimal-control-existence} one obtains the existence of a unique solution $\bar{u}$ again, and by using \cref{thm:variational-ineq}, one obtains the optimality condition
 \[
-	0 \leq \langle S \bar{u} - y_\Sigma, S u - S \bar{u} \rangle_{L^2(\Sigma)} + \lambda \langle \bar{u}, u - \bar{u} \rangle_{L^2(Q)} \quad \forall u \in U_{ad}.
+	0 \leq \langle S \bar{u} - y_\Sigma, S u - S \bar{u} \rangle_{L^2(\Sigma)} + \lambda \langle \bar{u}, u - \bar{u} \rangle_{L^2(Q)} \quad \forall u \in U_{ad},
 \]
-In this case, the adjoint is defined by \cref{eq:generalized-problem-adj} with $a_Q = 0$, $a_\Sigma = \bar{y} - y_\Sigma$ and $a_\Omega = 0$.
+where $U_{ad}$ is defined in an analogous fashion as before:
+\[
+	U_{ad} \coloneqq \left\{ u \in L^2(Q) \midcolon u_a(x, t) \leq u(x, t) \leq u_b(x, t) \quad \text{a.e.\ on $Q$} \right\}.
+\]
+
+In this case, the adjoint state is defined by \cref{eq:generalized-problem-adj} with $a_Q = 0$, $a_\Sigma = \bar{y} - y_\Sigma$ and $a_\Omega = 0$.
 One can show (see \cite[Satz 3.21, p.\ 131]{Troeltzsch}) that a control $\bar{u} \in U_{ad}$ is optimal if and only if the adjoint state fulfills the variational inequality
 \[
 	\iint_Q ( \beta p + \lambda \bar{u} ) ( u - \bar{u} ) \dd x \dd t \geq 0 \quad \forall u \in U_{ad}.
@@ -674,41 +798,71 @@ and then
 \[
 	S_h \coloneqq E_\Sigma G_I^h \beta \cdot.
 \]
-Given that $S_h$ is linear and continuous in this case as well, \cref{eq:generalized-problem-adj} gives us the existence of a unique solution $\bar{u}_h$ in the discrete setting.
+Resulting from the lack of an initial condition, no definition of $z$, and accordingly $z_h$ is necessary in this case.
 
-As a next step we would like to apply \cref{thm:variational-ineq} again, too. Just as in the continuous case, we define it via \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = \bar{y}_h - y_\Sigma$ and $a_\Omega = 0$.
+The operator $S_h$ is obviously linear, but continuity poses a problem that needs discussion.
+For the treatment of \cref{prb:BoundaryOptimalControl-restricted}, we used the argument that one could estimate the norm of the observation, i.e.\ $\| y_h(T) \|_{L^2(\Omega)}$ via $\| y_h \|_{A}$, or accordingly, $\lDG y_h \rDG$.
+However, such an argument does not hold in this case, as $\| y_h \|_{L^2(\Sigma)}$ cannot be estimated by $\lDG y_h \rDG$, at least not if Neumann boundary conditions are assumed.
+We may however argue that $\| y_h \|_{L^2(\Sigma)} \leq \alpha^{-\frac{1}{2}} \lDGw y_h \rDGw$ holds, which in the case of $\alpha \neq 0$ together with the the ellipticity estimate \cref{thm:A-ellip-weak} (or alternatively, for quasi-uniform meshes, the estimate \cref{thm:Astab-est}) shows continuity of the operator $S_h$.
+
+In the case $\alpha \neq 0$, we can apply \cref{thm:optimal-control-existence} because $S_h$ is going to be continuous.
+However, the case $\alpha = 0$ poses a problem, as not even a convergence argument could be made because of the exponent of $\alpha$ being negative. In fact, it's not clear if the results even apply for this case at all. Therefore, we assume $\alpha \neq 0$ in the following.
+
+As a next step we would like to apply \cref{thm:variational-ineq} again, too. Just as in the continuous case, we define the adjoint state via \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = \bar{y}_h - y_\Sigma$ and $a_\Omega = 0$.
+With this choice, we can immediately conclude the following result:
 \begin{theorem}
-There exists a unique optimal control $\bar{u}_h \in L^2(Q)$ for \cref{eq:InnerOptimalControl-restricted}.
+\label{thm:inner-variational-ineq}
+There exists a unique optimal control $\bar{u}_h \in U_{ad}$ for \cref{prb:InnerOptimalControl-restricted}.
 
-It can be characterized with a variational inequality: A control $\bar{u}_h \in L^2(Q)$ is optimal if and only if with the associated adjoint state $\bar{p}_h$ defined as the solution of \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = \bar{y}_h - y_\Sigma$ and $a_\Omega = 0$ fulfills the following variational inequality
+It can be characterized with a variational inequality: A control $\bar{u}_h \in U_{ad}$ is optimal if and only if with the associated adjoint state $\bar{p}_h$ defined as the solution of \cref{eq:generalized-problem-adj-dG} with the choices $a_Q = 0$, $a_\Sigma = \bar{y}_h - y_\Sigma$ and $a_\Omega = 0$ fulfills the following variational inequality
 \[
-	\langle \beta(x, t) \bar{p}_h (x, t) + \lambda \bar{u}_h(x, t), u_h - \bar{u}_h \rangle_{L^2(Q)} \geq 0 \quad \forall u_h \in L^2(Q)
+	\langle \beta(x, t) \bar{p}_h (x, t) + \lambda \bar{u}_h(x, t), u_h - \bar{u}_h \rangle_{L^2(Q)} \geq 0 \quad \forall u_h \in U_{ad}
 \]
 almost everywhere.
 \end{theorem}
 \begin{proof}
 The proof is identical to the one of \cref{thm:discrete-variational-ineq} with the respective choices of $a_Q$, $a_\Sigma$ and $a_\Omega$ adjusted to the interior heating situation.
 \end{proof}
-The overall optimality system in this case turns out to be
-\begin{IEEEeqnarray*}{c}
-\begin{IEEEeqnarraybox}{rCl"rCl}
-A(y_h, v_h) &=& \langle \beta u_h, v_h \rangle_{L^2(Q)} & A(v_h, p_h) &=& \langle y_h - y_\Sigma, v_h \rangle_{L^2(\Sigma)}
-\end{IEEEeqnarraybox} \\
-u_h = - \lambda^{-1} \beta p_h.
-\end{IEEEeqnarray*}
-
-In order to replicate the convergence theorem \cref{thm:optimal-control-convergence}, we need to make assumption \cref{as:continuous-Hs-regularity} again.
-However, this alone is not enough: During the proof of \cref{thm:optimal-control-convergence} we used the estimate
-\[
-	\left\| \bar{y}(T) - \bar{y}^h(T) \right\|_{L^2(\Omega)} \leq \left\lDG \bar{y} - \bar{y}^h \right\rDG.
-\]
-In contrast, we now use the observation operator $E_\Sigma$ instead of $E_T$, which means we have to estimate
-\[
-	\left\| \bar{y} - \bar{y}^h \right\|_{L^2(\Sigma)} \leq C \left\lDG \bar{y} - \bar{y}^h \right\rDG.
-\]
-If $\alpha > 0$, this trivially holds for $C = \frac{1}{\alpha}$, but it's not clear why it would hold for $\alpha = 0$. Therefore, we obtain the following convergence theorem:
+Just as before, the same projection formula follows from this inequality:
 \begin{theorem}
-Let for $\alpha > 0$ be $\bar{u}$ be the optimal control for the continuous problem \cref{eq:InnerOptimalControl-restricted} and let \cref{as:continuous-Hs-regularity} hold. Moreover, be $\bar{u}_h$ the discretized solution to \cref{eq:f-Sh}.
+\label{thm:inner-projection-formula}
+A control $\bar{u}_h \in U_{ad}$ is optimal for \cref{prb:InnerOptimalControl-restricted} if and only if the associated adjoint state $\bar{p}_h$ fulfills the equality
+\[
+	\bar{u}_h = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta \bar{p}_h \right\}.
+\]
+\end{theorem}
+\begin{proof}
+The proof is exactly the same as for \cref{thm:projection-formula}.
+\end{proof}
+Furthermore, one can again summarize the results into optimality systems.
+For the continuous formulation, this is:
+\begin{IEEEeqnarray*}{c}
+\begin{IEEEeqnarraybox}{r"l}
+\begin{IEEEeqnarraybox}{rCl}
+\frac{\partial y}{\partial t} - \lapl y &=& \beta u \\
+\partial_\nu y + \alpha y &=& 0 \\
+y(0) &=& 0
+\end{IEEEeqnarraybox} & 
+\begin{IEEEeqnarraybox}{rCl}
+-\frac{\partial p}{\partial t} - \lapl p &=& y - y_\Sigma \\
+\partial_\nu p + \alpha p &=& 0 \\
+p(T) &=& 0
+\end{IEEEeqnarraybox}
+\end{IEEEeqnarraybox} \\
+u = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p \right\}.
+\end{IEEEeqnarray*}
+For the discrete case, one obtains a corresponding formulation due to \cref{thm:inner-variational-ineq,thm:inner-projection-formula} the system
+\begin{IEEEeqnarray*}{c}
+\begin{IEEEeqnarraybox}{rCl}
+A(y_h, v_h) &=& \left\langle \beta u_h, v_h \right\rangle_{L^2(Q)} \\
+A(v_h, p_h) &=& \langle y_h - y_\Sigma, v_h \rangle_{L^2(\Sigma)}
+\end{IEEEeqnarraybox} \\
+u_h = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p_h \right\}.
+\end{IEEEeqnarray*}
+In order to replicate the convergence theorem \cref{thm:optimal-control-convergence}, we need to make assumption \cref{as:continuous-Hs-regularity} again, which can be weakened as explained in the remark after \cref{thm:optimal-control-convergence}.
+
+\begin{theorem}
+Let for $\alpha > 0$ be $\bar{u}$ be the optimal control for the continuous problem \cref{prb:InnerOptimalControl-restricted} and let \cref{as:continuous-Hs-regularity} hold. Moreover, be $\bar{u}_h$ the discretized solution to \cref{eq:f-Sh}.
 Then there is a $C > 0$ independent of $h$, such that:
 \[
 	\| \bar{u} - \bar{u}_h \|_{L^2(Q)} + \| \bar{y} - \bar{y}_h \|_{L^2(\Sigma)} \leq C h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(Q)} + \| y_\Omega \|_{L^2(\Omega)} \right).
@@ -717,4 +871,111 @@ Then there is a $C > 0$ independent of $h$, such that:
 \begin{proof}
 Under the assumption $\alpha > 0$, the proof is analogous to the one of \cref{thm:optimal-control-convergence}. Instead of $z_h$ and $z$ one uses $y_\Omega$ directly though, as the state is now linearly dependent on the control and not affine-linear as in the boundary control case.
 \end{proof}
+As before, one can shown that the results of \cref{thm:state-error-bound,thm:discrete-state-convergence} hold in this case, too.
+We can also transport \cref{thm:J-convergence}:
+\begin{lemma}
+\label{thm:J-convergence-inner}
+Let \cref{as:continuous-Hs-regularity} hold. Then with some constant $C > 0$ independent of $h$, we have for any $u \in U_{ad}$ the estimate:
+\[
+	| J(u) - J_h(u) | \leq \frac{1}{2} C h^{\min \{ s, p+1\} -1} \| u \|_{L^2(Q)}.
+\]
+\end{lemma}
+\begin{proof}
+We proceed as before with the proof of \cref{thm:J-convergence}:
+\begin{IEEEeqnarray*}{rCl}
+|J(u) - J_h(u)| &=& \left| \frac{1}{2} \| S u - y_\Sigma \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2 - J_h(u) \right| \\
+&=& \left| \frac{1}{2} \| S u - y_\Sigma - (S_h u - y_\Sigma) + S_h u + y_\Sigma \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2 - J_h(u) \right| \\
+&\leq& \left| \frac{1}{2} \| S u - S_h u \|_{L^2(\Omega)} + \frac{1}{2} \| S_h u - y_\Sigma \|_{L^2(\Omega)}^2 + \frac{\lambda}{2} \| u \|_{L^2(\Sigma)}^2 - J_h(u) \right| \\
+&=& \left| \frac{1}{2} \| S u - S_h u \|_{L^2(\Omega)} + J_h(u) - J_h(u) \right| \\
+&=& \frac{1}{2} \| S u - S_h u \|_{L^2(\Omega)}.
+\end{IEEEeqnarray*}
+Once again, we can apply the convergence result \cref{thm:dg-convergence} again and obtain
+\begin{IEEEeqnarray*}{rCl}
+	|J(u) - J_h(u)| &\leq& \frac{1}{2} c \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |y|_{H^s(\meshT_N)} \\
+	&\overset{\text{\cref{as:continuous-Hs-regularity}}}{\leq}& \frac{1}{2} c c_w' \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} (\| \beta \|_{L^\infty(Q)} \| u \|_{L^2(Q)}).
+\end{IEEEeqnarray*}
+This is the result we wanted to prove.
+\end{proof}
+Considering that the problems we're actually solving are
+\[
+	\min_{u \in U_{ad}} J(u) \qquad \min_{u_h \in U_{ad}} J_h(u),
+\]
+the convergence of the control in the $L^2(Q)$ norm and not the $\lDG \cdot \rDG$ norm is not that surprising.
+It stems from the approach to not discretize the control in the first place.
+\begin{remark}
+Another interesting fact that comes to light when considering this formulation is that the proof of \cref{thm:optimal-control-convergence} can be transported to formulations as long as the term $S \bar{u} - S_h \bar{u}$ can be estimated in some way.
+However, in order for that to be possible, the norm must be possible to estimate against the $\lDG \cdot \rDG$ norm.
+This however, is also necessary for showing that $S_h$ is well defined.
+In a way this means that either the discontinuous Galerkin approach converges for a given formulation or is not well defined for it at all.
+\end{remark}
+\section{Optimal control with state observations on the full space}
+In the light of the last remark, we want to introduce another formulation to point out some limitations of the method presented here.
+In contrast to the last problem, we now want to minimize the error to a given state on the full space-time domain $Q$.
+This leads to the following formulation:
+\begin{problem}
+\label{prb:SymmetricOptimalControl-restricted}
+\begin{IEEEeqnarray*}{c}
+\min J(y, u) = \frac{1}{2} \iint_Q \left( y(x, t) - y_Q(x, t) \right)^2 \dd s(x) \dd t + \frac{\lambda}{2} \iint_{Q} u(x, t)^2 \dd x \dd t \\
+\noalign{\noindent subject to\vspace{\jot}}
+\begin{IEEEeqnarraybox}{rCl"l}
+\frac{\partial y}{\partial t} - \lapl y &=& \beta u + f & \text{in } Q \\
+y &=& 0 & \text{in } \Sigma\\
+y(x, 0) &=& 0 & \text{in } \Omega
+\end{IEEEeqnarraybox} \\
+\noalign{\noindent and\vspace{\jot}}
+u_a(x, t) \leq u(x, t) \leq u_b(x, t) \quad \text{a.e.\ in $Q$}.
+\end{IEEEeqnarray*}
+\end{problem}
+Once again we assume $\Omega \subset \R^d$ to be a Lipschitz domain, $y_Q \in L^2(Q)$, $u_a, u_b \in L^2(Q)$ with $u_a(x, t) \leq u_b(x, t)$ and some constant $\lambda \geq 0$. As before, $\beta \in L^\infty(Q)$ can function as a restriction to where the control may operate. Additionally, we have an inner source function $f \in L^2(Q)$.
+Unlike previously, we now use homogeneous Dirichlet boundary conditions.
+
+For the continuous case, there's not much of a difference in comparison to the previously treated formulations.
+However, there is a crucial difference as far as applying our method is concerned.
+As in the previous section, we have
+\[
+	y = G_Q \beta u.
+\]
+The observation operator is now $E_Q : y \mapsto y$ though, the identity of $L^2(Q)$. This leads to a control to space operator of $S \coloneqq G_Q \beta \cdot$. As the identity is obviously continuous, so is $S$.
+
+For the discontinuous Galerkin method, this has an interesting effect, namely the operator $S_h \coloneqq G_Q^h \beta \cdot$ ostensibly cannot be shown to be continuous from $L^2(Q)$ to $L^2(Q)$.
+Recalling the discussion made after \cref{thm:A-ellip-weak}, we can argue that because $\lDGw \cdot \rDGw$ (and in that way, $\lDG \cdot \rDG$) is a norm on $\Shp(\meshT_N)$, we can argue that by the equivalence of norms, the $L^2(Q)$ norm can be estimated for the elements of $\Shp(\meshT_N) \subset L^2(Q)$ by the $\lDG \cdot \rDG$ norm multiplied with some constant.
+As of such, $S_h$ \emph{is} continuous from $L^2(Q)$ to $L^2(Q)$.
+
+This equivalence of norms keeps everything but the proof of convergence transferable. \cref{thm:discrete-adj-state-helper} suffices for deriving the the adjoint state, again.
+In the end, we obtain the following optimality system for the continuous case:
+\begin{IEEEeqnarray*}{c}
+\begin{IEEEeqnarraybox}{r"l}
+\begin{IEEEeqnarraybox}{rCl}
+\frac{\partial y}{\partial t} - \lapl y &=& f + \beta u \\
+y &=& 0 \\
+y(0) &=& 0
+\end{IEEEeqnarraybox} & 
+\begin{IEEEeqnarraybox}{rCl}
+-\frac{\partial p}{\partial t} - \lapl p &=& y - y_Q \\
+p &=& 0 \\
+p(T) &=& 0
+\end{IEEEeqnarraybox}
+\end{IEEEeqnarraybox} \\
+u = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p \right\}.
+\end{IEEEeqnarray*}
+This optimality system follows from the result \cite[Lemma 3.17, p.\ 126]{Troeltzsch}. Alternatively see the work \cite{MeidnerVexler-I}, which treats this formulation, too.
+For the discrete case, one obtains a corresponding formulation, derived in the same fashion as \cref{thm:discrete-variational-ineq,thm:projection-formula} were the system
+\begin{IEEEeqnarray*}{c}
+\begin{IEEEeqnarraybox}{rCl}
+A(y_h, v_h) &=& \left\langle \beta u_h, v_h \right\rangle_{L^2(\Sigma_R)} + \langle f, v_h \rangle_{L^2(Q)} \\
+A(v_h, p_h) &=& \langle y_h - y_Q, v_h \rangle_{L^2(Q)}
+\end{IEEEeqnarraybox} \\
+u_h = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p_h \right\}.
+\end{IEEEeqnarray*}
+Alas, we have a unique optimal control for the discrete problem, too.
+
+However, the proof of the convergence result \cref{thm:optimal-control-convergence} breaks down for this problem. The step that cannot be made is to estimate $\| G_Q^h \beta v - G_Q \beta v \|_{L^2(Q)}$ and $\| \bar{y} - \bar{y}^h \|_{L^2(Q)}$ by $\lDG G_Q^h \beta v - G_Q \beta v \rDG$ and $\lDG \bar{y} - \bar{y}^h \rDG$, respectively.
+This is simply not possible because $\bar{y} \notin \Shp(\meshT_N)$ and $G_Q \beta v \notin \Shp(\meshT_N)$: We used the argument of norm equivalence to argue why we could estimate the $L^2(Q)$ norm by the $\lDG \cdot \rDG$ norm. This however cannot be applied for functions that are obviously not in our finitely dimensional space.
+
+In a more general way, we again have the estimate
+\[
+	|J(u) - J_h(u)| \leq \frac{1}{2} \| S u - S_h u \|_{L^2(Q)},
+\]
+which is to say, the pointwise convergence of the functional $J_h$ is bound by something we cannot estimate, especially we don't even know what $J_h(\bar{u})$ converges to for $h \to 0$.
+As of such, it's not surprisingly that no convergence can be proved for this formulation.
 \end{document}

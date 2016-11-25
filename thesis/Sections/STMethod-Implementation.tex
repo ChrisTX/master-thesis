@@ -3,21 +3,25 @@
 \begin{document}
 \chapter{Numerical treatment of the control problem}
 In \cref{sec:Disc-Control-Problem} we derived optimality conditions and convergence for an approximation to the optimal control heating problem for both, boundary and interior heat sources.
-As a final step, one has to discuss the implementation of the method.
-\section{Establishing a linear optimality system}
-For the boundary heat system, we have an optimality system of
+We now want to discuss numerical methods for solving the formulations established.
+For now, we consider the case with no restrictions made to the control, i.e.\ $u_a = -\infty$ and $u_b = \infty$. In that setup, the projection formula becomes a simple equation: $u_h = - \lambda^{-1} \beta p_h$.
+A key advantage of the discontinuous Galerkin approach presented here is that we can immediately assemble a linear equation system for this case and solve the already discretized system with a common equation solver.
+\section{Establishing a linear optimality system in the case with no control restrictions}
+For the boundary heat system we obtain under this setup an optimality system of
 \begin{IEEEeqnarray*}{c}
 \begin{IEEEeqnarraybox}{rCl"rCl}
 A(y_h, v_h) &=& \langle \beta u_h, v_h \rangle_{L^2(\Sigma_R)} + \langle y_0, v_h(0) \rangle_{L^2(\Omega)} & A(v_h, p_h) &=& \langle y_h(T) - y_\Omega, v_h(T) \rangle_{L^2(\Omega)}
 \end{IEEEeqnarraybox} \\
 u_h = - \lambda^{-1} \beta p_h.
 \end{IEEEeqnarray*}
+Assuming that $y_\Omega$ and $y_0$ lie in $\Shp(\meshT_N)$
 By substituting $u_h$ with the representation given by the variational equality, we obtain the following system:
 \begin{IEEEeqnarray*}{rCl"l}
 A(y_h, v_h) &=& - \langle \beta^2 \lambda^{-1} p_h, v_h \rangle_{L^2(\Sigma_R)} + \langle y_0, v_h(0) \rangle_{L^2(\Omega)}& \forall v_h \in \Shp(\meshT_N) \\
 A(v_h, p_h) &=& \langle y_h(T) - y_\Omega, v_h(T) \rangle_{L^2(\Omega)} & \forall v_h \in \Shp(\meshT_N)
 \end{IEEEeqnarray*}
-Note that we can restrict $v_h$ $\Shp(\meshT_N) \subset L^2(Q)$ due to the same projection argument made for the restriction of $u_h$ in the last chapter.
+
+Note that we can restrict $v_h \in \Shp(\meshT_N) \subset L^2(Q)$ due to the same projection argument made for the restriction of $u_h$ in the last chapter.
 If we bring the terms depending on $y_h$ and $p_h$ to the left hand side we obtain
 \begin{IEEEeqnarray*}{rCl"l}
 A(y_h, v_h) + \langle \beta^2 \lambda^{-1} p_h, v_h \rangle_{L^2(\Sigma_R)} &=& \langle y_0, v_h(0) \rangle_{L^2(\Omega)} & \forall v_h \in \Shp(\meshT_N) \\
