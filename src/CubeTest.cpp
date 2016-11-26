@@ -103,7 +103,7 @@ int main() {
 #elif defined(SYMMETRIC_SYSTEM)
 	const auto reflim = 0;
 #else
-	const auto reflim = 1;
+	const auto reflim = 3;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -202,7 +202,7 @@ int main() {
 
 #else
 	auto matA = stmass.AssembleMatrix_Boundary<basis_t>();
-	auto lvA = stmass.AssembleLV_Boundary<basis_t>([pi](double x, double y, double) -> double { return 1.; }, [pi](double x, double y, double) -> double { return 5.; });
+	auto lvA = stmass.AssembleLV_Boundary<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 5.; });
 #endif
 #else
 	auto matAandLV = stmass.AssembleMatrixAndLV<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 1.; });
@@ -228,7 +228,7 @@ int main() {
 	
 	auto stmsol = STMSolver<double, basis_t>{ beta, lambda, mesh };
 #ifdef KR_SYSTEM
-	stmsol.SolveRestricted(stmass, [pi](double x, double y, double) -> double { return 1.; }, [pi](double x, double y, double) -> double { return 40.; }, 0., 2000., 3.);
+	stmsol.SolveRestricted(stmass, [](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 40.; }, 0., 40., 0.15);
 #else
 	stmsol.Solve(matA, lvA);
 #endif

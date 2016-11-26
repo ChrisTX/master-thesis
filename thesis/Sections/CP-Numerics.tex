@@ -657,7 +657,35 @@ Instead of making the demand for general right hand sides, it was only necessary
 Especially the former of the two conditions might be difficult to prove as it includes the optimal control of the discretized problem.
 \end{remark}
 \cref{thm:optimal-control-convergence} only discusses the convergence of $\bar{y}_h$ and $\bar{y}$ on the domain they're being observed on.
-Before discussing that, we point out a rather astonishing result:
+We can however derive a convergence of $\bar{y}_h$ towards $\bar{y}$ in the $\lDG \cdot \rDG$ norm:
+\begin{theorem}
+\label{thm:discrete-state-convergence}
+Let the assumptions of \cref{thm:optimal-control-convergence} hold and be $\bar{u}_h$ and $\bar{u}$ as in the theorem, with their respective associated states $\bar{y}_h$ and $\bar{y}$.
+Then it holds for some constant $C > 0$
+\begin{IEEEeqnarray*}{rCl}
+	\lDG \bar{y}_h - \bar{y} \rDG &\leq& C h^{\min \{ s, p+1\} -1} ( \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ).
+\end{IEEEeqnarray*}
+\end{theorem}
+\begin{proof}
+Using the triangle inequality we estimate:
+\begin{IEEEeqnarray*}{rCl}
+	\lDG \bar{y}_h - \bar{y} \rDG &\leq& \lDG \bar{y}_h - \bar{y}^h \rDG + \lDG \bar{y}^h - \bar{y} \rDG.
+\end{IEEEeqnarray*}
+For the first term, we use the previously applied stability estimate \cref{thm:Astab-est} followed by \cref{thm:optimal-control-convergence}:
+\begin{IEEEeqnarray*}{rCl}
+\lDG \bar{y}^h  - \bar{y}_h \rDG &=& \lDG G_\Sigma^h \beta \bar{u} + (G_0^h y_0) - G_\Sigma^h \beta \bar{u}_h - (G_0^h y_0) \rDG \\
+&\leq& \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Sigma)} \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} \\
+&\leq& \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Sigma)} \cdot C \lambda^{-1} h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right).
+\end{IEEEeqnarray*}
+For the second term, we can apply \cref{thm:dg-convergence} if \cref{as:continuous-Hs-regularity} is assumed:
+\begin{IEEEeqnarray*}{rCl}
+\lDG \bar{y}^h - \bar{y} \rDG &\leq& c \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |y|_{H^s(\meshT_N)} \\
+&\leq&  c c_w' \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} ( \| \beta \|_{L^\infty(\Sigma)} \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ).
+\end{IEEEeqnarray*}
+By combining both estimates, we obtain the desired result.
+\end{proof}
+Given the problem interpretation, we want to find an optimal control for the continuous setting.
+As of such, we are also interested in the convergence of the continuous state associated with the discretized control towards the state associated with the optimal control:
 \begin{theorem}
 \label{thm:state-error-bound}
 Let the assumptions of \cref{thm:optimal-control-convergence} hold and $\bar{u}_h$ be as in the theorem.
@@ -691,35 +719,9 @@ Reorganizing the constants into a new one proves the claim.
 
 Naturally, we could also use \cref{as:continuous-Hs-regularity} instead of \cref{thm:generalized-problem-solution} and obtain the same estimate in the $| \cdot |_{H^s(0, T)}$ norm.
 \end{proof}
-What \cref{thm:state-error-bound} effectively means is not that our discretized state will converge in the stronger norm, but rather that the strong convergence of the control translates into a strong convergence of the associated, non-discretized state.
-For the discretized state we obtain:
-\begin{theorem}
-\label{thm:discrete-state-convergence}
-Let the assumptions of \cref{thm:optimal-control-convergence} hold and be $\bar{u}_h$ and $\bar{u}$ as in the theorem, with their respective associated states $\bar{y}_h$ and $\bar{y}$.
-Then it holds for some constant $C > 0$
-\begin{IEEEeqnarray*}{rCl}
-	\lDG \bar{y}_h - \bar{y} \rDG &\leq& C h^{\min \{ s, p+1\} -1} ( \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ).
-\end{IEEEeqnarray*}
-\end{theorem}
-\begin{proof}
-Using the triangle inequality we estimate:
-\begin{IEEEeqnarray*}{rCl}
-	\lDG \bar{y}_h - \bar{y} \rDG &\leq& \lDG \bar{y}_h - \bar{y}^h \rDG + \lDG \bar{y}^h - \bar{y} \rDG.
-\end{IEEEeqnarray*}
-For the first term, we use the previously applied stability estimate \cref{thm:Astab-est} followed by \cref{thm:optimal-control-convergence}:
-\begin{IEEEeqnarray*}{rCl}
-\lDG \bar{y}^h  - \bar{y}_h \rDG &=& \lDG G_\Sigma^h \beta \bar{u} + (G_0^h y_0) - G_\Sigma^h \beta \bar{u}_h - (G_0^h y_0) \rDG \\
-&\leq& \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Sigma)} \| \bar{u} - \bar{u}_h \|_{L^2(\Sigma)} \\
-&\leq& \frac{1}{c_S^A} \| \beta \|_{L^\infty(\Sigma)} \cdot C \lambda^{-1} h^{\min \{ s, p+1\} - 1} \left( \| \bar{u} \|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} \right).
-\end{IEEEeqnarray*}
-For the second term, we can apply \cref{thm:dg-convergence} if \cref{as:continuous-Hs-regularity} is assumed:
-\begin{IEEEeqnarray*}{rCl}
-\lDG \bar{y}^h - \bar{y} \rDG &\leq& c \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |y|_{H^s(\meshT_N)} \\
-&\leq&  c c_w' \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} ( \| \beta \|_{L^\infty(\Sigma)} \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ).
-\end{IEEEeqnarray*}
-By combining both estimates, we obtain the desired result.
-\end{proof}
-We can summarize both \cref{thm:discrete-state-convergence,thm:state-error-bound} together in the sense that while we ``lose'' some precision in the discretized state that the actual state corresponding to the optimal control of the discretized problem converges in a benign fashion with the same convergence rate.
+\cref{thm:state-error-bound} does not means that our discretized state will converge in the stronger norm, but rather that the strong convergence of the control translates into a strong convergence of the associated, non-discretized state.
+
+We can summarize both \cref{thm:discrete-state-convergence,thm:state-error-bound} together in the sense that while we ``lose'' some precision with our discretized state due to the weaker $\lDG \cdot \rDG$ norm, which only bounds the derivatives, the actual state corresponding to the optimal control of the discretized problem converges in a benign fashion in the $W(0, T)$ norm with the same convergence rate.
 
 Furthermore, we can prove that the functionals $J$ and $J_h$ converge in a pointwise fashion:
 \begin{lemma}
@@ -915,10 +917,10 @@ This leads to the following formulation:
 \begin{problem}
 \label{prb:SymmetricOptimalControl-restricted}
 \begin{IEEEeqnarray*}{c}
-\min J(y, u) = \frac{1}{2} \iint_Q \left( y(x, t) - y_Q(x, t) \right)^2 \dd s(x) \dd t + \frac{\lambda}{2} \iint_{Q} u(x, t)^2 \dd x \dd t \\
+\min J(y, u) = \frac{1}{2} \iint_Q \left( y(x, t) - y_Q(x, t) \right)^2 \dd x \dd t + \frac{\lambda}{2} \iint_{Q} u(x, t)^2 \dd x \dd t \\
 \noalign{\noindent subject to\vspace{\jot}}
 \begin{IEEEeqnarraybox}{rCl"l}
-\frac{\partial y}{\partial t} - \lapl y &=& \beta u + f & \text{in } Q \\
+\frac{\partial y}{\partial t} - \lapl y &=& \beta u + q & \text{in } Q \\
 y &=& 0 & \text{in } \Sigma\\
 y(x, 0) &=& 0 & \text{in } \Omega
 \end{IEEEeqnarraybox} \\
@@ -926,7 +928,7 @@ y(x, 0) &=& 0 & \text{in } \Omega
 u_a(x, t) \leq u(x, t) \leq u_b(x, t) \quad \text{a.e.\ in $Q$}.
 \end{IEEEeqnarray*}
 \end{problem}
-Once again we assume $\Omega \subset \R^d$ to be a Lipschitz domain, $y_Q \in L^2(Q)$, $u_a, u_b \in L^2(Q)$ with $u_a(x, t) \leq u_b(x, t)$ and some constant $\lambda \geq 0$. As before, $\beta \in L^\infty(Q)$ can function as a restriction to where the control may operate. Additionally, we have an inner source function $f \in L^2(Q)$.
+Once again we assume $\Omega \subset \R^d$ to be a Lipschitz domain, $y_Q \in L^2(Q)$, $u_a, u_b \in L^2(Q)$ with $u_a(x, t) \leq u_b(x, t)$ and some constant $\lambda \geq 0$. As before, $\beta \in L^\infty(Q)$ can function as a restriction to where the control may operate. Additionally, we have an inner source function $q \in L^2(Q)$.
 Unlike previously, we now use homogeneous Dirichlet boundary conditions.
 
 For the continuous case, there's not much of a difference in comparison to the previously treated formulations.
@@ -946,7 +948,7 @@ In the end, we obtain the following optimality system for the continuous case:
 \begin{IEEEeqnarray*}{c}
 \begin{IEEEeqnarraybox}{r"l}
 \begin{IEEEeqnarraybox}{rCl}
-\frac{\partial y}{\partial t} - \lapl y &=& f + \beta u \\
+\frac{\partial y}{\partial t} - \lapl y &=& q + \beta u \\
 y &=& 0 \\
 y(0) &=& 0
 \end{IEEEeqnarraybox} & 
@@ -962,7 +964,7 @@ This optimality system follows from the result \cite[Lemma 3.17, p.\ 126]{Troelt
 For the discrete case, one obtains a corresponding formulation, derived in the same fashion as \cref{thm:discrete-variational-ineq,thm:projection-formula} were the system
 \begin{IEEEeqnarray*}{c}
 \begin{IEEEeqnarraybox}{rCl"l}
-A(y_h, v_h) &=& \left\langle \beta u_h, v_h \right\rangle_{L^2(\Sigma_R)} + \langle f, v_h \rangle_{L^2(Q)} & \text{for all $v_h \in \Shp(\meshT_N)$} \\
+A(y_h, v_h) &=& \left\langle \beta u_h, v_h \right\rangle_{L^2(\Sigma_R)} + \langle q, v_h \rangle_{L^2(Q)} & \text{for all $v_h \in \Shp(\meshT_N)$} \\
 A(v_h, p_h) &=& \langle y_h - y_Q, v_h \rangle_{L^2(Q)} & \text{for all $v_h \in \Shp(\meshT_N)$}
 \end{IEEEeqnarraybox} \\
 u_h = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p_h \right\}.

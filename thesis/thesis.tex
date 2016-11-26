@@ -97,9 +97,7 @@
   colorlinks = true,
 }
 
-\usepackage{algorithm2e}
-\DontPrintSemicolon
-\SetKwRepeat{Do}{do}{while}
+\usepackage[linesnumbered]{algorithm2e}
 
 % These have to be loaded after hyperref!
 \usepackage[amsmath,hyperref,thmmarks]{ntheorem}
@@ -108,6 +106,19 @@
 \usepackage[capitalize,nameinlink]{cleveref}
 \usepackage[a4paper]{geometry}
 \usepackage{IEEEtrantools}
+
+% Algorithm2e specific
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{\node[shape=circle,draw,inner sep=1pt] (char) {#1};}}
+\newenvironment{algorithmbox}[1][]{\begin{mdframed}[style=theoremframing,frametitle={#1},frametitlefont={\scshape},frametitlebelowskip=0pt]}{\end{mdframed}}
+
+\IncMargin{2.5em}
+\SetNlSty{circled}{}{}
+\SetNlSkip{1em}
+\DontPrintSemicolon
+\newcommand{\EndAlgorithmLine}{\vskip\medskipamount % or other desired dimension
+\leaders\vrule width \textwidth\vskip0.4pt % or other desired thickness
+\vskip\smallskipamount % ditto
+\nointerlineskip}
 
 % Theorems
 \input{theorems.tex}

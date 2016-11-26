@@ -1245,6 +1245,81 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		}
 	}
 
+	template<class BasisFuncs>
+	auto ClassifyActiveSets(const active_set_qualifier_t& active_sets_n1, const std::vector<T>& p_n1, const T a, const T b, const T c) const {
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		const auto block_size = num_basis * num_elems;
+		const auto matrix_dim = 2 * block_size;
+
+		assert(active_sets_n1.size() == p_n1.size() / 2 && p_n1.size() == matrix_dim);
+
+		auto active_sets_n = active_set_qualifier_t(block_size, ActiveSetType::In);
+
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+				case SurfaceType_t::EndTime:
+					break;
+
+				case SurfaceType_t::StartTime:
+					break;
+
+				case SurfaceType_t::Inner:
+					break;
+
+				case SurfaceType_t::MidTime:
+				{
+					const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+					for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+						const auto offset_vi = start_offset + bi;
+
+						if (this->Test_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi))) {
+							auto un1x = T{ -1 } * p_n1[block_size + offset_vi] / lambda;
+							auto un1x_c = un1x;
+							switch (active_sets_n1[offset_vi]) {
+							case ActiveSetType::Aplusn:
+								un1x_c = b;
+								break;
+							case ActiveSetType::Aminusn:
+								un1x_c = a;
+								break;
+							case ActiveSetType::In:
+								break;
+							}
+
+							const auto mult1nx = un1x_c - un1x;
+							const auto classdenom = un1x_c + mult1nx / c;
+
+							if (classdenom > b) {
+								assert(mult1nx > T{ 0 });
+								active_sets_n[offset_vi] = ActiveSetType::Aplusn;
+							}
+							else if (classdenom < a) {
+								assert(mult1nx < T{ 0 });
+								active_sets_n[offset_vi] = ActiveSetType::Aminusn;
+							}
+							else {
+								assert(un1x_c > a && un1x_c < b && mult1nx == T{ 0 });
+								active_sets_n[offset_vi] = ActiveSetType::In;
+							}
+						}
+					}
+				}
+					break;
+
+				case SurfaceType_t::Undefined:
+					assert(false);
+			}
+		}
+
+		return std::move(active_sets_n);
+	}
+
 #endif
 };
 
@@ -1506,41 +1581,6 @@ public:
 		usgridwriter->Write();
 	}
 
-	auto ClassifyActiveSets(const active_set_qualifier_t& active_sets_n1, const solution_vector_t& p_n1, const T a, const T b, const T c) {
-		assert(active_sets_n1.size() == p_n1.size() / 2);
-		const auto system_dimension = p_n1.size() / 2;
-
-		auto active_sets_n = active_set_qualifier_t(system_dimension);
-
-		for (auto i = 0; i < system_dimension; ++i) {
-			auto un1x = T{};
-			switch (active_sets_n1[i]) {
-			case ActiveSetType::Aplusn:
-				un1x = b;
-				break;
-			case ActiveSetType::Aminusn:
-				un1x = a;
-				break;
-			case ActiveSetType::In:
-				un1x = T{ -1 } * p_n1[system_dimension + i] / m_lambda;
-				break;
-			}
-
-			const auto mult1nx = - m_lambda * un1x - p_n1[system_dimension + i];
-			const auto classdenom = un1x + mult1nx / c;
-
-			if (classdenom > b)
-				active_sets_n[i] = ActiveSetType::Aplusn;
-			else if (classdenom < a)
-				active_sets_n[i] = ActiveSetType::Aminusn;
-			else
-				active_sets_n[i] = ActiveSetType::In;
-		}
-
-		return std::move(active_sets_n);
-	}
-
-
 	template<class TriangQuadFm, class TetraQuadFm, class F0, class FT>
 	void SolveRestricted(const STMAssembler<T, TriangQuadFm, TetraQuadFm>& evaluator_Fm, const F0& y0, const FT& yOmega, const T box_a, const T box_b, const T c) {
 		m_box_a = box_a;
@@ -1552,12 +1592,41 @@ public:
 
 		const auto block_size = A.GetNumberOfRows() / 2;
 
-		auto p_n1 = solution_vector_t(2 * block_size, box_b);
+		auto p_n1 = solution_vector_t(2 * block_size, (box_b + box_a)/2.);
 		auto as_n1 = active_set_qualifier_t(block_size, ActiveSetType::In );
 
 		for (auto n = 1;; ++n) {
 			if (n >= 2) {
-				auto as_n = ClassifyActiveSets(as_n1, p_n1, box_a, box_b, c);
+				auto as_n = evaluator_Fm.ClassifyActiveSets<BasisFuncs>(as_n1, p_n1, box_a, box_b, c);
+#ifndef NO_STEP_OUTPUT
+				m_x = p_n1;
+				m_active_set_quals = as_n1;
+
+				auto filename_y = std::ostringstream();
+				filename_y << "KR-state-y-" << n << ".vtu";
+				PrintToVTU(filename_y.str(), true);
+
+				auto filename_unc = std::ostringstream();
+				filename_unc << "KR-state-u-nc-" << n << ".vtu";
+				PrintToVTU(filename_unc.str(), false);
+
+				for (auto i = 0; i < block_size; ++i) {
+					switch (m_active_set_quals[i]) {
+					case ActiveSetType::Aplusn:
+						m_x[block_size + i] = T{ -1 }*box_b * m_lambda;
+						break;
+					case ActiveSetType::Aminusn:
+						m_x[block_size + i] = T{ -1 }*box_a * m_lambda;
+						break;
+					case ActiveSetType::In:
+						break;
+					}
+				}
+
+				auto filename_u = std::ostringstream();
+				filename_u << "KR-state-u-" << n << ".vtu";
+				PrintToVTU(filename_u.str(), false);
+#endif
 				if (as_n == as_n1)
 					break;
 				as_n1 = std::move(as_n);

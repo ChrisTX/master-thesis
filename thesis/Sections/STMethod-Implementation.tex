@@ -123,4 +123,192 @@ For the boundary optimal control, we have to keep in mind that $u_h$ only holds 
 \[
 	u_h = E_\Sigma \frac{1}{\lambda} \beta E_V \boldsymbol{p_h}.
 \]
+\section{Numerical methods for the control-constrained case}
+In the control-constrained case, one has to deal with the optimality system having a projection on its right hand side, for example in the case with boundary controls, one obtains a state equation looking like this:
+\[
+A(y_h, v_h) = \left\langle \beta \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p_h \right\}, v_h \right\rangle_{L^2(\Sigma_R)} + \langle y_0, v_h(0) \rangle_{L^2(\Omega)} \quad \text{for all $v_h \in \Shp(\meshT_N)$}.
+\]
+From a theoretical point of view, this is perfectly acceptable, of course.
+However, a projection on an interval cannot be a linear function in general and therefore, this poses a problem for an implementation.
+The method described in the previous section is simply not applicable in this case.
+
+In effect, one has to look for numerical methods that can handle such a projection formula.
+There is a wide variety of options available here, see \cite[p.\ 134ff.]{Troeltzsch} for some discussion on the matter.
+
+Probably the easiest approach is to use a gradient projection method.
+Assuming that a number of controls $u_1, \ldots, u_n$ has already been determined, the step to determine $u_{n+1}$ looks as follows (c.f.\ \cite{Troeltzsch}):
+\begin{algorithmbox}[Gradient Projection Method]
+\begin{tabular}{@{}ll}
+\textit{Input:} & An initial control $u_n$. \\
+\textit{Output:} & A control $u_{n+1}$.
+\end{tabular}
+\end{algorithmbox}
+\vspace{-10pt}
+\begin{algorithm}
+Determine the discretized state $y_n$.\;
+Calculate the adjoined state $p_n$.\;
+Set the direction of descent to the anti-gradient
+\[
+	v_n = -J_h'(u_n) = - (\beta p_n + \lambda u_n).
+\]\;
+\vspace{-15pt}
+Determine an optimal step width $s_n$ from
+\[
+	J_h \left( \projP_{[u_a, u_b]} \left\{ u_n + s_n v_n \right\} \right) = \min_{s > 0} J_h \left( \projP_{[u_a, u_b]} \left\{ u_n + s v_n \right\} \right).
+\]\;
+\vspace{-15pt}
+Set the next control as $u_{n+1} \coloneqq \projP_{[u_a, u_b]} \left\{ u_n + s_n v_n \right\}$.
+\end{algorithm}
+\vspace{-4pt}
+\EndAlgorithmLine
+The convergence of this method has been analyzed in e.g.\ \cite{HinzePinnauUlbrich}, however it tends to become rather slow for practical purposes.
+\subsection{Primal-dual active set strategies}
+Another promising approach is to apply so called primal-dual active set strategies. The works \cite{ItoKunisch-2000}, \cite{ItoKunisch} and \cite{BergouniouxItoKunisch} discuss the origins of these methods. Specifically for the parabolic case considered here, the method described in \cite{KunischRoesch} can be applied.
+Roughly spoken, these methods maintain some active sets where the box restrictions for $u$ are enforced. Outside of those sets, the unrestricted system as presented in the previous section is applied.
+
+We want to present how the method treated in \cite{KunischRoesch} can be applied for our discontinuous Galerkin method. For this purpose, we let $E$ be the domain that the optimal control operates on, i.e.\ $E = \Sigma$ for the boundary heating scenario and $E = Q$ for the interior one. Furthermore, let $Y$ be the state space and $U$ be the control space, i.e.\ $U = L^2(E)$.
+The problem we want to operate on can then be expressed as
+\begin{problem}
+\label{prb:KR-optimal-control}
+\begin{IEEEeqnarray*}{c}
+\min J(y, u) = \frac{1}{2} \| y - y_d \|^2_Y + \frac{\lambda}{2} \| u \|_U^2 \\
+\noalign{\noindent subject to\vspace{\jot}}
+\begin{IEEEeqnarraybox}{rCl}
+y &=& S_h u + q
+\end{IEEEeqnarraybox} \\
+\noalign{\noindent and\vspace{\jot}}
+u_a \leq u(x, t) \leq u_b\quad \text{a.e.\ in $E$}.
+\end{IEEEeqnarray*}
+\end{problem}
+Hereby let $q, y_d \in Y$, $\lambda > 0$ and $-\infty \leq u_a < u_b \leq \infty$ hold, where at least $u_a$ or $u_b$ are finite.
+It is assumed in \cite{KunischRoesch} that $S_h$ is linear and compact, but given the finite dimension of $\Shp(\meshT_N)$, this is ensured to be the case.
+Moreover, we assume here that the previously used $\beta$ is constant and equal to one.
+\begin{theorem}
+\label{thm:KR-Lagrange-mult}
+Let $c > 0$. A control $\bar{u}_h$ and $\bar{y}_h$ is optimal for \cref{prb:KR-optimal-control} if and only if there exists a $(\bar{p}_h, \bar{\mu}_h) \in U \times U$ such that the following two conditions hold for $(\bar{u}_h, \bar{y}_h, \bar{p}_h, \bar{\mu}_h)$:
+\begin{IEEEeqnarray*}{rCl}
+\bar{y}_h &=& S_h \bar{u}_h + q, \\
+\bar{p}_h &=& S_h^*(\bar{y} - yd), \\
+-\bar{p}_h &=& \lambda \bar{u}_h + \bar{\mu}_h
+\end{IEEEeqnarray*}
+and
+\begin{IEEEeqnarray*}{rCl}
+\bar{\mu}_h &=& c \left( \bar{u}_h + \frac{1}{c} \bar{\mu}_h - \projP_{[u_a, u_b]} \left( \bar{u}_h + \frac{1}{c} \bar{\mu}_h \right) \right).
+\end{IEEEeqnarray*}
+\end{theorem}
+\begin{proof}
+See \cite{KunischRoesch} for the proof of this statement.
+\end{proof}
+Next, we define the following sets, the so called active and inactive sets for the optimal solution:
+\begin{IEEEeqnarray*}{rCl}
+	\bar{A}^+ &=& \left\{ x \in E \midcolon \bar{u}_h(x) = u_b \right\}, \\
+	\bar{A}^- &=& \left\{ x \in E \midcolon \bar{u}_h(x) = u_a \right\}, \\
+	\bar{I} &=& \left\{ x \in E \midcolon u_a < \bar{u}_h(x) < u_b \right\}.
+\end{IEEEeqnarray*}
+The algorithm will proceed in an iterative fashion, determining pairs of controls and Lagrange multipliers $(u_n, \mu_n) \in U \times U$.
+Based on the multiplier rule of \cref{thm:KR-Lagrange-mult}, we introduce for $(u_{n-1}, \mu_{n-1}) \in U \times U$ the following active sets for the next iterate:
+\begin{equation}
+\label{eq:KR-active-sets}
+\begin{IEEEeqnarraybox}[][c]{rCl}
+	A^+_n &=& \left\{ x \in E \midcolon u_{n-1}(x) + \frac{\mu_{n-1}(x)}{c} > u_b \right\}, \\
+	A^-_n &=& \left\{ x \in E \midcolon u_{n-1}(x) + \frac{\mu_{n-1}(x)}{c} < u_a \right\}, \\
+	I_n &=& E \setminus ( A^+_n \cup A^-_n ).
+\end{IEEEeqnarraybox}
+\end{equation}
+One can conclude from the Lagrange multiplier rule in \cref{thm:KR-Lagrange-mult}, that for the optimal control one has $\bar{\mu} \geq 0$ on $\bar{A}^+$ and $\bar{\mu} \leq 0$ on $\bar{A}^-$. This motivates the choice of the active set update strategies in the algorithm.
+Finally, we can describe the algorithm as given in \cite{KunischRoesch}:
+\needspace{20\baselineskip}
+\begin{algorithmbox}[Primal-dual Active Set Strategy]
+\begin{tabular}{@{}ll}
+\textit{Input:} & An initial control $u_0$ and a multiplier $\mu_0$. \\
+\textit{Output:} & A control tuple $(\bar{u}_h, \bar{y}_h, \bar{p}_h, \bar{\mu}_h)$.
+\end{tabular}
+\end{algorithmbox}
+\vspace{-10pt}
+\begin{algorithm}
+Set $n = 1$.\;
+Determine the active and inactive sets for $(u_n, \mu_n)$ as given by \cref{eq:KR-active-sets}.\label{alg:KR-step-1}\;
+\eIf{$n \geq 2$ and $A_n^+ = A_{n-1}^+$, $A_n^- = A_{n-1}^-$, and $I_n = I_{n-1}$}{
+	\Return $(u_{n-1}, y_{n-1}, p_{n-1}, \mu_{n-1})$.
+}{
+	Find $(y_n, p_n) \in Y \times U$ such that
+	\begin{IEEEeqnarray*}{rCl}
+		y_n &=& S_h u_n + q, \\
+		p_n &=& S_h^* (y_n - y_d),
+	\end{IEEEeqnarray*}
+	where
+	\[
+		u_n(x) = \begin{cases}
+			u_b & \text{if } x \in A_n^+, \\
+			u_a & \text{if } x \in A_n^-, \\
+			- \frac{p_n}{\lambda} & \text{if } x \in I_n.
+		\end{cases}
+	\]\;
+	Set $\mu_n = p_n + \lambda u_n$, $n \leftarrow n + 1$ and goto \cref{alg:KR-step-1}.
+}
+\end{algorithm}
+\vspace{-4pt}
+\EndAlgorithmLine
+It can be easily seen that if the algorithm terminates, one has
+\begin{IEEEeqnarray*}{rCl"l}
+	\lambda_n &=& 0 & \text{on $I_n$}, \\
+	\lambda_n &>& 0 & \text{on $A_n^+$}, \\
+	\lambda_n &<& 0 & \text{on $A_n^-$}.	 
+\end{IEEEeqnarray*}
+and therefore the solution fulfills the optimality conditions of \cref{thm:KR-Lagrange-mult}, see \cite[Theorem 1]{KunischRoesch}.
+For a discussion of the stopping behavior of the algorithm and convergence analysis, we refer to \cite{KunischRoesch} again.
+
+Now, the issue how to find $(y_n, p_n) \in Y \times U$ remains. Previously, we could just bring the control  $u_n$ from the right hand side into the linear equation system on the left as $- \lambda^{-1} \beta p_h \in \Shp(\meshT_N)$.
+However, the constrained control $u_n \notin \Shp(\meshT_N)$.
+It would be very difficult to approach storing both, the active sets and the control iterate $u_n$ for an implementation.
+In general, because the optimal control can have a very difficult to handle form, working with the control space $L^2(E)$ is not practicable. Normally, one introduces a control discretization at this point, limiting the control space to a discretized subspace that one can handle better.
+
+It should be noted that restricting the control to a subspace does not invalidate the optimality conditions and uniqueness of the discrete problem.
+All proofs related to these work just as well with the choice $U_{ad} \subset \Shp(\meshT_N)$.
+However, this leads to a new discrete optimal solution for the fully discretized problem that is difficult to relate to the control being searched in the non-discretized space.
+For elliptic problems, \cite{CasasTroeltzsch} proves results for constant and linear discretization approaches of the control space.
+The previously mentioned work \cite{MeidnerVexler-I} was extended by its authors to cover these discretized control spaces in \cite{MeidnerVexler-II}.
+It might be possible to extend or use the ideas in \cite{MeidnerVexler-II} for application with the discontinuous Galerkin method as presented here.
+
+For the time being, we will just discuss how our numerical approach will look like without proving any error estimates.
+In the next chapter we present numerical results for this method.
+On a discrete level, we have now the choices $Y = \Shp(\meshT_N)$ and $U$ is chosen either as $\Shp(\meshT_N)$ (case $E = Q$) or the boundary projection of $\Shp(\meshT_N)$ (case $E = \Sigma$).
+This means we have to solve the system
+\begin{IEEEeqnarray*}{rCl"l}
+A(y_h, v_h) &=& \langle u_n, v_h \rangle_{U} + \langle \tilde{q}, v_h \rangle_{\tilde{Y}}& \forall v_h \in \Shp(\meshT_N), \\
+A(v_h, p_h) &=& \langle y_h - y_d, v_h \rangle_{L^2(Y)} & \forall v_h \in \Shp(\meshT_N).
+\end{IEEEeqnarray*}
+Hereby we denote with $\tilde{q} \in \tilde{Y}$ the function that the discontinuous Galerkin method solves to $q$, with $\tilde{Y}$ being chosen accordingly. For example in the case of boundary controls, this would be our initial condition and $\tilde{Y} =L^2(\Omega) \times \{ 0\}$.
+
+We now use that $A_n^+ \cup A_n^- \cup I_n = E$ by definition of these sets.
+Assuming we have a nodal basis of $\Shp(\meshT_N)$ that is being used, we can separate $u_n$ based on these sets. Therefore let $u_n^+$, $u_n^-$ and $u_n^I$ be functions in $\Shp(\meshT_N)$ with the same coefficients as $u_n$ if the associated basis function has its node in $A_n^+$, $A_n^-$ or $I_n$, respectively and otherwise a zero coefficient.
+In other words, if $\Shp(\meshT_N) = \spn \{ \varphi_j \}_{j=1}^m$, where $\varphi_j$ are nodal basis functions associated with nodes $\{ s_j \}_{j=1}^m$, so that $\varphi_j(s_i) = \delta_{ij}$ for all $i,j = 1, \ldots, m$, then
+\begin{IEEEeqnarray*}{rCl"l}
+	u_n^+(x, t) &=& \sum_{j=1}^m \boldsymbol{u_n^+}[j] \varphi_j(x, t) 
+\end{IEEEeqnarray*}
+with
+\[
+	\boldsymbol{u_n^+}[j] = \begin{cases}
+		\boldsymbol{u}[j] & \text{if $s_j \in A_n^+$}, \\
+		0 & \text{else}.
+	\end{cases}
+\]
+The functions $u_n^-$ and $u_n^I$ are defined analogously.
+With this definition, $u_n = u_n^+ + u_n^- + u_n^I$.
+That means, we can interpret the first equation as
+\begin{IEEEeqnarray*}{rCl}
+A(y_h, v_h) &=& \langle u_n, v_h \rangle_{U} + \langle \tilde{q}, v_h \rangle_{\tilde{Y}} \\
+&=& \langle u_n^-, v_h \rangle_{U} + \langle u_n^+, v_h \rangle_{U} + \langle u_n^I, v_h \rangle_{U} + \langle \tilde{q}, v_h \rangle_{\tilde{Y}}.
+\end{IEEEeqnarray*}
+From the optimality conditions, we can conclude that 
+\[
+	\boldsymbol{u_n}[j] = \begin{cases}
+		u_b & \text{for $s_j \in A_n^+$}, \\
+	 	u_a & \text{for $s_j \in A_n^-$}, \\
+	 	- \lambda^{-1} \boldsymbol{p_n}[j] & \text{for $s_j \in I_n$}.
+	\end{cases}
+\]
+This means we can consider $u_n^+$ and $u_n^-$ as functions for the right hand side and only have to bring $u_n^I = - \lambda^{-1} p_n^I$ to the other side.
+From here on out, we can proceed as in the last section.
+However, the term $\langle u_n^I, v_h \rangle_U$ leads to a mass matrix block that is not symmetrical: Only functions that have their nodes in $I_n$ are evaluated against all functions in $\Shp(\meshT_N)$. This means that we have to solve the linear equation without profiting of any speedups that might arise from using methods specialized for symmetrical matrices.
 \end{document}
