@@ -1,10 +1,11 @@
 //#define HEAT_SYSTEM
-#define SYMMETRIC_SYSTEM
+//#define SYMMETRIC_SYSTEM
 #define QUADRATIC_BASIS
 //#define EXACT_PRECISION_DIRICHLET
-#define USE_GMRES
+//#define USE_GMRES
+#define KR_SYSTEM
 
-#ifdef HEAT_SYSTEM
+#if defined(HEAT_SYSTEM) || defined(KR_SYSTEM) 
 #undef SYMMETRIC_ASSEMBLY
 #else
 #define SYMMETRIC_ASSEMBLY
@@ -70,8 +71,8 @@ int main() {
 	auto mesh = TetrahedralMesh<double>{ 0., 1. };
 
 	const auto xdelta = 1.;
-	const auto xmax = 5;
-	const auto ymax = 5;
+	const auto xmax = 1;
+	const auto ymax = 1;
 
 #define NO_CHECK_GEOMETRY
 #endif
@@ -102,7 +103,7 @@ int main() {
 #elif defined(SYMMETRIC_SYSTEM)
 	const auto reflim = 0;
 #else
-	const auto reflim = 4;
+	const auto reflim = 1;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -197,6 +198,8 @@ int main() {
 
 	auto matA = stmass.AssembleMatrix_Symmetric<basis_t>();
 	auto lvA = stmass.AssembleLV_Symmetric<basis_t>(f, yQ, y0);
+#elif defined(KR_SYSTEM)
+
 #else
 	auto matA = stmass.AssembleMatrix_Boundary<basis_t>();
 	auto lvA = stmass.AssembleLV_Boundary<basis_t>([pi](double x, double y, double) -> double { return 1.; }, [pi](double x, double y, double) -> double { return 5.; });
@@ -223,7 +226,12 @@ int main() {
 #ifdef HAVE_MKL
 	std::cout << "SOLVING" << std::endl;
 	
-	auto stmsol = STMSolver<double, basis_t>{ beta, lambda, mesh, matA, lvA };
+	auto stmsol = STMSolver<double, basis_t>{ beta, lambda, mesh };
+#ifdef KR_SYSTEM
+	stmsol.SolveRestricted(stmass, [pi](double x, double y, double) -> double { return 1.; }, [pi](double x, double y, double) -> double { return 40.; }, 0., 2000., 3.);
+#else
+	stmsol.Solve(matA, lvA);
+#endif
 
 #ifndef HEAT_SYSTEM
 	stmsol.PrintToVTU("testfile-u.vtu", false);

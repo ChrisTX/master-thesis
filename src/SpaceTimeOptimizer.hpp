@@ -26,6 +26,14 @@
 #include <vtkPointData.h>
 #include <vtkXMLUnstructuredGridWriter.h>
 
+enum class ActiveSetType {
+	Aplusn,
+	Aminusn,
+	In
+};
+
+using active_set_qualifier_t = std::vector<ActiveSetType>;
+
 template<class T, class TriangQuadFm, class TetraQuadFm>
 class STMFormEvaluator {
 protected:
@@ -971,7 +979,7 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				case SurfaceType_t::Undefined:
 					assert(false);
 			}
-		}
+		}	
 
 		return matassembler.AssembleMatrix(1e-13);
 	}
@@ -1122,41 +1130,168 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 
 		return matassembler.AssembleMatrix();
 	}
+
+#ifndef SYMMETRIC_ASSEMBLY
+
+	template<class BasisFuncs>
+	auto AssembleMatrix_KR() const {
+		// In a dG approach, we have a given amount of functions ( BasisFuncs' size ) per element
+		// Hence, the number of *active* elements in the mesh times the BasisFuncs is what we're looking for.
+
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		using csr_size_t = typename Utility::CSRMatrixAssembler<T>::size_type;
+		const auto block_size = static_cast<csr_size_t>(num_basis * num_elems);
+		const auto matrix_dim = static_cast<csr_size_t>(2 * block_size);
+
+		auto matassembler = AssembleMatrix_Base<BasisFuncs>();
+
+		// Aside from these per element integrals, we have some interface ones:
+		// Ah, Bh both have inner interface terms, Jh only applies on \partial \Omega x (0, T) and Kh applies on \partial \Omega x T.
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+			case SurfaceType_t::Inner:
+				break;
+
+			case SurfaceType_t::MidTime:
+				break;
+
+			case SurfaceType_t::EndTime:
+			{
+				const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+					for (auto bj = bi; bj < num_basis; ++bj) {
+						const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
+						const auto offset_uj = static_cast<csr_size_t>(start_offset + bj);
+
+						const auto form_val_Kh = this->EvaluateKh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+						assert(std::isfinite(form_val_Kh));
+						matassembler(offset_vi, offset_uj) += form_val_Kh;
+
+						if (bi != bj)
+							matassembler(offset_uj, offset_vi) += form_val_Kh;
+					}
+				}
+			}
+			break;
+
+			case SurfaceType_t::StartTime:
+				break;
+
+			case SurfaceType_t::Undefined:
+				assert(false);
+			}
+		}
+
+		return matassembler;
+	}
+
+	template<class BasisFuncs>
+	void CompleteLVandMat_KR(Utility::CSRMatrixAssembler<T>& mat, std::vector<T>& lv, const active_set_qualifier_t& ac_qual, const T box_a, const T box_b) const {
+		const auto basis_f = BasisFuncs{};
+		using basis_index_t = typename BasisFuncs::index_t;
+		using basis_und_t = std::underlying_type_t<basis_index_t>;
+		const auto num_elems = this->m_Mesh.m_ElementList.size();
+		const auto num_basis = basis_f.size();
+		const auto block_size = num_basis * num_elems;
+		const auto matrix_dim = 2 * block_size;
+
+		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
+			const auto& surf_id = pval.first;
+			const auto& surf_data = pval.second;
+			switch (surf_data.type) {
+			case SurfaceType_t::EndTime:
+				break;
+
+			case SurfaceType_t::StartTime:
+				break;
+
+			case SurfaceType_t::Inner:
+				break;
+
+			case SurfaceType_t::MidTime:
+			{
+				const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
+				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
+					for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
+						const auto offset_vi = start_offset + bi;
+						const auto offset_uj = start_offset + bj;
+
+						const auto form_val_Jh = this->EvaluateJh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
+						assert(std::isfinite(form_val_Jh));
+						const auto form_val_raw = form_val_Jh * lambda / (beta * beta);
+
+						switch (ac_qual[offset_vi]) {
+						case ActiveSetType::Aminusn:
+							lv[block_size + offset_vi] += box_a * form_val_raw;
+						case ActiveSetType::Aplusn:
+							lv[block_size + offset_vi] += box_b * form_val_raw;
+						case ActiveSetType::In:
+							mat(block_size + offset_vi, block_size + offset_uj) += form_val_Jh;
+						}
+					}
+				}
+			}
+			break;
+
+			case SurfaceType_t::Undefined:
+				assert(false);
+			}
+		}
+	}
+
+#endif
 };
 
 #ifdef HAVE_MKL
 template<class T, class BasisFuncs>
 class STMSolver {
+public:
+	using solution_vector_t = std::vector<T>;
 protected:
-	const Utility::CSRMatrix<T>& m_A;
-	const std::vector<T>& m_b;
-	std::vector<T> m_x;
+	solution_vector_t m_x;
 	const TetrahedralMesh<T>& m_Mesh;
 	const BasisFuncs basis_f{};
 	const T m_beta;
 	const T m_lambda;
+
+	bool m_restricted_formulation = false;
+	T m_box_a;
+	T m_box_b;
+	active_set_qualifier_t m_active_set_quals;
+
 public:
 	using ElementId_t = typename TetrahedralMesh<T>::ElementId_t;
 	using SurfaceId_t = typename TetrahedralMesh<T>::SurfaceId_t;
 	using Point_t = typename TetrahedralMesh<T>::Point_t;
 	using NodeId_t = typename TetrahedralMesh<T>::NodeId_t;
 
-	STMSolver(const T beta, const T lambda, const TetrahedralMesh<T>& Mesh, const Utility::CSRMatrix<T>& A, const std::vector<T>& b) : m_Mesh{ Mesh }, m_A{ A }, m_b{ b }, m_beta{beta}, m_lambda{lambda}
+	STMSolver(const T beta, const T lambda, const TetrahedralMesh<T>& Mesh ) : m_Mesh{ Mesh }, m_beta{ beta }, m_lambda{ lambda }
 	{
-		m_x.resize(m_A.GetNumberOfRows());
+
+	}
+
+	void Solve(const Utility::CSRMatrix<T>& A, const solution_vector_t& b)
+	{
 #ifndef NDEBUG
-		for (const auto bi : m_b)
+		for (const auto bi : b)
 			assert(std::isfinite(bi));
-		for (const auto Ai : m_A.m_Entries)
+		for (const auto Ai : A.m_Entries)
 			assert(std::isfinite(Ai));
 #endif
+		m_x.resize(m_A.GetNumberOfRows());
 #ifdef USE_GMRES
-		IterativeSolvers::MKL_FGMRES(m_A, m_x, m_b, 5000, 0, T{ 0 });
+		IterativeSolvers::MKL_FGMRES(A, m_x, b, 5000, 0, T{ 0 });
 #else
 #ifdef SYMMETRIC_ASSEMBLY
-		IterativeSolvers::MKL_PARDISO_SYM(m_A, m_x, m_b);
+		IterativeSolvers::MKL_PARDISO_SYM(A, m_x, b);
 #else
-		IterativeSolvers::MKL_PARDISO(m_A, m_x, m_b);
+		IterativeSolvers::MKL_PARDISO(A, m_x, b);
 #endif
 #endif
 #ifndef NDEBUG
@@ -1369,6 +1504,86 @@ public:
 		usgridwriter->SetFileName(file_name.c_str());
 		usgridwriter->SetInputData(usgrid);
 		usgridwriter->Write();
+	}
+
+	auto ClassifyActiveSets(const active_set_qualifier_t& active_sets_n1, const solution_vector_t& p_n1, const T a, const T b, const T c) {
+		assert(active_sets_n1.size() == p_n1.size() / 2);
+		const auto system_dimension = p_n1.size() / 2;
+
+		auto active_sets_n = active_set_qualifier_t(system_dimension);
+
+		for (auto i = 0; i < system_dimension; ++i) {
+			auto un1x = T{};
+			switch (active_sets_n1[i]) {
+			case ActiveSetType::Aplusn:
+				un1x = b;
+				break;
+			case ActiveSetType::Aminusn:
+				un1x = a;
+				break;
+			case ActiveSetType::In:
+				un1x = T{ -1 } * p_n1[system_dimension + i] / m_lambda;
+				break;
+			}
+
+			const auto mult1nx = - m_lambda * un1x - p_n1[system_dimension + i];
+			const auto classdenom = un1x + mult1nx / c;
+
+			if (classdenom > b)
+				active_sets_n[i] = ActiveSetType::Aplusn;
+			else if (classdenom < a)
+				active_sets_n[i] = ActiveSetType::Aminusn;
+			else
+				active_sets_n[i] = ActiveSetType::In;
+		}
+
+		return std::move(active_sets_n);
+	}
+
+
+	template<class TriangQuadFm, class TetraQuadFm, class F0, class FT>
+	void SolveRestricted(const STMAssembler<T, TriangQuadFm, TetraQuadFm>& evaluator_Fm, const F0& y0, const FT& yOmega, const T box_a, const T box_b, const T c) {
+		m_box_a = box_a;
+		m_box_b = box_b;
+		m_restricted_formulation = true;
+
+		const auto A = evaluator_Fm.AssembleMatrix_KR<BasisFuncs>();
+		const auto b = evaluator_Fm.AssembleLV_Boundary<BasisFuncs>(y0, yOmega);
+
+		const auto block_size = A.GetNumberOfRows() / 2;
+
+		auto p_n1 = solution_vector_t(2 * block_size, box_b);
+		auto as_n1 = active_set_qualifier_t(block_size, ActiveSetType::In );
+
+		for (auto n = 1;; ++n) {
+			if (n >= 2) {
+				auto as_n = ClassifyActiveSets(as_n1, p_n1, box_a, box_b, c);
+				if (as_n == as_n1)
+					break;
+				as_n1 = std::move(as_n);
+			}
+			auto A_n = A;
+			auto b_n = b;
+			evaluator_Fm.CompleteLVandMat_KR<BasisFuncs>(A_n, b_n, as_n1, box_a, box_b);
+
+			IterativeSolvers::MKL_PARDISO(A_n.AssembleMatrix(1e-13), p_n1, b_n);
+		}
+
+		for (auto i = 0; i < block_size; ++i) {
+			switch (as_n1[i]) {
+			case ActiveSetType::Aplusn:
+				p_n1[block_size + i] = T{ -1 }* box_b * m_lambda;
+				break;
+			case ActiveSetType::Aminusn:
+				p_n1[block_size + i] = T{ -1 }*box_a * m_lambda;
+				break;
+			case ActiveSetType::In:
+				break;
+			}
+		}
+
+		m_x = std::move(p_n1);
+		m_active_set_quals = std::move(as_n1);
 	}
 };
 #endif

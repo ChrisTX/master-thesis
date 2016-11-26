@@ -372,6 +372,16 @@ namespace Utility {
 
 		}
 
+		auto GetNumberOfRows() const
+		{
+			return m_Rows;
+		}
+
+		auto GetNumberOfColumns() const
+		{
+			return m_Rows;
+		}
+
 	protected:
 		std::map<size_type, std::map<size_type, T>> m_EntriesBuildUpMap;
 		const size_type m_Rows;
