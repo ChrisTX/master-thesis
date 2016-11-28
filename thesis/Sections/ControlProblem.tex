@@ -51,8 +51,8 @@ u_a(x, t) \leq u(x, t) \leq u_b(x, t) \quad \text{a.e.\ in $Q$}.
 \end{IEEEeqnarray*}
 Unlike previously, the desired temperature on the boundary $y_\Sigma$ is needed in this formulation. 
 
-For now, we'll consider the boundary heating problem with any pointwise restrictions to the control omitted.
-Without going into details just yet one introduces a so called adjoint state $p$ for a given state $y$ that adheres to the following system of equations
+Let us consider the boundary heating problem for now.
+Without going into details just yet, see \cref{sec:Disc-Control-Problem}, one introduces a so called adjoint state $p$ for a given state $y$ that adheres to the following system of equations
 \begin{IEEEeqnarray*}{rCl"l}
 -\frac{\partial p}{\partial t} - \lapl y &=& 0 & \text{in } Q \\
 \partial_\nu p + \alpha p &=& 0 & \text{in } \Sigma \\
@@ -60,15 +60,15 @@ p(x, T) &=& y (x, T) - y_\Omega(x) & \text{in } \Omega
 \end{IEEEeqnarray*}
 One can show (see for example \cite[Satz 3.20, p.\ 129]{Troeltzsch}) that a control $\bar{u}$ with associated state $\bar{y}$ is optimal if and only if the projection formula
 \[
-	\bar{u}(x, t) = \projP_{[u_a(x, t), u_b(x, t)]} \left\{ - \frac{1}{\lambda} \beta(x, t) p(x, t) \right\}
+	\bar{u}(x, t) = \projP_{[u_a, u_b]} \left\{ - \frac{1}{\lambda} \beta(x, t) p(x, t) \right\}
 \]
 holds, provided that $\lambda > 0$.
 For the case $\lambda = 0$, one obtains an analogous projection formula on the bounds depending on the sign of $\beta(x, t) p(x, t)$, with unknown behavior at points where $\beta(x, t) p(x, t) = 0$. In this text, only the case $\lambda > 0$ is considered.
-As we're going to omit the pointwise control restrictions, i.e.\ $u_a = - \infty$ and $u_b = \infty$, we instead arrive at
+If we omit the pointwise control restrictions, i.e.\ $u_a = - \infty$ and $u_b = \infty$, the projection becomes the identity, and we arrive at
 \[
-	\bar{u}(x, t) = - \frac{1}{\lambda} \beta(x, t) p(x, t)
+	\bar{u}(x, t) = - \frac{1}{\lambda} \beta(x, t) p(x, t).
 \]
-By replacing $u$ with the right hand side this  equation, we obtain the optimality system
+By replacing $u$ with the right hand side this equation, we obtain the optimality system
 \begin{IEEEeqnarray*}{c}
 \begin{IEEEeqnarraybox}{r"l}
 \begin{IEEEeqnarraybox}{rCl}
@@ -85,7 +85,16 @@ p(T) &=& y(T) - y_\Omega
 u = - \lambda^{-1} \beta p
 \end{IEEEeqnarray*}
 While this system can be solved as-is, the intertwining of the state and the adjoint state equations, and especially the fact that one is operating forward in time and the other one backwards in time, make this a difficult system to solve.
+If one considers the control-constrained case, then this becomes an even harder nut to crack, as the right hand side of the state system now depends on a non-linear function. From a theoretical point of view, that does not matter, however, and \cref{sec:Disc-Control-Problem} will treat the constrained form.
+In \cref{sec:st-numerics} we will discuss numerical methods for solving this problem, and will also treat the control-constrained case. It will however turn out to be much more difficult to work with than the unconstrained case.
 
-In \cite{Neumueller}, a space-time discontinuous Galerkin method for the parabolic heat equation has been derived. The approach made here will be to take said discretization, derive the corresponding discrete adjoint problem to then ultimately prove convergence of the discretized solution towards the continuous solution.
-The first step will be therefore to introduce and to expand the space-time discontinuous Galerkin method.
+For deriving a numerical approach, one needs to apply a numerical discretization of the heat system that governs the state. In the elliptic case, one might simply apply a conformal finite element method for this purpose. The work \cite{Hinze} analyzed error estimates for such an approach.
+However, in the parabolic case, one traditionally uses semi-discretization methods, where one effectively uses discontinuous Galerkin methods in the time direction and conformal approaches in the space dimensions. For the parabolic optimal control case, such methods have been examined in \cite{MeidnerVexler-I,MeidnerVexler-II}.
+
+However, the approach made in this text is a different one.
+In \cite{Neumueller}, a space-time discontinuous Galerkin method for the parabolic heat equation has been derived.
+In contrast to the approach of \cite{MeidnerVexler-I}, this method employs a discretization using a discontinuous Galerkin approach in both space and time and operates with elements that span the space-time cylinder.
+We will be to take said discretization, derive the corresponding discrete adjoint problem to then ultimately prove in \cref{sec:Disc-Control-Problem} convergence of the discretized solution towards the continuous solution in a given sense.
+The first step will be therefore to introduce and to expand the space-time discontinuous Galerkin method, which will take place in \cref{sec:dG-method}. In \cref{sec:dG-numerics} we will discuss convergence results for that method, and finally derive numerical methods for it in \cref{sec:st-numerics}.
+Last, but not least, we will present numerical results for this method in \cref{sec:numerical-results}.
 \end{document}
