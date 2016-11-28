@@ -1359,7 +1359,7 @@ public:
 		for (const auto Ai : A.m_Entries)
 			assert(std::isfinite(Ai));
 #endif
-		m_x.resize(m_A.GetNumberOfRows());
+		m_x.resize(A.GetNumberOfRows());
 #ifdef USE_GMRES
 		IterativeSolvers::MKL_FGMRES(A, m_x, b, 5000, 0, T{ 0 });
 #else

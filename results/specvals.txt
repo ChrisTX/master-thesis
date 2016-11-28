@@ -1,0 +1,42 @@
+alpha = 1, lambda = 0.1, theta = 1, sigma = 50, beta = 1.
+
+restricted:
+c = 0.15, y0 = 1, yOmega = 40, ua = 0, ub = 40, quadratic, 3 refs
+
+restricted-unres:
+same, but no control restriction.
+
+boundary-control:
+y0 = 1, yOmega = 5, but 4 refs.
+
+boundary-control-low-theta:
+same, but theta = 0.1
+
+optimum:
+opt. sol for symmetric problem
+
+symm-Xr:
+symmetric problem with standard parm, linear basis. X refinements.
+
+vals:
+3 ref
+y error 0.00261563
+u error 0.101845
+
+2 ref
+y error 0.0102616
+u error 0.366676
+
+1 ref
+y error 0.0395745
+u error 1.23222
+
+0 ref
+y error 0.140675
+u error 3.74837
+
+inner:
+alpha = 0, yQ = 10 * t. Linear basis. 3 refs
+
+hole:
+boundary-control, but with hole geometry 

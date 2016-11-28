@@ -1,9 +1,11 @@
 //#define HEAT_SYSTEM
 //#define SYMMETRIC_SYSTEM
-#define QUADRATIC_BASIS
+//#define INNER_SYSTEM
+//#define QUADRATIC_BASIS
 //#define EXACT_PRECISION_DIRICHLET
 //#define USE_GMRES
-#define KR_SYSTEM
+//#define KR_SYSTEM
+#define HOLE
 
 #if defined(HEAT_SYSTEM) || defined(KR_SYSTEM) 
 #undef SYMMETRIC_ASSEMBLY
@@ -67,18 +69,26 @@ int main() {
 	const auto xdelta = 0.1;
 	const auto xmax = 10;
 	const auto ymax = 10;
+#elif defined(HOLE)
+	auto mesh = TetrahedralMesh<double>{ 0., 1. };
+
+	const auto xdelta = 0.1;
+	const auto xmax = 10;
+	const auto ymax = 10;
 #else
 	auto mesh = TetrahedralMesh<double>{ 0., 1. };
 
 	const auto xdelta = 1.;
 	const auto xmax = 1;
 	const auto ymax = 1;
-
-#define NO_CHECK_GEOMETRY
 #endif
 
 	for (auto lx = 0; lx < xmax; ++lx) {
 		for (auto ly = 0; ly < ymax; ++ly) {
+#ifdef HOLE
+			if (lx > 1 && lx < xmax - 2 && ly > 1 && ly < ymax - 2)
+				continue;
+#endif
 			const auto ax = lx * xdelta;
 			const auto ay = ly * xdelta;
 			const auto dx = ax + xdelta;
@@ -101,7 +111,7 @@ int main() {
 #elif !defined(NDEBUG)
 	const auto reflim = 2;
 #elif defined(SYMMETRIC_SYSTEM)
-	const auto reflim = 0;
+	const auto reflim = 3;
 #else
 	const auto reflim = 3;
 #endif
@@ -166,7 +176,7 @@ int main() {
 #else
 	auto lambda = 0.1;
 #endif
-	auto alpha = 1.;
+	auto alpha = 0.;
 	auto sigma = 50.;
 	auto theta = 1.;
 
@@ -185,7 +195,7 @@ int main() {
 #ifndef HEAT_SYSTEM
 #ifdef INNER_SYSTEM
 	auto matA = stmass.AssembleMatrix_Inner<basis_t>();
-	auto lvA = stmass.AssembleLV_Inner<basis_t>([](double x, double y, double t) -> double { return t * t; });
+	auto lvA = stmass.AssembleLV_Inner<basis_t>([](double x, double y, double t) -> double { return 10 * t; });
 #elif defined(SYMMETRIC_SYSTEM)
 	const auto a = 1.;
 	const auto T = 0.1;
@@ -228,7 +238,7 @@ int main() {
 	
 	auto stmsol = STMSolver<double, basis_t>{ beta, lambda, mesh };
 #ifdef KR_SYSTEM
-	stmsol.SolveRestricted(stmass, [](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 40.; }, 0., 40., 0.15);
+	stmsol.SolveRestricted(stmass, [](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 40.; }, -20000., 20000., 0.15);
 #else
 	stmsol.Solve(matA, lvA);
 #endif
