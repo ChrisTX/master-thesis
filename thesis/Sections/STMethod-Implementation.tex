@@ -2,11 +2,13 @@
 
 \begin{document}
 \chapter{Numerical treatment of the control problem}
+\label{sec:st-numerics}
 In \cref{sec:Disc-Control-Problem} we derived optimality conditions and convergence for an approximation to the optimal control heating problem for both, boundary and interior heat sources.
 We now want to discuss numerical methods for solving the formulations established.
 For now, we consider the case with no restrictions made to the control, i.e.\ $u_a = -\infty$ and $u_b = \infty$. In that setup, the projection formula becomes a simple equation: $u_h = - \lambda^{-1} \beta p_h$.
 A key advantage of the discontinuous Galerkin approach presented here is that we can immediately assemble a linear equation system for this case and solve the already discretized system with a common equation solver.
 \section{Establishing a linear optimality system in the case with no control restrictions}
+\label{sec:num-unconstrained}
 In this section, we assume $u_a = -\infty$ and $u_b = \infty$, as well as $\beta$ being a constant with $\beta > 0$. 
 For the boundary heat system we obtain under this setup an optimality system of
 \begin{IEEEeqnarray*}{c}
@@ -162,7 +164,9 @@ Set the next control as $u_{n+1} \coloneqq \projP_{[u_a, u_b]} \left\{ u_n + s_n
 \vspace{-4pt}
 \EndAlgorithmLine
 The convergence of this method has been analyzed in e.g.\ \cite{HinzePinnauUlbrich}, however it tends to become rather slow for practical purposes.
+Furthermore, given that the projection does not have to be a mesh function, this is difficult to implement unless a control discretization is being used, compare the discussion in the following subsection.
 \subsection{Primal-dual active set strategies}
+\label{sec:KR-numerics}
 Another promising approach is to apply so called primal-dual active set strategies. The works \cite{ItoKunisch-2000}, \cite{ItoKunisch} and \cite{BergouniouxItoKunisch} discuss the origins of these methods. Specifically for the parabolic case considered here, the method described in \cite{KunischRoesch} can be applied.
 Roughly spoken, these methods maintain some active sets where the box restrictions for $u$ are enforced. Outside of those sets, the unrestricted system as presented in the previous section is applied.
 
@@ -300,7 +304,7 @@ That means, we can interpret the first equation as
 A(y_h, v_h) &=& \langle u_n, v_h \rangle_{U} + \langle \tilde{q}, v_h \rangle_{\tilde{Y}} \\
 &=& \langle u_n^-, v_h \rangle_{U} + \langle u_n^+, v_h \rangle_{U} + \langle u_n^I, v_h \rangle_{U} + \langle \tilde{q}, v_h \rangle_{\tilde{Y}}.
 \end{IEEEeqnarray*}
-From the optimality conditions, we can conclude that 
+Motivated by the choice of $u_n$ in the algorithm, one makes the following approach for the discrete coefficients:
 \[
 	\boldsymbol{u_n}[j] = \begin{cases}
 		u_b & \text{for $s_j \in A_n^+$}, \\
@@ -308,6 +312,8 @@ From the optimality conditions, we can conclude that
 	 	- \lambda^{-1} \boldsymbol{p_n}[j] & \text{for $s_j \in I_n$}.
 	\end{cases}
 \]
+Proving that the optimal discretized control is of this form can be done by adapting the steps necessary for proving \cref{thm:KR-Lagrange-mult} on the discrete level, where one can associate a multiplier $\mu$ with each basis function, effectively.  
+
 This means we can consider $u_n^+$ and $u_n^-$ as functions for the right hand side and only have to bring $u_n^I = - \lambda^{-1} p_n^I$ to the other side.
 From here on out, we can proceed as in the last section.
 However, the term $\langle u_n^I, v_h \rangle_U$ leads to a mass matrix block that is not symmetrical: Only functions that have their nodes in $I_n$ are evaluated against all functions in $\Shp(\meshT_N)$. This means that we have to solve the linear equation without profiting of any speedups that might arise from using methods specialized for symmetrical matrices.

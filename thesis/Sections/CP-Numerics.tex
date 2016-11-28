@@ -4,7 +4,7 @@
 \chapter{Discretization of the control problem}
 \label{sec:Disc-Control-Problem}
 In this chapter, we're going back to the optimal control problem introduced in \cref{sec:OptimalControlProblem}.
-We are going to restrict ourselves to the boundary and inner heating problems with no restrictions made to the control itself, i.e.\ $u_a = -\infty$ and $u_b = \infty$.
+We aim to apply the discontinuous Galerkin method introduced in \cref{sec:dG-method} and the convergence results from \cref{sec:dG-numerics} to prove convergence of the then discretized optimal control problem. 
 \section{Existence of solutions for a generalized problem}
 We're going to work with weak solutions in appropriate spaces. To this end, we introduce a generalized form of the state equation, that can cover various formulations of the optimal control problem:
 \begin{equation}
