@@ -552,9 +552,9 @@ See \cite[Lemma 2.2.27]{Neumueller}.
 \begin{theorem}
 \label{thm:dg-convergence}
 Let $\meshT_N$ be a quasi-uniform decomposition and let $f \in H^s(\meshT_N)$, $s \geq 2$, be the exact solution of \cref{eq:dg-model-prob} and for $\sigma \geq 4 c_K$ let $f_h \in \Shp(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-form}.
-Then the following error estimate holds
+Then the following error estimate holds for some constant $C > 0$:
 \[
-	\lDG f - f_h \rDG \leq c \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |f|_{H^s(\meshT_N)}.
+	\lDG f - f_h \rDG \leq C \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |f|_{H^s(\meshT_N)}.
 \]
 \end{theorem}
 \begin{proof}
@@ -563,7 +563,7 @@ We apply \cref{thm:A-convergence-abstract} and use the $L^2$-projection $Q_{\mes
 	\lDG f - f_h \rDG &\leq& \inf_{z_h \in \Shp(\meshT_N)} \left[ \lDG f - z_h \rDG + \frac{c_2^A}{c_S^A} \lDGs f - z_h \rDGs \right] \\
 	&\leq& \lDG f - Q_{\meshT_N} f \rDG + \frac{c_2^A}{c_S^A} \lDGs f - Q_{\meshT_N} f \rDGs. \\
 \noalign{\noindent Using the previously derived results \cref{thm:L2proj-A-error,thm:L2proj-AR-error,thm:L2proj-Astar-error,thm:L2proj-B-error}, we obtain:}
-	\lDG f - f_h \rDG &=& \left[ \| f - Q_{\meshT_N} f \|_A^2 + \| f - Q_{\meshT_N} f \|_{A, R}^2 + \| f - Q_{\meshT_N} f \|_B^2 \right]^\frac{1}{2} \\
+	\lDG f - f_h \rDG &\leq& \left[ \| f - Q_{\meshT_N} f \|_A^2 + \| f - Q_{\meshT_N} f \|_{A, R}^2 + \| f - Q_{\meshT_N} f \|_B^2 \right]^\frac{1}{2} \\
 	&& \quad {} + \frac{c_2^A}{c_S^A} \left[ \| f - Q_{\meshT_N} f \|_{A,*}^2 + \| f - Q_{\meshT_N} f \|_{A, R}^2 + \| f - Q_{\meshT_N} f \|_{B,*}^2 \right]^\frac{1}{2} \\
 	&\leq& c \max\{ 1, \alpha \} \left(1 + \frac{c_2^A}{c_S^A} \right)\left[ \sum_{\ell=1}^N (1 + h_\ell) h_\ell^{2 \min \{ s, p+ 1 \} - 2 } |f|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2} \\
 	&\leq& c \max\{ 1, \alpha \} \left(1 + \frac{c_2^A}{c_S^A} \right)\left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 2 } |f|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2}. \\
@@ -590,4 +590,49 @@ However, a result of $f \in H^2(0, T; L^2(\Omega))$ is difficult to obtain under
 
 The regularity assumption $f \in H^s(\meshT_N)$, $s \geq 2$ can be relaxed a bit nonetheless: It suffices to ask for $f \in W_p^2(\meshT_N)$ with $p \in ( \frac{2d}{d+2}, 2 ]$, see \cite[4.2.5 Analysis for Low-Regularity Solutions]{DiPietroErn}, as originally presented in \cite{Wihler} for two space dimensions and in \cite{DiPietroErn-Low} for any space dimension.
 \end{remark}
+Motivated by the proof for $L^2$-error estimates for the SIP method, found in for example \cite[Theorem 4.25]{DiPietroErn}, we aim to derive error estimates in the $L^2$ norm for our discontinuous Galerkin method.
+\begin{theorem}
+\label{thm:dg-L2-estimate}
+Let $\meshT_N$ be a quasi-uniform decomposition and let $f \in H^s(\meshT_N)$, $s \geq 2$, be the exact solution of \cref{eq:dg-model-prob} and for $\sigma \geq 4 c_K$ let $f_h \in \Shp(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-form}.
+Then the following error estimate holds for some constant $C > 0$
+\[
+	\| f - f_h \|_{L^2(Q)} \leq C c_g c_2^A \sqrt{1 + c_K} h^{\min \{ s, p+1 \} - 1} \lDG f - f_h \rDG.
+\]
+\end{theorem}
+\begin{proof}
+Consider the following auxiliary problem: Find $\chi \in H^1(Q)$ such that
+\begin{IEEEeqnarray*}{rCl}
+	\iint_Q \left(- \frac{\partial \chi}{\partial t} - \lapl \chi \right) v \dd x \dd t = \iint_Q (f - f_h) v \dd x \dd t \qquad \text{for all $H^1(Q)$},
+\end{IEEEeqnarray*}
+with the same boundary conditions as $f$ has, but in homogenized form, i.e.\ $\partial_\nu \chi + \alpha \chi = 0$ on $\Gamma_R$ and $\chi = 0$ on $\Gamma_D$.
+Using our understanding of the adjoint and the assumption that $\chi \in H^s(Q)$ implies that $\chi$ and its derivatives are continuous, we observe that all jump penalty terms in $a^\sip$ and $b$ disappear, simplifying $A(\cdot, \chi)$ to:
+\begin{IEEEeqnarray*}{rCl}
+	A(f - f_h, \chi) &=& \iint_Q \left( - \frac{\partial \chi}{\partial t} - \lapl \chi \right) (f - f_h) \dd x \dd t \\
+	&=& \iint_Q (f - f_h)^2 \dd x \dd t \\
+	&=& \| f - f_h \|_{L^2(Q)}^2.
+\end{IEEEeqnarray*}
+Using the Galerkin orthogonality \cref{eq:dg-Galerkin-orthogonality}, we know
+\[
+	A(f - f_h, \chi) = A(f - f_h, \chi - Q_{\meshT_N} \chi)
+\]
+holds true.
+Using \cref{thm:A-bounded}, we can estimate
+\begin{IEEEeqnarray*}{rCl}
+	\| f - f_h \|_{L^2(Q)}^2 &=& A(f - f_h, \chi) \\
+	&=& A(f - f_h, \chi - Q_{\meshT_N} \chi) \\
+	&\leq& c_2^A \sqrt{1 + c_K} \lDG f - f_h \rDG \lDGs \chi - Q_{\meshT_N} \chi \rDGs \\
+	&\overset{\text{\cref{thm:L2proj-Astar-error}}}{\leq}& c_2^A \sqrt{1 + c_K} \lDG f - f_h \rDG \cdot c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} -2 } |\chi|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2} \\
+	&\overset{\text{\cref{as:quasi-uniform}}}{\leq}& C c_g c_2^A \sqrt{1 + c_K} h^{\min \{ s, p+1 \} - 1} \| f - f_h \|_{L^2(Q)} \lDG f - f_h \rDG
+\end{IEEEeqnarray*}
+Dividing by $\| f - f_h \|_{L^2(Q)}$ yields the result.
+\end{proof}
+Combining \cref{thm:dg-L2-estimate,thm:dg-convergence}, we obtain the following result:
+\begin{corollary}
+\label{thm:dg-convergence-L2}
+Let $\meshT_N$ be a quasi-uniform decomposition and let $f \in H^s(\meshT_N)$, $s \geq 2$, be the exact solution of \cref{eq:dg-model-prob} and for $\sigma \geq 4 c_K$ let $f_h \in \Shp(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-form}.
+Then the following error estimate holds for some $C > 0$
+\[
+	\| f - f_h \|_{L^2(Q)} \leq C \max\{ 1, \alpha \} h^{2 \min \{ s, p+1\} - 2} |f|_{H^s(\meshT_N)}.
+\]
+\end{corollary}
 \end{document}

@@ -684,6 +684,15 @@ For the second term, we can apply \cref{thm:dg-convergence} if \cref{as:continuo
 \end{IEEEeqnarray*}
 By combining both estimates, we obtain the desired result.
 \end{proof}
+Of course, we also obtain an estimate for $\| \bar{y}_h - \bar{y} \|_{L^2(Q)}$ from this by using \cref{thm:dg-L2-estimate}:
+\begin{corollary}
+\label{thm:discrete-state-convergence-L2}
+Let the assumptions of \cref{thm:optimal-control-convergence} hold and be $\bar{u}_h$ and $\bar{u}$ as in the theorem, with their respective associated states $\bar{y}_h$ and $\bar{y}$.
+Then it holds for some constant $C > 0$
+\begin{IEEEeqnarray*}{rCl}
+	\| \bar{y}_h - \bar{y} \|_{L^2(Q)} &\leq& C h^{2 \min \{ s, p+1\} - 2} ( \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ).
+\end{IEEEeqnarray*}
+\end{corollary}
 Given the problem interpretation, we want to find an optimal control for the continuous setting.
 As of such, we are also interested in the convergence of the continuous state associated with the discretized control towards the state associated with the optimal control:
 \begin{theorem}
@@ -719,10 +728,6 @@ Reorganizing the constants into a new one proves the claim.
 
 Naturally, we could also use \cref{as:continuous-Hs-regularity} instead of \cref{thm:generalized-problem-solution} and obtain the same estimate in the $| \cdot |_{H^s(0, T)}$ norm.
 \end{proof}
-\cref{thm:state-error-bound} does not means that our discretized state will converge in the stronger norm, but rather that the strong convergence of the control translates into a strong convergence of the associated, non-discretized state.
-
-We can summarize both \cref{thm:discrete-state-convergence,thm:state-error-bound} together in the sense that while we ``lose'' some precision with our discretized state due to the weaker $\lDG \cdot \rDG$ norm, which only bounds the derivatives, the actual state corresponding to the optimal control of the discretized problem converges in a benign fashion in the $W(0, T)$ norm with the same convergence rate.
-
 Furthermore, we can prove that the functionals $J$ and $J_h$ converge in a pointwise fashion:
 \begin{lemma}
 \label{thm:J-convergence}
@@ -898,12 +903,6 @@ Once again, we can apply the convergence result \cref{thm:dg-convergence} again 
 \end{IEEEeqnarray*}
 This is the result we wanted to prove.
 \end{proof}
-Considering that the problems we're actually solving are
-\[
-	\min_{u \in U_{ad}} J(u) \qquad \min_{u_h \in U_{ad}} J_h(u),
-\]
-the convergence of the control in the $L^2(Q)$ norm and not the $\lDG \cdot \rDG$ norm is not that surprising.
-It stems from the approach to not discretize the control in the first place.
 \begin{remark}
 Another interesting fact that comes to light when considering this formulation is that the proof of \cref{thm:optimal-control-convergence} can be transported to formulations as long as the term $S \bar{u} - S_h \bar{u}$ can be estimated in some way.
 However, in order for that to be possible, the norm must be possible to estimate against the $\lDG \cdot \rDG$ norm.
@@ -911,8 +910,9 @@ This however, is also necessary for showing that $S_h$ is well defined.
 In a way this means that either the discontinuous Galerkin approach converges for a given formulation or is not well defined for it at all.
 \end{remark}
 \section{Optimal control with state observations on the full space}
-In the light of the last remark, we want to introduce another formulation to point out some limitations of the method presented here.
+We want to introduce a third formulation of the optimal control problem.
 In contrast to the last problem, we now want to minimize the error to a given state on the full space-time domain $Q$.
+The motivation for considering this problem for us is that we obtain an optimality system for which we can easily generate numerical samples using eigenfunctions, as both the state and adjoint state will have homogeneous boundary conditions.
 This leads to the following formulation:
 \begin{problem}
 \label{prb:SymmetricOptimalControl-restricted}
@@ -939,11 +939,10 @@ As in the previous section, we have
 \]
 The observation operator is now $E_Q : y \mapsto y$ though, the identity of $L^2(Q)$. This leads to a control to space operator of $S \coloneqq G_Q \beta \cdot$. As the identity is obviously continuous, so is $S$.
 
-For the discontinuous Galerkin method, this has an interesting effect, namely the operator $S_h \coloneqq G_Q^h \beta \cdot$ ostensibly cannot be shown to be continuous from $L^2(Q)$ to $L^2(Q)$.
-Recalling the discussion made after \cref{thm:A-ellip-weak}, we can argue that because $\lDGw \cdot \rDGw$ (and in that way, $\lDG \cdot \rDG$) is a norm on $\Shp(\meshT_N)$, we can argue that by the equivalence of norms, the $L^2(Q)$ norm can be estimated for the elements of $\Shp(\meshT_N) \subset L^2(Q)$ by the $\lDG \cdot \rDG$ norm multiplied with some constant.
-As of such, $S_h$ \emph{is} continuous from $L^2(Q)$ to $L^2(Q)$.
+For the discontinuous Galerkin method, we can employ \cref{thm:dg-L2-estimate} and combine it with \cref{thm:Astab-est} in order to show the continuity of the corresponding discrete control-to-state operator $S_h \coloneqq G_Q^h \beta \cdot$.
+This means that \cref{thm:optimal-control-existence,thm:variational-ineq} can be applied for this problem formulation also.
 
-This equivalence of norms keeps everything but the proof of convergence transferable. \cref{thm:discrete-adj-state-helper} suffices for deriving the the adjoint state, again.
+As before, \cref{thm:discrete-adj-state-helper} suffices for deriving the formulation adjoint state in the sense of \cref{thm:discrete-variational-ineq}. The projection formula \cref{thm:projection-formula} derives for this formulation via the same way.
 In the end, we obtain the following optimality system for the continuous case:
 \begin{IEEEeqnarray*}{c}
 \begin{IEEEeqnarraybox}{r"l}
@@ -962,22 +961,34 @@ u = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p \right\}.
 \end{IEEEeqnarray*}
 This optimality system follows from the result \cite[Lemma 3.17, p.\ 126]{Troeltzsch}. Alternatively see the work \cite{MeidnerVexler-I}, which treats this formulation, too.
 For the discrete case, one obtains a corresponding formulation, derived in the same fashion as \cref{thm:discrete-variational-ineq,thm:projection-formula} were the system
-\begin{IEEEeqnarray*}{c}
+\begin{equation}
+\label{eq:symmetric-discrete}
+\begin{IEEEeqnarraybox}[][c]{c}
 \begin{IEEEeqnarraybox}{rCl"l}
 A(y_h, v_h) &=& \left\langle \beta u_h, v_h \right\rangle_{L^2(\Sigma_R)} + \langle q, v_h \rangle_{L^2(Q)} & \text{for all $v_h \in \Shp(\meshT_N)$} \\
 A(v_h, p_h) &=& \langle y_h - y_Q, v_h \rangle_{L^2(Q)} & \text{for all $v_h \in \Shp(\meshT_N)$}
 \end{IEEEeqnarraybox} \\
 u_h = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p_h \right\}.
-\end{IEEEeqnarray*}
+\end{IEEEeqnarraybox}
+\end{equation}
 Alas, we have a unique optimal control for the discrete problem, too.
 
-However, the proof of the convergence result \cref{thm:optimal-control-convergence} breaks down for this problem. The step that cannot be made is to estimate $\| G_Q^h \beta v - G_Q \beta v \|_{L^2(Q)}$ and $\| \bar{y} - \bar{y}^h \|_{L^2(Q)}$ by $\lDG G_Q^h \beta v - G_Q \beta v \rDG$ and $\lDG \bar{y} - \bar{y}^h \rDG$, respectively.
-This is simply not possible because $\bar{y} \notin \Shp(\meshT_N)$ and $G_Q \beta v \notin \Shp(\meshT_N)$: We used the argument of norm equivalence to argue why we could estimate the $L^2(Q)$ norm by the $\lDG \cdot \rDG$ norm. This however cannot be applied for functions that are obviously not in our finitely dimensional space.
-
-In a more general way, we again have the estimate
+An interesting difference comes up when proving the convergence, though. Previously, the observation operators forced us to estimate the convergence on boundary terms, where we needed to apply \cref{thm:dg-convergence} rather than \cref{thm:dg-convergence-L2}. One can translate the proof of \cref{thm:optimal-control-convergence} for this formulation by using \cref{thm:dg-convergence-L2} rather than \cref{thm:dg-convergence}.
+This has the interesting effect that one obtains a slightly stronger convergence result:
+\begin{theorem}
+\label{thm:optimal-control-convergence-symm}
+Let $\bar{u}$ be the optimal control for the continuous problem \cref{prb:SymmetricOptimalControl-restricted} and let \cref{as:continuous-Hs-regularity} hold. Moreover, be $\bar{u}_h$ the optimal control to the discretized problem \cref{eq:symmetric-discrete}.
+Then there is a $C > 0$ independent of $h$, such that:
 \[
-	|J(u) - J_h(u)| \leq \frac{1}{2} \| S u - S_h u \|_{L^2(Q)},
+	\| \bar{u} - \bar{u}_h \|_{L^2(Q)} + \| \bar{y} - \bar{y}_h \|_{L^2(Q)} \leq C h^{2 \min \{ s, p+1\} - 2} \left( \| \bar{u} \|_{L^2(Q)} + \| q \|_{L^2(Q)} + \| y_Q \|_{L^2(Q)} \right).
 \]
-which is to say, the pointwise convergence of the functional $J_h$ is bound by something we cannot estimate, especially we don't even know what $J_h(\bar{u})$ converges to for $h \to 0$.
-As of such, it's not surprisingly that no convergence can be proved for this formulation.
+\end{theorem}
+For the same reason, we also have for $J_h$ a convergence with this speed:
+\begin{lemma}
+\label{thm:J-convergence-symm}
+Let \cref{as:continuous-Hs-regularity} hold. Then with some constant $C > 0$ independent of $h$, we have for any $u \in U_{ad}$ the estimate:
+\[
+	| J(u) - J_h(u) | \leq \frac{1}{2} C h^{2\min \{ s, p+1\} -2} \| u \|_{L^2(Q)}.
+\]
+\end{lemma}
 \end{document}
