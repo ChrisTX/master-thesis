@@ -213,6 +213,7 @@ Due to \cref{thm:generalized-problem-solution}, linear and continuous operators 
 	y = G_Q g_I + G_\Sigma g_R + G_0 y_0.
 \]
 \section{Optimal control with boundary controls}
+\label{sec:boundary-control-opt}
 We'll now go back to the optimal control problem with boundary controls:
 \begin{problem}
 \label{prb:BoundaryOptimalControl-restricted}
@@ -690,7 +691,7 @@ Of course, we also obtain an estimate for $\| \bar{y}_h - \bar{y} \|_{L^2(Q)}$ f
 Let the assumptions of \cref{thm:optimal-control-convergence} hold and be $\bar{u}_h$ and $\bar{u}$ as in the theorem, with their respective associated states $\bar{y}_h$ and $\bar{y}$.
 Then it holds for some constant $C > 0$
 \begin{IEEEeqnarray*}{rCl}
-	\| \bar{y}_h - \bar{y} \|_{L^2(Q)} &\leq& C h^{2 \min \{ s, p+1\} - 2} ( \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ).
+	\| \bar{y}_h - \bar{y} \|_{L^2(Q)} &\leq& C h^{\min \{ s, p+1\}} ( \|\bar{u}\|_{L^2(\Sigma)} + \| y_\Omega \|_{L^2(\Omega)} ).
 \end{IEEEeqnarray*}
 \end{corollary}
 Given the problem interpretation, we want to find an optimal control for the continuous setting.
@@ -910,6 +911,7 @@ This however, is also necessary for showing that $S_h$ is well defined.
 In a way this means that either the discontinuous Galerkin approach converges for a given formulation or is not well defined for it at all.
 \end{remark}
 \section{Optimal control with state observations on the full space}
+\label{sec:symmetric-Problem}
 We want to introduce a third formulation of the optimal control problem.
 In contrast to the last problem, we now want to minimize the error to a given state on the full space-time domain $Q$.
 The motivation for considering this problem for us is that we obtain an optimality system for which we can easily generate numerical samples using eigenfunctions, as both the state and adjoint state will have homogeneous boundary conditions.
@@ -931,8 +933,6 @@ u_a(x, t) \leq u(x, t) \leq u_b(x, t) \quad \text{a.e.\ in $Q$}.
 Once again we assume $\Omega \subset \R^d$ to be a Lipschitz domain, $y_Q \in L^2(Q)$, $u_a, u_b \in L^2(Q)$ with $u_a(x, t) \leq u_b(x, t)$ and some constant $\lambda \geq 0$. As before, $\beta \in L^\infty(Q)$ can function as a restriction to where the control may operate. Additionally, we have an inner source function $q \in L^2(Q)$.
 Unlike previously, we now use homogeneous Dirichlet boundary conditions.
 
-For the continuous case, there's not much of a difference in comparison to the previously treated formulations.
-However, there is a crucial difference as far as applying our method is concerned.
 As in the previous section, we have
 \[
 	y = G_Q \beta u.
@@ -974,13 +974,13 @@ u_h = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta p_h \right\}.
 Alas, we have a unique optimal control for the discrete problem, too.
 
 An interesting difference comes up when proving the convergence, though. Previously, the observation operators forced us to estimate the convergence on boundary terms, where we needed to apply \cref{thm:dg-convergence} rather than \cref{thm:dg-convergence-L2}. One can translate the proof of \cref{thm:optimal-control-convergence} for this formulation by using \cref{thm:dg-convergence-L2} rather than \cref{thm:dg-convergence}.
-This has the interesting effect that one obtains a slightly stronger convergence result:
+This has the effect that one obtains a stronger convergence result:
 \begin{theorem}
 \label{thm:optimal-control-convergence-symm}
 Let $\bar{u}$ be the optimal control for the continuous problem \cref{prb:SymmetricOptimalControl-restricted} and let \cref{as:continuous-Hs-regularity} hold. Moreover, be $\bar{u}_h$ the optimal control to the discretized problem \cref{eq:symmetric-discrete}.
 Then there is a $C > 0$ independent of $h$, such that:
 \[
-	\| \bar{u} - \bar{u}_h \|_{L^2(Q)} + \| \bar{y} - \bar{y}_h \|_{L^2(Q)} \leq C h^{2 \min \{ s, p+1\} - 2} \left( \| \bar{u} \|_{L^2(Q)} + \| q \|_{L^2(Q)} + \| y_Q \|_{L^2(Q)} \right).
+	\| \bar{u} - \bar{u}_h \|_{L^2(Q)} + \| \bar{y} - \bar{y}_h \|_{L^2(Q)} \leq C h^{\min \{ s, p+1\}} \left( \| \bar{u} \|_{L^2(Q)} + \| q \|_{L^2(Q)} + \| y_Q \|_{L^2(Q)} \right).
 \]
 \end{theorem}
 For the same reason, we also have for $J_h$ a convergence with this speed:
@@ -988,7 +988,7 @@ For the same reason, we also have for $J_h$ a convergence with this speed:
 \label{thm:J-convergence-symm}
 Let \cref{as:continuous-Hs-regularity} hold. Then with some constant $C > 0$ independent of $h$, we have for any $u \in U_{ad}$ the estimate:
 \[
-	| J(u) - J_h(u) | \leq \frac{1}{2} C h^{2\min \{ s, p+1\} -2} \| u \|_{L^2(Q)}.
+	| J(u) - J_h(u) | \leq \frac{1}{2} C h^{\min \{ s, p+1\}} \| u \|_{L^2(Q)}.
 \]
 \end{lemma}
 \end{document}

@@ -150,12 +150,12 @@ namespace IterativeSolvers {
 		iparm[6] = 0;         /* Not in use */
 		iparm[7] = 0;         /* Max numbers of iterative refinement steps */
 		iparm[8] = 0;         /* Not in use */
-		iparm[9] = 13;        /* Perturb the pivot elements with 1E-13 */
+		iparm[9] = 8;        /* Perturb the pivot elements with 1E-13 */
 		iparm[10] = 1;        /* Use nonsymmetric permutation and scaling MPS */
 		iparm[11] = 0;        /* Not in use */
 		iparm[12] = 1;        /* Maximum weighted matching algorithm is switched-off */
 							  /* (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy */
-		iparm[13] = 0;        /* Output: Number of perturbed pivots */
+		iparm[13] = 1;        /* Output: Number of perturbed pivots */
 		iparm[14] = 0;        /* Not in use */
 		iparm[15] = 0;        /* Not in use */
 		iparm[16] = 0;        /* Not in use */

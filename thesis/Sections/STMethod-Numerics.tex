@@ -596,7 +596,7 @@ Motivated by the proof for $L^2$-error estimates for the SIP method, found in fo
 Let $\meshT_N$ be a quasi-uniform decomposition and let $f \in H^s(\meshT_N)$, $s \geq 2$, be the exact solution of \cref{eq:dg-model-prob} and for $\sigma \geq 4 c_K$ let $f_h \in \Shp(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-form}.
 Then the following error estimate holds for some constant $C > 0$
 \[
-	\| f - f_h \|_{L^2(Q)} \leq C c_g c_2^A \sqrt{1 + c_K} h^{\min \{ s, p+1 \} - 1} \lDG f - f_h \rDG.
+	\| f - f_h \|_{L^2(Q)} \leq C c_g c_2^A \sqrt{1 + c_K} h \lDG f - f_h \rDG.
 \]
 \end{theorem}
 \begin{proof}
@@ -605,7 +605,7 @@ Consider the following auxiliary problem: Find $\chi \in H^1(Q)$ such that
 	\iint_Q \left(- \frac{\partial \chi}{\partial t} - \lapl \chi \right) v \dd x \dd t = \iint_Q (f - f_h) v \dd x \dd t \qquad \text{for all $H^1(Q)$},
 \end{IEEEeqnarray*}
 with the same boundary conditions as $f$ has, but in homogenized form, i.e.\ $\partial_\nu \chi + \alpha \chi = 0$ on $\Gamma_R$ and $\chi = 0$ on $\Gamma_D$.
-Using our understanding of the adjoint and the assumption that $\chi \in H^s(Q)$ implies that $\chi$ and its derivatives are continuous, we observe that all jump penalty terms in $a^\sip$ and $b$ disappear, simplifying $A(\cdot, \chi)$ to:
+Using our understanding of the adjoint and the assumption that $\chi \in H^2(Q)$ implies that $\chi$ and its derivatives are continuous, we observe that all jump penalty terms in $a^\sip$ and $b$ disappear, simplifying $A(\cdot, \chi)$ to:
 \begin{IEEEeqnarray*}{rCl}
 	A(f - f_h, \chi) &=& \iint_Q \left( - \frac{\partial \chi}{\partial t} - \lapl \chi \right) (f - f_h) \dd x \dd t \\
 	&=& \iint_Q (f - f_h)^2 \dd x \dd t \\
@@ -621,8 +621,8 @@ Using \cref{thm:A-bounded}, we can estimate
 	\| f - f_h \|_{L^2(Q)}^2 &=& A(f - f_h, \chi) \\
 	&=& A(f - f_h, \chi - Q_{\meshT_N} \chi) \\
 	&\leq& c_2^A \sqrt{1 + c_K} \lDG f - f_h \rDG \lDGs \chi - Q_{\meshT_N} \chi \rDGs \\
-	&\overset{\text{\cref{thm:L2proj-Astar-error}}}{\leq}& c_2^A \sqrt{1 + c_K} \lDG f - f_h \rDG \cdot c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} -2 } |\chi|^2_{H^s(\tau_\ell)} \right]^\frac{1}{2} \\
-	&\overset{\text{\cref{as:quasi-uniform}}}{\leq}& C c_g c_2^A \sqrt{1 + c_K} h^{\min \{ s, p+1 \} - 1} \| f - f_h \|_{L^2(Q)} \lDG f - f_h \rDG
+	&\overset{\text{\cref{thm:L2proj-Astar-error}}}{\leq}& c_2^A \sqrt{1 + c_K} \lDG f - f_h \rDG \cdot c \left[ \sum_{\ell=1}^N h_\ell^{2 \min \{ 2, p+ 1 \} -2 } |\chi|^2_{H^2(\tau_\ell)} \right]^\frac{1}{2} \\
+	&\overset{\text{\cref{as:quasi-uniform}}}{\leq}& C c_g c_2^A \sqrt{1 + c_K} h \| f - f_h \|_{L^2(Q)} \lDG f - f_h \rDG
 \end{IEEEeqnarray*}
 Dividing by $\| f - f_h \|_{L^2(Q)}$ yields the result.
 \end{proof}
@@ -632,7 +632,7 @@ Combining \cref{thm:dg-L2-estimate,thm:dg-convergence}, we obtain the following 
 Let $\meshT_N$ be a quasi-uniform decomposition and let $f \in H^s(\meshT_N)$, $s \geq 2$, be the exact solution of \cref{eq:dg-model-prob} and for $\sigma \geq 4 c_K$ let $f_h \in \Shp(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-form}.
 Then the following error estimate holds for some $C > 0$
 \[
-	\| f - f_h \|_{L^2(Q)} \leq C \max\{ 1, \alpha \} h^{2 \min \{ s, p+1\} - 2} |f|_{H^s(\meshT_N)}.
+	\| f - f_h \|_{L^2(Q)} \leq C \max\{ 1, \alpha \} h^{\min \{ s, p+1\}} |f|_{H^s(\meshT_N)}.
 \]
 \end{corollary}
 \end{document}

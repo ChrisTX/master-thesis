@@ -1,11 +1,11 @@
 //#define HEAT_SYSTEM
 //#define SYMMETRIC_SYSTEM
 //#define INNER_SYSTEM
-//#define QUADRATIC_BASIS
+#define QUADRATIC_BASIS
 //#define EXACT_PRECISION_DIRICHLET
 //#define USE_GMRES
 //#define KR_SYSTEM
-#define HOLE
+//#define HOLE
 
 #if defined(HEAT_SYSTEM) || defined(KR_SYSTEM) 
 #undef SYMMETRIC_ASSEMBLY
@@ -113,7 +113,7 @@ int main() {
 #elif defined(SYMMETRIC_SYSTEM)
 	const auto reflim = 3;
 #else
-	const auto reflim = 3;
+	const auto reflim = 4;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -170,15 +170,15 @@ int main() {
 
 	const auto pi = 3.14159265359;
 	
-	auto beta = 1.;
+	auto beta = 0.2;
 #ifdef SYMMETRIC_SYSTEM
 	auto lambda = std::pow(pi, -4.);
 #else
 	auto lambda = 0.1;
 #endif
-	auto alpha = 0.;
+	auto alpha = 0.2;
 	auto sigma = 50.;
-	auto theta = 1.;
+	auto theta = 0.2;
 
 #ifdef HEAT_SYSTEM
 	auto stmass = HeatAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda, theta };
@@ -212,7 +212,7 @@ int main() {
 
 #else
 	auto matA = stmass.AssembleMatrix_Boundary<basis_t>();
-	auto lvA = stmass.AssembleLV_Boundary<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 5.; });
+	auto lvA = stmass.AssembleLV_Boundary<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 40.; });
 #endif
 #else
 	auto matAandLV = stmass.AssembleMatrixAndLV<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 1.; });
@@ -238,7 +238,7 @@ int main() {
 	
 	auto stmsol = STMSolver<double, basis_t>{ beta, lambda, mesh };
 #ifdef KR_SYSTEM
-	stmsol.SolveRestricted(stmass, [](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 40.; }, -20000., 20000., 0.15);
+	stmsol.SolveRestricted(stmass, [](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 40.; }, 0., 40., 0.15);
 #else
 	stmsol.Solve(matA, lvA);
 #endif

@@ -1361,7 +1361,7 @@ public:
 #endif
 		m_x.resize(A.GetNumberOfRows());
 #ifdef USE_GMRES
-		IterativeSolvers::MKL_FGMRES(A, m_x, b, 5000, 0, T{ 0 });
+		IterativeSolvers::MKL_FGMRES(A, m_x, b, 5000, 150, T{ 0 });
 #else
 #ifdef SYMMETRIC_ASSEMBLY
 		IterativeSolvers::MKL_PARDISO_SYM(A, m_x, b);
