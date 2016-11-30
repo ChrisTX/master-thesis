@@ -1,8 +1,8 @@
 //#define HEAT_SYSTEM
 //#define SYMMETRIC_SYSTEM
-#define INNER_SYSTEM
+//#define INNER_SYSTEM
 //#define KR_SYSTEM
-#define HOLE
+//#define HOLE
 #define QUADRATIC_BASIS
 //#define USE_GMRES
 

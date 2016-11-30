@@ -9,3 +9,15 @@ For compiling the code, one needs two libraries installed and available with hea
 Especially because the latter is non-trivial to link, we cannot provide a makefile that would work with the code.
 The specific version of MKL installed and the operating system used greatly vary the link and compiler parameters required.
 Intel provides a guide on how to link the library, which can be found under https://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/
+
+The following options are available as compile time switches:
+HEAT_SYSTEM - solves the parabolic heat system, not an optimal control problem
+SYMMETRIC_SYSTEM - both u and y are searched for in Q
+INNER_SYSTEM - u is searched in Q, y on Sigma
+KR_SYSTEM - boundary optimal control system with pointwise control constraints, solved via Kunisch-Roesch active set method
+
+if no system is defined, u is searched on Sigma and y is observed on t = T.
+
+HOLE - cuts the middle from the domain
+QUADRATIC_BASIS - if set, switches from a linear to a quadratic basis approach
+USE_GMRES - uses FGMRES instead of PARDISO for solving the system
