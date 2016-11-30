@@ -1,11 +1,10 @@
 //#define HEAT_SYSTEM
 //#define SYMMETRIC_SYSTEM
-//#define INNER_SYSTEM
-#define QUADRATIC_BASIS
-//#define EXACT_PRECISION_DIRICHLET
-//#define USE_GMRES
+#define INNER_SYSTEM
 //#define KR_SYSTEM
-//#define HOLE
+#define HOLE
+#define QUADRATIC_BASIS
+//#define USE_GMRES
 
 #if defined(HEAT_SYSTEM) || defined(KR_SYSTEM) 
 #undef SYMMETRIC_ASSEMBLY
@@ -70,7 +69,7 @@ int main() {
 	const auto xmax = 10;
 	const auto ymax = 10;
 #elif defined(HOLE)
-	auto mesh = TetrahedralMesh<double>{ 0., 1. };
+	auto mesh = TetrahedralMesh<double>{ 0., 0.1 };
 
 	const auto xdelta = 0.1;
 	const auto xmax = 10;
@@ -113,7 +112,7 @@ int main() {
 #elif defined(SYMMETRIC_SYSTEM)
 	const auto reflim = 3;
 #else
-	const auto reflim = 3;
+	const auto reflim = 2;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -199,7 +198,7 @@ int main() {
 #ifndef HEAT_SYSTEM
 #ifdef INNER_SYSTEM
 	auto matA = stmass.AssembleMatrix_Inner<basis_t>();
-	auto lvA = stmass.AssembleLV_Inner<basis_t>([pi](double x, double y, double t) -> double { return (x + y) * std::sin(pi * t); });
+	auto lvA = stmass.AssembleLV_Inner<basis_t>([pi](double x, double y, double t) -> double { return 10 * (x + y) * std::sin(pi * t); });
 #elif defined(SYMMETRIC_SYSTEM)
 	const auto a = 1.;
 	const auto T = 0.1;
@@ -213,7 +212,9 @@ int main() {
 	auto matA = stmass.AssembleMatrix_Symmetric<basis_t>();
 	auto lvA = stmass.AssembleLV_Symmetric<basis_t>(f, yQ, y0);
 #elif defined(KR_SYSTEM)
-
+#elif defined(HOLE)
+	auto matA = stmass.AssembleMatrix_Boundary<basis_t>();
+	auto lvA = stmass.AssembleLV_Boundary<basis_t>([](double x, double y, double) -> double { return 2. - (x + y); }, [](double x, double y, double) -> double { return x + y; });
 #else
 	auto matA = stmass.AssembleMatrix_Boundary<basis_t>();
 	auto lvA = stmass.AssembleLV_Boundary<basis_t>([](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 40.; });
@@ -237,7 +238,6 @@ int main() {
 	matbut.close();
 #endif
 
-#ifdef HAVE_MKL
 	std::cout << "SOLVING" << std::endl;
 	
 	auto stmsol = STMSolver<double, basis_t>{ beta, lambda, mesh };
@@ -251,7 +251,6 @@ int main() {
 	stmsol.PrintToVTU("testfile-u.vtu", false);
 #endif
 	stmsol.PrintToVTU("testfile-y.vtu", true);
-#endif
 
 	std::cout << "PRINTING" << std::endl;
 	

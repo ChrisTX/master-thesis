@@ -10,11 +10,7 @@
 #include <utility>
 #include <valarray>
 
-#ifdef HAVE_MKL
 #include <mkl.h>
-#else
-using MKL_INT = int;
-#endif
 
 namespace Utility {
 	template<typename T, typename TNorm = double>
@@ -23,7 +19,6 @@ namespace Utility {
 		return std::sqrt( std::inner_product(std::begin(x), std::end(x), std::begin(x), TNorm{0}) );
 	}
 
-#ifdef HAVE_MKL
 	inline void MKL_csrgemv(char *transa, MKL_INT *m, float *a, MKL_INT *ia, MKL_INT *ja, float *x, float *y)
 	{
 		mkl_scsrgemv(transa, m, a, ia, ja, x, y);
@@ -43,7 +38,6 @@ namespace Utility {
 	{
 		mkl_dcsrsymv(uplo, m, a, ia, ja, x, y);
 	}
-#endif
 }
 
 #endif // !GUARD_UTILITY_HPP

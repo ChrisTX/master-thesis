@@ -1,0 +1,11 @@
+The implementation is given in the form of a C++14 header-only library.
+It is capable of handling various formulations treated in the accompanying thesis.
+More specifically, the C++ file "CubeTest.cpp" implements all the various test setups that were used and solves them using the library.
+In order to run the code, one has to compile this file only after setting the correct parameters in the file for the specific test case in the file's header.
+
+For compiling the code, one needs two libraries installed and available with headers:
+- VTK
+- Intel(R) MKL
+Especially because the latter is non-trivial to link, we cannot provide a makefile that would work with the code.
+The specific version of MKL installed and the operating system used greatly vary the link and compiler parameters required.
+Intel provides a guide on how to link the library, which can be found under https://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/

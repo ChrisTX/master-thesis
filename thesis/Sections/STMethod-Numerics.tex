@@ -590,7 +590,7 @@ However, a result of $f \in H^2(0, T; L^2(\Omega))$ is difficult to obtain under
 
 The regularity assumption $f \in H^s(\meshT_N)$, $s \geq 2$ can be relaxed a bit nonetheless: It suffices to ask for $f \in W_p^2(\meshT_N)$ with $p \in ( \frac{2d}{d+2}, 2 ]$, see \cite[4.2.5 Analysis for Low-Regularity Solutions]{DiPietroErn}, as originally presented in \cite{Wihler} for two space dimensions and in \cite{DiPietroErn-Low} for any space dimension.
 \end{remark}
-Motivated by the proof for $L^2$-error estimates for the SIP method, found in for example \cite[Theorem 4.25]{DiPietroErn}, we aim to derive error estimates in the $L^2$ norm for our discontinuous Galerkin method.
+Motivated by the proof for $L^2$-error estimates for the symmetric interior penalty method, found in for example \cite[Theorem 4.25]{DiPietroErn}, we aim to derive error estimates in the $L^2$ norm for our discontinuous Galerkin method.
 \begin{theorem}
 \label{thm:dg-L2-estimate}
 Let $\meshT_N$ be a quasi-uniform decomposition and let $f \in H^s(\meshT_N)$, $s \geq 2$, be the exact solution of \cref{eq:dg-model-prob} and for $\sigma \geq 4 c_K$ let $f_h \in \Shp(\meshT_N)$ be the solution of the discrete variational problem \cref{eq:dg-discrete-form}.
@@ -600,12 +600,16 @@ Then the following error estimate holds for some constant $C > 0$
 \]
 \end{theorem}
 \begin{proof}
+This proof is an adaption of \cite[Theorem 4.25]{DiPietroErn} for our space-time discontinuous Galerkin method.
+
 Consider the following auxiliary problem: Find $\chi \in H^1(Q)$ such that
 \begin{IEEEeqnarray*}{rCl}
 	\iint_Q \left(- \frac{\partial \chi}{\partial t} - \lapl \chi \right) v \dd x \dd t = \iint_Q (f - f_h) v \dd x \dd t \qquad \text{for all $H^1(Q)$},
 \end{IEEEeqnarray*}
 with the same boundary conditions as $f$ has, but in homogenized form, i.e.\ $\partial_\nu \chi + \alpha \chi = 0$ on $\Gamma_R$ and $\chi = 0$ on $\Gamma_D$.
-Using our understanding of the adjoint and the assumption that $\chi \in H^2(Q)$ implies that $\chi$ and its derivatives are continuous, we observe that all jump penalty terms in $a^\sip$ and $b$ disappear, simplifying $A(\cdot, \chi)$ to:
+We have to make the assumption that $\chi \in H^2(Q)$ with $\| \chi \|_{H^2(Q)} \leq C \| f - f_h \|_{L^2(Q)}$ holds.
+Given that this problem is can be interpreted as the adjoint to the parabolic heat equation and using the transformation $(x, t) \to (x, T - t)$ can be transferred onto it, this assumption is not stronger than assuming $f \in H^s(\meshT_N)$.
+This regularity implies that $\chi$ and its derivatives are continuous, we observe that all jump penalty terms in $a^\sip$ and $b$ disappear, simplifying $A(\cdot, \chi)$ to:
 \begin{IEEEeqnarray*}{rCl}
 	A(f - f_h, \chi) &=& \iint_Q \left( - \frac{\partial \chi}{\partial t} - \lapl \chi \right) (f - f_h) \dd x \dd t \\
 	&=& \iint_Q (f - f_h)^2 \dd x \dd t \\
@@ -626,6 +630,9 @@ Using \cref{thm:A-bounded}, we can estimate
 \end{IEEEeqnarray*}
 Dividing by $\| f - f_h \|_{L^2(Q)}$ yields the result.
 \end{proof}
+\begin{remark}
+Note that if \cref{thm:L2proj-Astar-error} could be weakened to work for functions in $H^1(\meshT_N)$, the assumption on the regularity of $\chi$ could also be dropped and replaced with an $H^1(Q)$ regularity demand. We only needed $H^2(Q)$-regularity for the application of \cref{thm:L2proj-Astar-error}.
+\end{remark}
 Combining \cref{thm:dg-L2-estimate,thm:dg-convergence}, we obtain the following result:
 \begin{corollary}
 \label{thm:dg-convergence-L2}

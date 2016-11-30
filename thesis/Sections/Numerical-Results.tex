@@ -246,6 +246,27 @@ Due to the way the state looks, we cut the state for display reasons along the l
 \end{figure}
 \FloatBarrier
 
+Of course, the implementation is not restricted to simple domains like the ones we've shown so far.
+Using a quadratic domain for $\Omega$ was primarily done so that the results can be more easily visualized on paper.
+As a next step, we will show some results for a different domain: Once again considering the inner heat source problem, with $y_Q$ as before, but scaled up by a factor $10$ for improved visibility, we now cut some part from the domain.
+More specifically, we consider $\Omega = [0, 1]^2 \setminus [0.2, 0.8]^2$ and $T = 0.1$. This leaves us with a non-convex domain, which has a hole in its midst.
+In \cref{fig:hole-y,fig:hole-u} we have given heat-maps of the optimal state and control on the space time domain $Q$, therefore showing a three dimensional plot this time.
+As one can see, the lack of convexity in the domain itself matters little for the numerical method.
+Do keep in mind however, that many regularity results for the parabolic heat equation depend on convexity of the domain.
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.9\textwidth]{Images/inner-hole-y.png}
+\caption{The optimal state of the inner control problem with the new, cut out domain.}
+\label{fig:hole-y}
+\end{figure}
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.9\textwidth]{Images/inner-hole-u.png}
+\caption{The optimal control of the inner control problem with the new, cut out domain.}
+\label{fig:hole-u}
+\end{figure}
+\FloatBarrier
+
 All results so far were calculated by employing the sparse-direct solver PARDISO.
 The reason for this is that iterative methods such as FGMRES converge poorly for the equation systems stem from the saddle point minimization problem.
 We want to illustrate this with an example.

@@ -1321,7 +1321,6 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 #endif
 };
 
-#ifdef HAVE_MKL
 template<class T, class BasisFuncs>
 class STMSolver {
 public:
@@ -1510,7 +1509,7 @@ public:
 				tetra->GetPointIds()->SetId(j, p_VtkId);
 
 				auto p_Ref = ref_tran.InverseMap(p);
-				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : pEvaluateElement_Ref(i, p_Ref)));
+				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : uEvaluateElement_Ref(i, p_Ref)));
 			}
 
 			cells->InsertNextCell(tetra);
@@ -1545,7 +1544,7 @@ public:
 				tetra->GetPointIds()->SetId(j, p_VtkId);
 
 				auto p_Ref = ref_tran.InverseMap(p);
-				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : pEvaluateElement_Ref(i, p_Ref)));
+				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : uEvaluateElement_Ref(i, p_Ref)));
 			}
 
 			const auto inserthalfpt = [&](NodeId_t k, NodeId_t l) -> void {
@@ -1556,7 +1555,7 @@ public:
 				tetra->GetPointIds()->SetId(j++, p_VtkId);
 
 				auto p_Ref = ref_tran.InverseMap(p);
-				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : pEvaluateElement_Ref(i, p_Ref)));
+				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : uEvaluateElement_Ref(i, p_Ref)));
 			};
 
 			inserthalfpt(NodeId_t{ 0 }, NodeId_t{ 1 });
@@ -1653,7 +1652,6 @@ public:
 		m_active_set_quals = std::move(as_n1);
 	}
 };
-#endif
 
 #ifndef SYMMETRIC_ASSEMBLY
 
