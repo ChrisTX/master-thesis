@@ -117,13 +117,13 @@ The \cref{fig:symm-3r-y,fig:symm-3r-u} show the control and state for the soluti
 \centering
 \includegraphics[width=\textwidth]{Images/symm-3r-y-0t.png}
 \includegraphics[width=\textwidth]{Images/symm-3r-y-Tt.png}
-\caption{The state of the problem \cref{eq:symmetric-num-eq} after 3 times uniform discretization with linear basis functions, at $t = 0$ and $t = T$, respectively.}
+\caption{The optimal state of the problem \cref{eq:symmetric-num-eq} after 3 times uniform discretization with linear basis functions, at $t = 0$ and $t = T$, respectively.}
 \label{fig:symm-3r-y}
 \end{figure}
 \begin{figure}[htpb]
 \centering
 \includegraphics[width=\textwidth]{Images/symm-3r-u-0t.png}
-\caption{The control of the problem \cref{eq:symmetric-num-eq} after 3 times uniform discretization with linear basis functions, at $t = 0$. At $t = T$, the control is zero by definition of the optimality system and therefore not shown here.}
+\caption{The optimal control of the problem \cref{eq:symmetric-num-eq} after 3 times uniform discretization with linear basis functions, at $t = 0$. At $t = T$, the control is zero by definition of the optimality system and therefore not shown here.}
 \label{fig:symm-3r-u}
 \end{figure}
 The results in \cref{fig:symm-3r-y,fig:symm-3r-u} were solved using PARDISO by making use of the symmetric matrix formulation we gave in \cref{sec:num-unconstrained}.
@@ -135,45 +135,156 @@ Our problem setup shall now be $y_0 \equiv 1$ and $y_\Omega \equiv 40$.
 As one would expect, all four sides of the space-time cylinder $Q$ that $u$ works on have the same solution under this setup.
 \begin{figure}[htpb]
 \centering
-\includegraphics[width=\textwidth]{Images/boundary-const-u.png}
-\caption{The control of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$, plotted at $\{ 1 \} \times [0, 1] \times [0, T]$.}
+\includegraphics[width=0.9\textwidth]{Images/boundary-const-u.png}
+\caption{The optimal control of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$, plotted at $\{ 1 \} \times [0, 1] \times [0, T]$.}
 \label{fig:boundary-const-u}
 \end{figure}
 As one might expect from the fact that the control in \cref{fig:boundary-const-u} unfolds most of its energy very late on, the state changes very little until shortly before $t = T$. The reason for this is that we effectively made the thermal diffusivity mentioned in \cref{sec:OptimalControlProblem} very large corresponding to a material with physically unreasonable thermal conductivity properties.
 This also means that the difference in heat from the boundary towards the center of $\Omega$ is comparatively small.
 The \cref{fig:boundary-const-y-endtime} shows the state at the time point $t = T$.
 
-Note that the optimal state does not converge towards $y_\Omega$, as we're penalizing energy required and the boundary control cannot lead towards a constant inner temperature. In fact, the center of the domain, is at the end attaining a value of roughly $30$, whereas the boundary attains values between $36$ and $37$.
+Note that the optimal state does not converge towards $y_\Omega$, as we're penalizing energy required and the boundary control cannot lead towards a constant inner temperature. In fact, the center of the domain, is at the end attaining a value of roughly $29$, whereas the boundary attains values between $34$ and $37$.
 In \cref{fig:boundary-const-y-cut} the state of the line $\{ 0.5 \} \times [0, 1]$ is being shown over time.
 \begin{figure}[htpb]
 \centering
-\includegraphics[width=\textwidth]{Images/boundary-const-y-endtime.png}
-\caption{The state of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$, plotted at $t = T$.}
+\includegraphics[width=0.9\textwidth]{Images/boundary-const-y-endtime.png}
+\caption{The optimal state of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$, plotted at $t = T$.}
 \label{fig:boundary-const-y-endtime}
 \end{figure}
 \begin{figure}[htpb]
 \centering
-\includegraphics[width=\textwidth]{Images/boundary-const-y-cut.png}
-\caption{The state of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$, plotted as slice $\{ 0.5 \} \times [0, 1] \times [0, 1]$.}
+\includegraphics[width=0.9\textwidth]{Images/boundary-const-y-cut.png}
+\caption{The optimal state of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$, plotted as slice $\{ 0.5 \} \times [0, 1] \times [0, 1]$.}
 \label{fig:boundary-const-y-cut}
 \end{figure}
 \FloatBarrier
 
-We can now use the primal-dual active set method described in \cref{sec:KR-numerics} to consider the same problem with the box restrictions $0 \leq u(x, t) \leq 40$. As we've seen, the unrestricted optimal control exceeds that value in some points, so the restricted solution should have some cut offs.
-The \cref{fig:boundary-const-u-rest} shows the optimal restricted control and \cref{fig:boundary-const-y-rest-endtime} shows its associated state at $t = T$.
-As given by the optimality conditions, one observes that the restricted control is the unrestricted optimal control with a cutoff taking place in the points that exceed $u_b = 40$.
-Furthermore, the optimal discrete state is closer to $y_\Omega$ than the optimal unrestricted state. This is simply a result of the energy penalty. If one lowered $\lambda$ further, one would observe the difference between $\bar{y}_h(T)$ and $y_\Omega$ being much smaller.
-However, in the restricted setting, the minimizer can simply require more energy as is the case here, leading to the state being closer to the desired state.
+We can now use the primal-dual active set method described in \cref{sec:KR-numerics} to consider the same problem with the box restrictions $10 \leq u(x, t) \leq 40$. As we've seen, the unrestricted optimal control exceeds these bounds in some points, so the restricted solution should have some cut offs.
+The \cref{fig:boundary-const-u-rest} shows the optimal restricted control and \cref{fig:boundary-const-y-rest-endtime} shows its associated state at $t = T$. It took four iterations of the algorithm for it to terminate.
+As given by the optimality conditions, one observes that the restricted control is very close to the unrestricted optimal control with a cutoff taking place in the points that exceeds the box constraints.
+In fact, the areas where the value $u_a = 10$ and $u_b = 40$ were attained are precisely those that the algorithm placed in $A^-_n$ and $A^+_n$ respectively.
+
+Unlike all other examples discussed in this chapter, these results stem from solving a linear equation system involving a non-symmetric matrix.
+The solver PARDISO can handle both, symmetric and non-symmetric matrices alike, but of course it's significantly slower on non-symmetric matrices. Moreover, the amount of memory consumed is roughly doubled.
+Therefore, the results for this case step from a three times uniform refinement only, whereas all other results for the boundary and inner optimal control problems in this chapter have at least four refinement steps taken.
 \begin{figure}[htpb]
 \centering
-\includegraphics[width=\textwidth]{Images/boundary-cont-u-rest.png}
-\caption{The control of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$ restricted by $0 \leq u(x, t) \leq 40$, plotted at the boundary on $[0, 1] \times \{ 1 \} \times [0, 1]$.}
+\includegraphics[width=0.9\textwidth]{Images/boundary-cont-u-rest.png}
+\caption{The optimal control of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$ restricted by $10 \leq u(x, t) \leq 40$, plotted at the boundary on $[0, 1] \times \{ 1 \} \times [0, 1]$.}
 \label{fig:boundary-const-u-rest}
 \end{figure}
 \begin{figure}[htpb]
 \centering
-\includegraphics[width=\textwidth]{Images/boundary-cont-y-rest.png}
-\caption{The state of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$ restricted by $0 \leq u(x, t) \leq 40$, plotted at $t = T$.}
+\includegraphics[width=0.9\textwidth]{Images/boundary-cont-y-rest.png}
+\caption{The optimal state of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$ restricted by $10 \leq u(x, t) \leq 40$, plotted at $t = T$.}
 \label{fig:boundary-const-y-rest-endtime}
 \end{figure}
+\FloatBarrier
+
+As previously mentioned, the correct formulation for the heat transfer would be $\partial_t y - \alpha \lapl y = 0$ with the boundary condition $\partial_\nu y + \alpha y = \alpha u$.
+Numerically, a coefficient in front of the Laplace term will cause stability issues if it gets too small.
+As far as the theory is concerned, nothing changes except for the term $\alpha$ appearing as coefficient in front of all norms and so forth.
+We want to see what changing the coefficient of the Laplace term does to the optimal control.
+Therefore, we now pick $\alpha = 0.2$ for all three occurrences. Other than that, we leave the problem setup unchanged.
+We have displayed one side of the control in \cref{fig:boundary-lowthet-u} and the associated states as before in \cref{fig:boundary-lowthet-y-endtime,fig:boundary-lowthet-y-cut}.
+In order to improve the readability, we have set the upper limit of the color scale to $30$ in these figures, whereas $y_\Omega \equiv 40$.
+One notices right away that the state is being heated up much earlier in time than before and that the overall state at $t = T$ is much farther away from $y_\Omega$ than it was before.
+By changing the value of $\alpha$ on the boundary, or more specifically, the value of $\beta$, the control needs much more energy to attain the same heating effect.
+Additionally, the introduction of the parameter $\alpha$ in front of the Laplace term ensures that in order to attain the same end-time state, a control has to heat up earlier as the transport of heat inside the domain $\Omega$ is not as good anymore.
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=\textwidth]{Images/boundary-lowthet-u.png}
+\caption{The optimal control of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$ and $\alpha = 0.2$, plotted at the boundary on $[0, 1] \times \{ 1 \} \times [0, 1]$.}
+\label{fig:boundary-lowthet-u}
+\end{figure}
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=\textwidth]{Images/boundary-lowthet-y-endtime.png}
+\caption{The optimal state of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$ and $\alpha = 0.2$, plotted at $t = T$.}
+\label{fig:boundary-lowthet-y-endtime}
+\end{figure}
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=\textwidth]{Images/boundary-lowthet-y-cut.png}
+\caption{The optimal state of the boundary control problem with $y_0 \equiv 1$ and $y_\Omega \equiv 40$ and $\alpha = 0.2$, plotted as slice $\{ 0.5 \} \times [0, 1] \times [0, 1]$.}
+\label{fig:boundary-lowthet-y-cut}
+\end{figure}
+\FloatBarrier
+
+Finally, we want to show some results for \cref{sec:inner-optimal-control}.
+Let the domain and $\lambda = 0.1$ as before, $\alpha = 0$ and $\beta = 1$. Once again, we use the quadratic basis functions.
+For $y_Q$ we will now use a non-constant function:
+\[
+	y_Q(x, y, t) = (x + y) \sin(\pi t).
+\]
+As $y_Q$ differs between time points by a scaling factor, we show the results for the optimal state at $t = 0.5$ in \cref{fig:inner-y-midtime}.
+Due to the way the state looks, we cut the state for display reasons along the line going from $(0, 0)$ to $(1, 1)$ and displayed the behavior over time in \cref{fig:inner-y-diag}.
+\cref{fig:inner-u-midtime,fig:inner-u-diag} show the optimal control cut away in the same fashion.
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.9\textwidth]{Images/inner-y-cut-midtime.png}
+\caption{The optimal state of the inner control problem, plotted at $t = 0.5$.}
+\label{fig:inner-y-midtime}
+\end{figure}
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.9\textwidth]{Images/inner-y-cut-diag.png}
+\caption{The optimal state of the inner control problem, plotted as a cut along the diagonal plane with normal $(-1, 1, 0)^\tp$ centered on $(0.5, 0.5, 0.5)^\tp$.}
+\label{fig:inner-y-diag}
+\end{figure}
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.9\textwidth]{Images/inner-u-cut-midtime.png}
+\caption{The optimal control of the inner control problem, plotted at $t = 0.5$.}
+\label{fig:inner-u-midtime}
+\end{figure}
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.9\textwidth]{Images/inner-u-cut-diag.png}
+\caption{The optimal control of the inner control problem, plotted as a cut along the diagonal plane with normal $(-1, 1, 0)^\tp$ centered on $(0.5, 0.5, 0.5)^\tp$.}
+\label{fig:inner-u-diag}
+\end{figure}
+\FloatBarrier
+
+All results so far were calculated by employing the sparse-direct solver PARDISO.
+The reason for this is that iterative methods such as FGMRES converge poorly for the equation systems stem from the saddle point minimization problem.
+We want to illustrate this with an example.
+Consider again the unconstrained boundary optimal control problem for $y_0 \equiv 1$ and $y_\Omega \equiv 40$, which we discussed earlier.
+\cref{fig:boundary-p} shows the adjoint state of the optimal control for this problem after three refinements.
+If we attempt to solve the same linear equation system that stems from the discretization using a restarted variant of FGMRES, where we restart after 150 iterations, we obtain after 5000 iterations an iterate that is being shown in \cref{fig:GMRES-p}.
+To be clear, \cref{fig:boundary-p} shows the exact solution of the linear equation system from which the iterate shown in \cref{fig:GMRES-p} stems.
+One can clearly see that the unconditioned FGMRES method works poorly for solving the resulting linear system.
+
+It is understood that the convergence of iterative methods including MINRES and GMRES\slash{}FGMRES depends critically upon the condition of the matrix.
+The matrices that occur for the discretized optimal control problems are all of the form
+\[
+	\begin{pmatrix}
+		M_1 & A_h^\tp \\
+		A_h & M_2
+	\end{pmatrix},
+\]
+where $A$ and $A^\tp$ are two matrices that are sparse but expected to be of rather benign form.
+However, for the boundary optimal control problem, both $M_1$ and $M_2$ are mass matrices on boundary faces multiplied by some coefficients (for the inner optimal control problem, it is just $M_1$).
+Therefore, neither can be invertible on their own.
+
+Due to the absolutely critical dependence of the solution on both matrices, it's not surprising that the condition of the resulting system is rather poor.
+After all, keep in mind that all the various problem formulations discussed here, use the same ansatz for the matrices $A_h$ and only differ by their choices for $M_1$ and $M_2$.
+
+Ultimately, one would need a suitable matrix preconditioner if one wants to apply iterative methods to the resulting linear systems. The work \cite{BenziGolubLiesen} discusses several types of preconditioners suitable for saddle point problems like the ones encountered here.
+Yet, they assume that the blocks $M_1$ or $M_2$ would be invertible, which they clearly cannot be in this case.
+One might experience some success with block diagonal preconditioners for the systems resulting from the problem discussed in \cref{sec:symmetric-Problem} as both $M_1$ and $M_2$ are mass matrices stemming from the $L^2$ scalar product on $\Shp(\meshT_N)$ and therefore invertible.
+Possibly such an approach could also be made for the inner optimal control problem from \cref{sec:inner-optimal-control}, where only $M_2$ is of full rank.
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.9\textwidth]{Images/boundary-cont-p.png}
+\caption{The optimal adjoint state of the boundary control problem for $y_0 \equiv 1$ and $y_\Omega \equiv 40$, plotted at $t = T$.}
+\label{fig:boundary-p}
+\end{figure}
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.9\textwidth]{Images/boundary-cont-GMRES.png}
+\caption{The iterate of restarted FGMRES after 5000 corresponding the adjoint state of the boundary control problem for $y_0 \equiv 1$ and $y_\Omega \equiv 40$ as, plotted at $t = T$.}
+\label{fig:GMRES-p}
+\end{figure}
+\FloatBarrier
 \end{document}

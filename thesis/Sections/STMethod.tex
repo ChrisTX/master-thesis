@@ -24,6 +24,7 @@ One could directly extend this method to include a mixture of Neumann and Robin 
 \end{remark}
 
 Following the proceedings of \cite[Chapter 2]{Neumueller}, we can derive a space-time discontinuous Galerkin method for this problem.
+For a general introduction to discontinuous Galerkin methods, the work \cite{Cockburn} can be recommended.
 
 In order to arrive at a discretization, we make an approach of decomposing the space-time cylinder $Q$ into $N \in \mathbb{N}$ finite elements, whose collection we denote by $\meshT_N$. More precisely we work with simplexes of mesh size $h_\ell = \sqrt[d+1]{|\tau_\ell|}$ and assume the space-time domain $Q$ can be decomposed into simplexes without error, i.e.
 \[
@@ -98,7 +99,8 @@ In order to obtain an approach for the remaining term,
 \[
 	\iint_Q \nabla u \nabla v \dd x \dd t
 \]
-we use the so called ``symmetric interior penalty'' method, see \cite[Chapter 4.2]{DiPietroErn} for the derivation of the method and \cite[(4.12), p.\ 125]{DiPietroErn} for the final result\footnote{In comparison to \cite[(4.12), p.\ 125]{DiPietroErn} the bilinear form looks slightly different, as we use a different definition of jumps, compare \cite[Remark 1.20, p.\ 12]{DiPietroErn}.}:
+we use the so called ``symmetric interior penalty'' method, originally introduced in \cite{Arnold}.
+A modern derivation can be found in \cite[Chapter 4.2]{DiPietroErn}, and the finaly result is given as \cite[(4.12), p.\ 125]{DiPietroErn}\footnote{In comparison to \cite[(4.12), p.\ 125]{DiPietroErn} the bilinear form looks slightly different, as we use a different definition of jumps, compare \cite[Remark 1.20, p.\ 12]{DiPietroErn}.}:
 \begin{IEEEeqnarray*}{rCl}
 	a^\sip(f_h, v_h) &\coloneqq& \sum_{\ell = 1}^N \iint_{\tau_\ell} \nabla_x f_h(x, t) \cdot \nabla_x v_h(x, t) \dd x \dd t \\
 	&& {} - \sum_{\Gamma_{k\ell} \in \intfI_N} \iint_{\Gamma_{k \ell}} \lavg \nabla_x f_h \ravg_{\Gamma_{k \ell}} (x, t) \ljump v_h \rjump_{\Gamma_{k \ell}, x} (x, t) \dd s(x) \dd t \\

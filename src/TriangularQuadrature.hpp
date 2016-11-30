@@ -79,15 +79,15 @@ namespace QuadratureFormulas {
 			constexpr static T sqrt_of_fifteen = T{3.8729833462074168851792653997824};
 			constexpr static T vma = (T{6} - sqrt_of_fifteen)/T{21};
 			constexpr static T vpa = (T{6} + sqrt_of_fifteen)/T{21};
-			constexpr static T vmb = (T{9} + T{2} * sqrt_of_fifteen)/T{21};
-			constexpr static T vpb = (T{9} - T{2} * sqrt_of_fifteen)/T{21};
+			constexpr static T vmb = (T{9} - T{2} * sqrt_of_fifteen)/T{21};
+			constexpr static T vpb = (T{9} + T{2} * sqrt_of_fifteen)/T{21};
 			constexpr static T wa = (T{155} - sqrt_of_fifteen)/T{2400};
 			constexpr static T wb = (T{155} + sqrt_of_fifteen)/T{2400};
 		public:
 			using point_t = std::array<T, 2>;
 			const std::array<T, 7> weights{ wa, wa, wa, wb, wb, wb, T{9}/T{80} };
 			const std::array<point_t, 7> points{
-				{ vma, vma }, { vpb, vma }, { vma, vpb }, { vpa, vmb }, { vpa, vpa }, { vmb, vpa }, { T{1}/T{3}, T{1}/T{3} }
+				point_t{ vma, vma }, point_t{ vpb, vma }, point_t{ vma, vpb }, point_t{ vpa, vmb }, point_t{ vpa, vpa }, point_t{ vmb, vpa }, point_t{ T{1}/T{3}, T{1}/T{3} }
 			};
 
 			template<typename F>

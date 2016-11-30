@@ -38,7 +38,7 @@ namespace QuadratureFormulas {
 		template<typename T>
 		struct Formula_3DT3 {
 		private:
-			constexpr static T sqrt_of_five = T{2.2360679774997896964091736687313};
+			constexpr static auto sqrt_of_five = T{2.2360679774997896964091736687313};
 		public:
 			using point_t = std::array<T, 3>;
 			const std::array<T, 4> weights{ T{1}/T{24}, T{1}/T{24}, T{1}/T{24}, T{1}/T{24} };
@@ -47,6 +47,50 @@ namespace QuadratureFormulas {
 				point_t{ (T{5} + T{3} * sqrt_of_five)/T{20}, (T{5} - sqrt_of_five)/T{20}, (T{5} - sqrt_of_five)/T{20} },
 				point_t{ (T{5} - sqrt_of_five)/T{20}, (T{5} + T{3} * sqrt_of_five)/T{20}, (T{5} - sqrt_of_five)/T{20} },
 				point_t{ (T{5} - sqrt_of_five)/T{20}, (T{5} - sqrt_of_five)/T{20}, (T{5} + T{3} * sqrt_of_five)/T{20} }
+			};
+
+			template<typename F>
+			auto operator()(const F& f_integrand) const {
+				return EvaluateQuadrature(points, weights, f_integrand);
+			}
+		};
+
+		template<typename T>
+		struct Formula_3DT4 {
+		private:
+			constexpr static auto a = T{ 0.3108859 };
+			constexpr static auto b = T{ 1 - 3 * a };
+			constexpr static auto c = T{ 0.09273525 };
+			constexpr static auto d = T{ 1 - 3 * c };
+			constexpr static auto e = T{ 0.4544963 };
+			constexpr static auto f = T{ T{0.5} - e };
+
+			constexpr static auto weight_a = T{ 0.01878132 };
+			constexpr static auto weight_c = T{ 0.01224884 };
+			constexpr static auto weight_e = T{ 0.007091003 };
+
+		public:
+			using point_t = std::array<T, 3>;
+			const std::array<T, 14> weights{ 
+				weight_a, weight_a, weight_a, weight_a,
+				weight_c, weight_c, weight_c, weight_c,
+				weight_e, weight_e, weight_e, weight_e, weight_e, weight_e
+			};
+			const std::array<point_t, 14> points{
+				point_t{ a, a, a },
+				point_t{ b, a, a },
+				point_t{ a, b, a },
+				point_t{ a, a, b },
+				point_t{ c, c, c },
+				point_t{ d, c, c },
+				point_t{ c, d, c },
+				point_t{ c, c, d },
+				point_t{ f, e, e },
+				point_t{ e, f, e },
+				point_t{ e, e, f },
+				point_t{ e, f, f },
+				point_t{ f, e, f },
+				point_t{ f, f, e }
 			};
 
 			template<typename F>

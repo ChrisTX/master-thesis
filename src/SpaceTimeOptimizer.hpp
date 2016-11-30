@@ -1198,8 +1198,9 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 		using basis_und_t = std::underlying_type_t<basis_index_t>;
 		const auto num_elems = this->m_Mesh.m_ElementList.size();
 		const auto num_basis = basis_f.size();
-		const auto block_size = num_basis * num_elems;
-		const auto matrix_dim = 2 * block_size;
+		using csr_size_t = typename Utility::CSRMatrixAssembler<T>::size_type;
+		const auto block_size = static_cast<csr_size_t>(num_basis * num_elems);
+		const auto matrix_dim = static_cast<csr_size_t>(2 * block_size);
 
 		for (const auto& pval : this->m_Mesh.m_SurfaceList) {
 			const auto& surf_id = pval.first;
@@ -1219,8 +1220,8 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 				const auto start_offset = surf_data.adjacent_elements[0] * num_basis;
 				for (auto bi = basis_und_t{ 0 }; bi < num_basis; ++bi) {
 					for (auto bj = basis_und_t{ 0 }; bj < num_basis; ++bj) {
-						const auto offset_vi = start_offset + bi;
-						const auto offset_uj = start_offset + bj;
+						const auto offset_vi = static_cast<csr_size_t>(start_offset + bi);
+						const auto offset_uj = static_cast<csr_size_t>(start_offset + bj);
 
 						const auto form_val_Jh = this->EvaluateJh_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi), static_cast<basis_index_t>(bj));
 						assert(std::isfinite(form_val_Jh));
@@ -1229,10 +1230,13 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						switch (ac_qual[offset_vi]) {
 						case ActiveSetType::Aminusn:
 							lv[block_size + offset_vi] += box_a * form_val_raw;
+							break;
 						case ActiveSetType::Aplusn:
 							lv[block_size + offset_vi] += box_b * form_val_raw;
+							break;
 						case ActiveSetType::In:
 							mat(block_size + offset_vi, block_size + offset_uj) += form_val_Jh;
+							break;
 						}
 					}
 				}
@@ -1279,34 +1283,28 @@ struct STMAssembler : public STMFormEvaluator<T, TriangQuadFm, TetraQuadFm> {
 						const auto offset_vi = start_offset + bi;
 
 						if (this->Test_Surface(surf_id, basis_f, static_cast<basis_index_t>(bi))) {
-							auto un1x = T{ -1 } * p_n1[block_size + offset_vi] / lambda;
-							auto un1x_c = un1x;
+							auto pnx = p_n1[block_size + offset_vi];
+							auto unx = T{ -1 } * pnx/lambda;
 							switch (active_sets_n1[offset_vi]) {
 							case ActiveSetType::Aplusn:
-								un1x_c = b;
+								unx = b;
 								break;
 							case ActiveSetType::Aminusn:
-								un1x_c = a;
+								unx = a;
 								break;
 							case ActiveSetType::In:
 								break;
 							}
 
-							const auto mult1nx = un1x_c - un1x;
-							const auto classdenom = un1x_c + mult1nx / c;
+							const auto mult1nx = pnx + lambda * unx;
+							const auto classdenom = unx - mult1nx / c;
 
-							if (classdenom > b) {
-								assert(mult1nx > T{ 0 });
+							if (classdenom > b)
 								active_sets_n[offset_vi] = ActiveSetType::Aplusn;
-							}
-							else if (classdenom < a) {
-								assert(mult1nx < T{ 0 });
+							else if (classdenom < a)
 								active_sets_n[offset_vi] = ActiveSetType::Aminusn;
-							}
-							else {
-								assert(un1x_c > a && un1x_c < b && mult1nx == T{ 0 });
+							else
 								active_sets_n[offset_vi] = ActiveSetType::In;
-							}
 						}
 					}
 				}
@@ -1512,7 +1510,7 @@ public:
 				tetra->GetPointIds()->SetId(j, p_VtkId);
 
 				auto p_Ref = ref_tran.InverseMap(p);
-				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : uEvaluateElement_Ref(i, p_Ref)));
+				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : pEvaluateElement_Ref(i, p_Ref)));
 			}
 
 			cells->InsertNextCell(tetra);
@@ -1547,7 +1545,7 @@ public:
 				tetra->GetPointIds()->SetId(j, p_VtkId);
 
 				auto p_Ref = ref_tran.InverseMap(p);
-				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : uEvaluateElement_Ref(i, p_Ref)));
+				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : pEvaluateElement_Ref(i, p_Ref)));
 			}
 
 			const auto inserthalfpt = [&](NodeId_t k, NodeId_t l) -> void {
@@ -1558,7 +1556,7 @@ public:
 				tetra->GetPointIds()->SetId(j++, p_VtkId);
 
 				auto p_Ref = ref_tran.InverseMap(p);
-				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : uEvaluateElement_Ref(i, p_Ref)));
+				dataarr->InsertNextValue((EvaluateY ? yEvaluateElement_Ref(i, p_Ref) : pEvaluateElement_Ref(i, p_Ref)));
 			};
 
 			inserthalfpt(NodeId_t{ 0 }, NodeId_t{ 1 });
@@ -1592,7 +1590,7 @@ public:
 
 		const auto block_size = A.GetNumberOfRows() / 2;
 
-		auto p_n1 = solution_vector_t(2 * block_size, (box_b + box_a)/2.);
+		auto p_n1 = solution_vector_t(2 * block_size, std::numeric_limits<T>::signaling_NaN());
 		auto as_n1 = active_set_qualifier_t(block_size, ActiveSetType::In );
 
 		for (auto n = 1;; ++n) {

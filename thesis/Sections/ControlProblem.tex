@@ -84,9 +84,8 @@ p(T) &=& y(T) - y_\Omega
 \end{IEEEeqnarraybox} \\
 u = - \lambda^{-1} \beta p
 \end{IEEEeqnarray*}
-While this system can be solved as-is, the intertwining of the state and the adjoint state equations, and especially the fact that one is operating forward in time and the other one backwards in time, make this a difficult system to solve.
+While this system can be solved as-is, the intertwining of the state and the adjoint state equations, and especially the fact that one is operating forward in time and the other one backwards in time, make this a difficult system to discretize.
 If one considers the control-constrained case, then this becomes an even harder nut to crack, as the right hand side of the state system now depends on a non-linear function. From a theoretical point of view, that does not matter, however, and \cref{sec:Disc-Control-Problem} will treat the constrained form.
-In \cref{sec:st-numerics} we will discuss numerical methods for solving this problem, and will also treat the control-constrained case. It will however turn out to be much more difficult to work with than the unconstrained case.
 
 For deriving a numerical approach, one needs to apply a numerical discretization of the heat system that governs the state. In the elliptic case, one might simply apply a conformal finite element method for this purpose. The work \cite{Hinze} analyzed error estimates for such an approach.
 However, in the parabolic case, one traditionally uses semi-discretization methods, where one effectively uses discontinuous Galerkin methods in the time direction and conformal approaches in the space dimensions. For the parabolic optimal control case, such methods have been examined in \cite{MeidnerVexler-I,MeidnerVexler-II}.
@@ -94,7 +93,8 @@ However, in the parabolic case, one traditionally uses semi-discretization metho
 However, the approach made in this text is a different one.
 In \cite{Neumueller}, a space-time discontinuous Galerkin method for the parabolic heat equation has been derived.
 In contrast to the approach of \cite{MeidnerVexler-I}, this method employs a discretization using a discontinuous Galerkin approach in both space and time and operates with elements that span the space-time cylinder.
-We will be to take said discretization, derive the corresponding discrete adjoint problem to then ultimately prove in \cref{sec:Disc-Control-Problem} convergence of the discretized solution towards the continuous solution in a given sense.
-The first step will be therefore to introduce and to expand the space-time discontinuous Galerkin method, which will take place in \cref{sec:dG-method}. In \cref{sec:dG-numerics} we will discuss convergence results for that method, and finally derive numerical methods for it in \cref{sec:st-numerics}.
-Last, but not least, we will present numerical results for this method in \cref{sec:numerical-results}.
+The motivation for employing a method that works in the space-time domain is simply said that we are not hindered by the state being ``forwards'' in time and the adjoint working ``backwards'' in time if one works with the whole space-time domain at once.
+We will take aforementioned discretization, derive the corresponding discrete adjoint problem to then ultimately prove in \cref{sec:Disc-Control-Problem} convergence of the discretized solution towards the continuous solution in a given sense.
+The first step will be therefore to introduce and to expand the space-time discontinuous Galerkin method, which will take place in \cref{sec:dG-method}. In \cref{sec:dG-numerics} we will discuss convergence results for that method, and finally derive numerical methods for it in \cref{sec:st-numerics}, including approaches for the control constrained case.
+Last, but not least, we will present numerical results for this method in \cref{sec:numerical-results}, for both problems with and without control constraints.
 \end{document}

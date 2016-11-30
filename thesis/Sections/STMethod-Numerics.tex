@@ -521,7 +521,7 @@ Let $f \in H^s(\meshT_N)$ with $s \geq 1$.
 	\| f - Q_{\meshT_N} f \|_{L^2(\Sigma_R)}^2 &=& \sum_{\substack{\tau_\ell \in \meshT_N \\ \partial \tau_\ell \cap \Sigma_R}} \| f - Q_{\meshT_N} f \|_{L^2(\partial \tau_\ell \cap \Sigma_R)} \\
 	&\leq& \sum_{\ell=1}^N \| f - Q_{\meshT_N} f \|_{L^2(\partial \tau_\ell)}^2 \\
 \noalign{\noindent Applying \cref{thm:L2-approximation-props} we estimate this as}
-	&\leq& c^2 \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1} |f|^2_{H^s(\tau_\ell)}.
+	\| f - Q_{\meshT_N} f \|_{L^2(\Sigma_R)}^2 &\leq& c^2 \sum_{\ell=1}^N h_\ell^{2 \min \{ s, p+ 1 \} - 1} |f|^2_{H^s(\tau_\ell)}.
 \end{IEEEeqnarray*}
 By definition of $\| \cdot \|_{A,R}$:
 \[

@@ -1,5 +1,29 @@
-\documentclass{scrbook}
+\documentclass[a4paper]{scrbook}
 \KOMAoptions{twoside=false,parskip=yes}
+
+\usepackage{MA_Titlepage}
+
+%Name of the author of the thesis 
+\authornew{Christian Pfeiffer}
+%Date of birth of the Author
+\geburtsdatum{8th June 1992}
+%Place of Birth
+\geburtsort{Bonn, Germany}
+%Date of submission of the thesis
+\date{December 1, 2016}
+
+%Name of the Advisor
+% z.B.: Prof. Dr. Peter Koepke
+\betreuer{Advisor: Prof. Dr. Sven Beuchler}
+%Name of the Insitute of the advisor
+%\zweitgutachter{Second Advisor: Prof. Dr. X Y}
+%name of the second advisor of the thesis
+%z.B.: Mathematisches Institut
+\institut{Institute for Numerical Simulation}
+%Title of the thesis 
+\title{Space-time discontinuous Galerkin methods for parabolic optimal control problems}
+%Do not change!
+\ausarbeitungstyp{Master's Thesis  Mathematics}
 
 % This document is only designed for
 % XeLaTeX, LuaLaTeX or pdfLaTeX
@@ -92,10 +116,7 @@
 \definecolor{shadecolor}{RGB}{229, 218, 38}
 
 \hypersetup{
-  linkcolor  = mylinkcolor!\myshade!black,
-  citecolor  = mycitecolor!\myshade!black,
-  urlcolor   = myurlcolor!\myshade!black,
-  colorlinks = true,
+  hidelinks,
 }
 
 \usepackage[linesnumbered]{algorithm2e}
@@ -131,6 +152,7 @@
 
 \begin{document}
 \frontmatter
+\maketitle
 
 %\printacronyms
 \tableofcontents
@@ -142,6 +164,7 @@
 \subfile{Sections/CP-Numerics.tex}
 \subfile{Sections/STMethod-Implementation.tex}
 \subfile{Sections/Numerical-Results.tex}
+\subfile{Sections/Summary.tex}
 
 \backmatter
 \printbibliography[heading=bibintoc]

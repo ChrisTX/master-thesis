@@ -109,11 +109,11 @@ int main() {
 #if defined(PRINT_MATRIX)
 	const auto reflim = 0;
 #elif !defined(NDEBUG)
-	const auto reflim = 2;
+	const auto reflim = 1;
 #elif defined(SYMMETRIC_SYSTEM)
 	const auto reflim = 3;
 #else
-	const auto reflim = 4;
+	const auto reflim = 3;
 #endif
 	for(auto i = 0; i < reflim; ++i)
 		mesh.UniformRefine();
@@ -170,32 +170,36 @@ int main() {
 
 	const auto pi = 3.14159265359;
 	
-	auto beta = 0.2;
 #ifdef SYMMETRIC_SYSTEM
 	auto lambda = std::pow(pi, -4.);
 #else
 	auto lambda = 0.1;
 #endif
-	auto alpha = 0.2;
+	auto alpha = 1.;
+	auto beta = 1.;
 	auto sigma = 50.;
-	auto theta = 0.2;
-
-#ifdef HEAT_SYSTEM
-	auto stmass = HeatAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda, theta };
-#else
-	auto stmass = STMAssembler<double, QuadratureFormulas::Triangles::Formula_2DD5<double>, QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>{ mesh, sigma, alpha, beta, lambda, theta };
-#endif
+	auto theta = 1.;
 
 #ifdef QUADRATIC_BASIS
 	using basis_t = BasisFunctions::TetrahedralQuadraticBasis<double>;
+	using triang_quad_t = QuadratureFormulas::Triangles::Formula_2DD6<double>;
+	using tetra_quad_t = QuadratureFormulas::Tetrahedra::Formula_3DT4<double>;
 #else
 	using basis_t = BasisFunctions::TetrahedralLinearBasis<double>;
+	using triang_quad_t = QuadratureFormulas::Triangles::Formula_2DD3<double>;
+	using tetra_quad_t = QuadratureFormulas::Tetrahedra::Formula_3DT1<double>;
+#endif
+
+#ifdef HEAT_SYSTEM
+	auto stmass = HeatAssembler<double, triang_quad_t, tetra_quad_t>{ mesh, sigma, alpha, beta, lambda, theta };
+#else
+	auto stmass = STMAssembler<double, triang_quad_t, tetra_quad_t>{ mesh, sigma, alpha, beta, lambda, theta };
 #endif
 
 #ifndef HEAT_SYSTEM
 #ifdef INNER_SYSTEM
 	auto matA = stmass.AssembleMatrix_Inner<basis_t>();
-	auto lvA = stmass.AssembleLV_Inner<basis_t>([](double x, double y, double t) -> double { return 10 * t; });
+	auto lvA = stmass.AssembleLV_Inner<basis_t>([pi](double x, double y, double t) -> double { return (x + y) * std::sin(pi * t); });
 #elif defined(SYMMETRIC_SYSTEM)
 	const auto a = 1.;
 	const auto T = 0.1;
@@ -238,7 +242,7 @@ int main() {
 	
 	auto stmsol = STMSolver<double, basis_t>{ beta, lambda, mesh };
 #ifdef KR_SYSTEM
-	stmsol.SolveRestricted(stmass, [](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 40.; }, 0., 40., 0.15);
+	stmsol.SolveRestricted(stmass, [](double, double, double) -> double { return 1.; }, [](double, double, double) -> double { return 40.; }, 10., 40., 0.15);
 #else
 	stmsol.Solve(matA, lvA);
 #endif
@@ -267,8 +271,8 @@ int main() {
 		};
 	};
 
-	std::cout << "y error\t" << stmsol.L2NormError_SpaceTime<QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>(y_opt, true) << std::endl;
-	std::cout << "u error\t" << stmsol.L2NormError_SpaceTime<QuadratureFormulas::Tetrahedra::Formula_3DT3<double>>(u_opt, false) << std::endl;
+	std::cout << "y error\t" << stmsol.L2NormError_SpaceTime<tetra_quad_t>(y_opt, true) << std::endl;
+	std::cout << "u error\t" << stmsol.L2NormError_SpaceTime<tetra_quad_t>(u_opt, false) << std::endl;
 #endif
 	std::cout << "DONE" << std::endl;
 

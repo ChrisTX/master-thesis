@@ -1,0 +1,29 @@
+\documentclass[../thesis.tex]{subfiles}
+
+\begin{document}
+\chapter{Conclusions and outlook}
+\label{sec:conclusions}
+The discretization approaches examined in this work delivered error estimates for both, the optimal control and associated state of the parabolic optimal heat control problem.
+Said error estimates could be derived for formulations that minimize their state on the end time point $t = T$, for states that are observed on the boundary as well as states that are observed on the full space. As far as the control is concerned, we were able to treat problem formulations where the state acts as a boundary or inner control.
+
+In comparison to the work \cite{MeidnerVexler-I}, who use separate discretization approaches in both, space and time, the approach to work in the full space-time domain presented here, was shown to be easily transferable to all these formulations.
+\cite{MeidnerVexler-I} only deals with the problem formulation given in \cref{sec:symmetric-Problem}.
+However, the estimates in both the $\lDG \cdot \rDG$ and $\| \cdot \|_{L^2(Q)}$ norms that were proved in \cref{sec:dG-numerics} turned out to be flexible and applicable for all the various formulations. In fact, \cite{MeidnerVexler-I} gives estimates of the order $h^{p+1}$, too.
+Nonetheless, their method requires to employ a control discretization at all times - a restriction that the method analyzed here does not. As of such, the strongest method they give is the cG(1)dG(0) method, i.e.\ a discretization done by working cellwise linear in space and piecewise constant in time.
+This leads them to a method of order $\mathcal{O}(h^2)$.
+
+For our method, using higher order methods is on the other hand not a hindrance. While the numerical results given \cref{sec:numerical-results} were only generated up to quadratic basis functions, using higher polynomial degrees is not an issue.
+Even the quadratic basis function approach lead to excellent numerical results and a very fast convergence, and its convergence rate is most certainly a strong advantage of the method examined in this work.
+
+On the other hand, the problematic regularity requirements for \cref{thm:dg-convergence}, which we had to cover by making the strong assumption \cref{as:continuous-Hs-regularity} is most certainly the downside of the discretization treated here. Given that it was only necessary for \cref{thm:L2proj-Astar-error}, it might be possible to find an alternative proof in the future that would enable the theoretical results a wider applicability.
+Certainly, for practical purposes, one might apply the method under the assumption that it works, but that's not an answer satisfactory from a mathematical point of view.
+
+Furthermore, error estimates for a discretization of the control space as needed for the implementation of the primal-dual active set method as outlined in \cref{sec:KR-numerics} would be another topic permitting future work.
+For the discontinuous Galerkin approach given in \cite{MeidnerVexler-I}, such discretization results in the case of control constrained problems exist in the work \cite{MeidnerVexler-II}, and it might be possible to apply the methods from there and \cite{CasasTroeltzsch} in order to prove such results in the future. Such an analysis is however outside of the scope of this work.
+
+From a computational point of view, the lack of a predestined fast linear solver poses a problem.
+In \cref{sec:numerical-results}, the results were generated using PARDISO, which as a direct solver is rather limited by performance and memory for really huge equation systems.
+One would expect that for problems with three space dimensions, the solver performance would be even worse.
+Finding ways to apply iterative methods efficiently would greatly augment the performance of the method's implementation.
+As mentioned in \cref{sec:numerical-results}, block diagonal preconditioners as discussed in \cite{BenziGolubLiesen} could be a starting point for deriving efficient preconditioners for the resulting linear systems, at least for some of the problem formulations discussed in this work.
+\end{document}
