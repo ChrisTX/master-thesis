@@ -180,12 +180,12 @@ f(x, 0) &=& f_0(x) & \text{for } (x, t) \in \Omega.
 \begin{itemize}
 \item If the function is in $H^s(\meshT_N)$ with $s \geq 2$:
 \[
-	\lDG f - f_h \rDG \leq C \max\{ 1, \alpha \} h^{\min \{ s, p+1\} -1} |f|_{H^s(\meshT_N)}.
+	\lDG f - f_h \rDG \leq C h^{\min \{ s, p+1\} -1} |f|_{H^s(\meshT_N)}.
 \]
 \item Reason for requiring $s \geq 2$: Need to estimate $\| \nabla_x(f - Q_\ell f) \|_{[L^2(\partial \tau_\ell)]^d}$.
 \item Under assumption of at least $H^2$ regularity for general right hand sides: 
 \[
-	\| f - f_h \|_{L^2(Q)} \leq C \max\{ 1, \alpha \} h^{\min \{ s, p+1\}} |f|_{H^s(\meshT_N)}.
+	\| f - f_h \|_{L^2(Q)} \leq C h^{\min \{ s, p+1\}} |f|_{H^s(\meshT_N)}.
 \] 
 \end{itemize}
 \end{frame}
