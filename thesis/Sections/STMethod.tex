@@ -78,7 +78,7 @@ Note that with these definitions, the jump in space direction is a vector itself
 With these notations introduced, we can proceed. As already remarked, we're looking for an overall discontinuous approach while maintaining elementwise continuity. As of such, we simply demand for our ansatz space that the functions in it restricted to every element are polynomial of order $p$, where $p$ can be freely chosen.
 In precise terms, we obtain an ansatz space of
 \[
-	\Shp(\mathcal{T}_N) \coloneqq \left\{ v_h \in L_2(Q) \gmid v_h |_{\tau_\ell} \in \polyP_p(\tau_\ell) \text{ for all } \tau_\ell \in \mathcal{T}_N \text{ and } v_h = 0 \text{ on } \Sigma_D \right\}.
+	\Shp(\meshT_N) \coloneqq \left\{ v_h \in L_2(Q) \gmid v_h |_{\tau_\ell} \in \polyP_p(\tau_\ell) \text{ for all } \tau_\ell \in \meshT_N \text{ and } v_h = 0 \text{ on } \Sigma_D \right\}.
 \]
 As it is common practice, we demand zero values on the Dirichlet boundary.
 In order to obtain a discontinuous Galerkin formulation in this space, we multiply the differential equation with a test function $v$ of this space and integrate over the space-time cylinder:
@@ -166,7 +166,7 @@ b(f_h, v_h) &=& - \sum_{\ell = 1}^N \iint_{\tau_\ell} f_h(x, t) \frac{\partial v
 && {} - \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \iint_{\Gamma_{k \ell}} \ljump f_h \rjump_{\Gamma_{k \ell}, t}(x, t) \ldwnd v_h \rdwnd_{\Gamma_{k \ell}}(x, t) \dd s(x) \dd t
 \end{IEEEeqnarraybox}
 \end{equation}
-for all $f_h, v_h \in \Shp(\mathcal{T}_N)$, where the downwind in time direction on an interior facet $\Gamma_{k \ell} \in \intfI_N$ is given by
+for all $f_h, v_h \in \Shp(\meshT_N)$, where the downwind in time direction on an interior facet $\Gamma_{k \ell} \in \intfI_N$ is given by
 \[
 	\ldwnd v \rdwnd_{\Gamma_{k \ell}} (x, t) \coloneqq \begin{cases}
 	v|_{\tau_\ell}(x, t) & \text{for } n_{k, t} > 0, \\
@@ -221,7 +221,7 @@ This can be verified to hold by considering that $f$ is continuous and therefore
 
 Using a basis $\varphi_j$, $j = 1, \ldots, m$ of $\Shp$, i.e.
 \[
-	\Shp(\mathcal{T}_N) = \spn \{ \varphi_j \}_{j=1}^m, \quad f_h(x, t) = \sum_{j=1}^m \boldsymbol{f}[j] \varphi_j(x, t) \quad \text{for } f_h \in \Shp(\mathcal{T}_N),
+	\Shp(\meshT_N) = \spn \{ \varphi_j \}_{j=1}^m, \quad f_h(x, t) = \sum_{j=1}^m \boldsymbol{f}[j] \varphi_j(x, t) \quad \text{for } f_h \in \Shp(\meshT_N),
 \]
 we obtain a formulation as a linear system:
 \begin{equation}
@@ -232,7 +232,7 @@ with
 \[
 	A_h[i, j] \coloneqq A(\varphi_j, \varphi_i) \quad \text{and} \quad \boldsymbol{g}[i] \coloneqq \tilde{g}(\varphi_i). 
 \]
-\section{Adjoined problem treatment}
+\section{Adjoint problem treatment}
 \label{sec:adj-dG-treatment}
 We can additionally transport the same approach to obtain a discretization of $- \partial_t f$. For this we consider the problem
 \begin{equation}

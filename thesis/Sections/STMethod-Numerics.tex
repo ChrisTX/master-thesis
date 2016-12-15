@@ -65,13 +65,13 @@ Here, $c_I > 0$ is a generic constant depending on the mesh and the polynomial d
 For the statements see \cite[Lemma 2.2.3]{Neumueller}. For the last statement, see the proof of \cite[(4.28), (4.29)]{XuZou}.
 \end{proof}
 In the light of \cref{thm:Necas-Babuska}, we first define some energy norms with respect to the bilinear form $a(\cdot, \cdot)$, compare \cite{Neumueller}.
-For a function $f \in H^s(\mathcal{T}_N)$ with $s > \frac{3}{2}$ we define
+For a function $f \in H^s(\meshT_N)$ with $s > \frac{3}{2}$ we define
 \begin{IEEEeqnarray*}{rCl}
 \| f \|_A^2 &\coloneqq& \sum_{\ell = 1}^N \| \nabla_x f \|_{[L^2(\tau_\ell)]^d}^2 + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \frac{\sigma}{\bar{h}_{k \ell}} \left\| \ljump f \rjump_{\Gamma_{k \ell}, x} \right\|_{[L^2(\Gamma_{k \ell})]^d}^2, \\
 \| f \|_{A, *}^2 &\coloneqq& \| f \|_A^2 + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \bar{h}_{k \ell} \left\| \lavg \nabla_x f \ravg_{\Gamma_{k \ell}} \right\|_{[L^2(\Gamma_{k \ell})]^d}^2, \\
 \| f \|_{A, R}^2 &\coloneqq& \alpha \| f \|_{L^2(\Sigma_R)}^2.
 \end{IEEEeqnarray*}
-In the same vein, we define for $b(\cdot, \cdot)$ two norms for functions $f \in H^s(\mathcal{T}_N)$, $s \geq 1$:
+In the same vein, we define for $b(\cdot, \cdot)$ two norms for functions $f \in H^s(\meshT_N)$, $s \geq 1$:
 \begin{IEEEeqnarray*}{rCl}
 \| f \|_B^2 &\coloneqq& \sum_{\ell = 1}^N h_\ell \| \partial_t f \|_{L^2(\tau_\ell)}^2 + \| f(0) \|_{L^2(\Omega)}^2 + \| f(T) \|_{L^2(\Omega)}^2  + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \left\| \ljump f \rjump_{\Gamma_{k \ell}, t} \right\|_{L^2(\Gamma_{k \ell})}^2, \\
 \| f \|_{B, *}^2 &\coloneqq& \sum_{\ell = 1}^N h_\ell^{-1} \| f \|_{L^2(\tau_\ell)}^2 + \| f(T) \|_{L^2(\Omega)}^2  + \sum_{\Gamma_{k \ell} \in \mathcal{I}_N} \left\| \lupw f \rupw_{\Gamma_{k \ell}} \right\|_{L^2(\Gamma_{k \ell})}^2.
@@ -83,7 +83,7 @@ The bilinear form $a^\sip(\cdot, \cdot)$ is bounded, i.e.
 \[
 	|a^\sip(f, v_h)| \leq c_2^a \| f \|_{A, *} \| v_h \|_A,
 \]
-for all $f \in H^s(\mathcal{T}_N)$ with $s > \frac{3}{2}$ and for all $v_h \in \Shp(\mathcal{T}_N)$ with an $h$-independent constant $c_2^a > 0$.
+for all $f \in H^s(\meshT_N)$ with $s > \frac{3}{2}$ and for all $v_h \in \Shp(\meshT_N)$ with an $h$-independent constant $c_2^a > 0$.
 \end{lemma}
 \begin{proof}
 See \cite[Lemma 2.2.7]{Neumueller} and its prerequisite \cite[Lemma 2.2.6]{Neumueller}.
@@ -110,7 +110,7 @@ The bilinear form $b(\cdot, \cdot)$ is bounded, i.e.
 \[
 	|b(f, v_h)| \leq \| f \|_{B, *} \| v_h \|_B
 \]
-for all $f \in H^s(\mathcal{T}_N)$ with $s \geq 1$ and for all $v_h \in \Shp(\mathcal{T}_N)$.
+for all $f \in H^s(\meshT_N)$ with $s \geq 1$ and for all $v_h \in \Shp(\meshT_N)$.
 \end{lemma}
 \begin{proof}
 See \cite[Lemma 2.2.8]{Neumueller} for this statement.

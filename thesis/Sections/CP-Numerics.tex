@@ -362,7 +362,7 @@ The element $\bar{u} \in U_{ad}$ solves
 \]
 if and only if
 \[
-	\langle S \bar{u} - z, S ( u - \bar{u} ) \rangle_U + \lambda \langle \bar{u}, u - \bar{u} \rangle_U \geq 0 \quad \text{for all } u \in U_{ad}.
+	\langle S \bar{u} - z, S ( u - \bar{u} ) \rangle_H + \lambda \langle \bar{u}, u - \bar{u} \rangle_U \geq 0 \quad \text{for all } u \in U_{ad}.
 \]
 \end{theorem}
 \begin{proof}
@@ -370,7 +370,7 @@ See \cite[Satz 2.22]{Troeltzsch} for this statement.
 \end{proof}
 By using the adjoint operator $S^*$, one can characterize the solution of an optimal control problem using the so called adjoint state:
 \begin{IEEEeqnarray*}{r"rCl"l}
-	& \langle S \bar{u} - z, S ( u - \bar{u} ) \rangle_U + \lambda \langle \bar{u}, u - \bar{u} \rangle_U &\geq& 0 & \text{for all } u \in U_{ad}, \\
+	& \langle S \bar{u} - z, S ( u - \bar{u} ) \rangle_H + \lambda \langle \bar{u}, u - \bar{u} \rangle_U &\geq& 0 & \text{for all } u \in U_{ad}, \\
 	\Longleftrightarrow & \langle S^* ( S \bar{u} - z ) + \lambda \bar{u}, u - \bar{u} \rangle_U &\geq& 0 & \text{for all } u \in U_{ad}.
 \end{IEEEeqnarray*}
 Hence, one can define the solution by making use of the adjoint state $p \coloneqq  S^* ( S \bar{u} - z ) $.
@@ -382,7 +382,7 @@ In order to be able to treat the various formulations of the optimal control pro
 \begin{IEEEeqnarraybox}[][c]{rCl"l}
 -\frac{\partial p}{\partial t} (x, t) - \lapl p(x, t) &=& a_Q(x, t) & \text{for } (x, t) \in Q, \\
 n_x(x,t) \cdot \nabla_x p(x, t) + \alpha p(x, t) &=& a_\Sigma(x, t) & \text{for } (x, t) \in \Sigma, \\
-p(x, T) &=& a_\Omega(x) & \text{for } (x, t) \in \Omega,
+p(x, T) &=& a_\Omega(x) & \text{for } x \in \Omega,
 \end{IEEEeqnarraybox}
 \end{equation}
 with $\alpha$ being a constant as before and $a_Q \in L^2(Q)$, $a_\Sigma \in L^2(\Sigma)$ and $a_\Omega \in L^2(\Omega)$.
@@ -404,7 +404,7 @@ For $b_Q \in L^\infty(Q)$, $b_\Sigma \in L^\infty(\Sigma)$, $b_\Omega \in L^\inf
 \begin{IEEEeqnarraybox}[][c]{rCl"l}
 \frac{\partial y}{\partial t} (x, t) - \lapl y(x, t) &=& b_Q(x, t) v(x, t) & \text{for } (x, t) \in Q, \\
 n_x(x,t) \cdot \nabla_x y(x, t) + \alpha y(x, t) &=& b_\Sigma(x, t) u(x, t) & \text{for } (x, t) \in \Sigma, \\
-y(x, 0) &=& b_\Omega(x) w(x) & \text{for } (x, t) \in \Omega.
+y(x, 0) &=& b_\Omega(x) w(x) & \text{for } x \in \Omega.
 \end{IEEEeqnarraybox}
 \end{equation}
 Alas, we have right hand sides that consist of the product between some coefficients and a control.
@@ -512,7 +512,7 @@ A control $\bar{u}_h \in U_{ad}$ is optimal for \cref{eq:f-Sh} if and only if th
 See \cite[p.\ 53ff.]{Troeltzsch} for the deviation of the projection formula from the variational inequality.
 Note that we're only considering the case $\lambda > 0$.
 \end{proof}
-The same projection formula holds for the continuous case, i.e.\ $\bar{u} \in U_{ad}$ is optimal for \cref{eq:f-S} if and only if the adjoined state $\bar{p}$ fulfills
+The same projection formula holds for the continuous case, i.e.\ $\bar{u} \in U_{ad}$ is optimal for \cref{eq:f-S} if and only if the adjoint state $\bar{p}$ fulfills
 \[
 	\bar{u} = \projP_{[u_a, u_b]} \left\{ - \lambda^{-1} \beta \bar{p} \right\}.
 \]
